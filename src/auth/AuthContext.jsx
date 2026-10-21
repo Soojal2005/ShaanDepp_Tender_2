@@ -86,6 +86,8 @@ const ROLE_PERMISSIONS = {
   'audit:view': ['platform_admin'],
   'reports:release': ['platform_admin', 'case_manager'],
   'reports:generate': ['platform_admin'],
+  'cases:work': ['platform_admin', 'analyst', 'case_manager'],
+  'cases:assign': ['platform_admin', 'case_manager'],
   'enquiries:view': ['platform_admin', 'analyst', 'case_manager'],
   'members:manage': ['tenant_admin'],
 };

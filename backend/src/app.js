@@ -11,6 +11,7 @@ import { adminIngestionRoutes } from './routes/adminIngestion.js';
 import { adminJobsRoutes, adminMailRoutes } from './routes/adminOps.js';
 import { adminAlertRoutes, alertRoutes } from './routes/alerts.js';
 import { authRoutes } from './routes/auth.js';
+import { caseRoutes } from './routes/cases.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { mastersRoutes } from './routes/masters.js';
 import { orgRoutes } from './routes/org.js';
@@ -88,6 +89,7 @@ export function createApp({ db, rateLimits = true, makeTenderbookClient, jobs, s
   api.use('/alert-profiles', alertRoutes({ limiters }));
   api.use('/results', resultsRoutes());
   api.use('/reports', reportRoutes());
+  api.use('/cases', caseRoutes());
   api.use('/admin/ingestion', requireAuth, adminIngestionRoutes({ makeClient: makeTenderbookClient }));
   api.use('/admin/reports', requireAuth, adminReportRoutes());
   api.use('/admin/mail', requireAuth, adminMailRoutes());

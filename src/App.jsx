@@ -4,7 +4,6 @@ import { RequireAnyPermission, RequireAuth, RequirePermission } from './auth/gua
 import { Loading } from './components/ui.jsx';
 import AuthLayout from './layouts/AuthLayout.jsx';
 import PortalLayout from './layouts/PortalLayout.jsx';
-import ComingSoon from './pages/ComingSoon.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import Login from './pages/auth/Login.jsx';
@@ -26,6 +25,8 @@ const Jobs = lazy(() => import('./pages/admin/Jobs.jsx'));
 const Alerts = lazy(() => import('./pages/portal/Alerts.jsx'));
 const Enquiries = lazy(() => import('./pages/admin/Enquiries.jsx'));
 const AuditLog = lazy(() => import('./pages/admin/AuditLog.jsx'));
+const Desk = lazy(() => import('./pages/portal/Desk.jsx'));
+const CaseDetail = lazy(() => import('./pages/portal/CaseDetail.jsx'));
 const Results = lazy(() => import('./pages/portal/Results.jsx'));
 const Reports = lazy(() => import('./pages/portal/Reports.jsx'));
 const ReportDetail = lazy(() => import('./pages/portal/Reports.jsx').then((m) => ({ default: m.ReportDetail })));
@@ -47,7 +48,8 @@ export default function App() {
           <Route path="search" element={<Search />} />
           <Route path="watchlist" element={<Watchlist />} />
           <Route path="alerts" element={<Alerts />} />
-          <Route path="desk" element={<ComingSoon titleKey="nav.desk" />} />
+          <Route path="desk" element={<Desk />} />
+          <Route path="desk/:caseId" element={<CaseDetail />} />
           <Route path="results" element={<Results />} />
           <Route path="reports" element={<Reports />} />
           <Route path="reports/:bundleId" element={<ReportDetail />} />

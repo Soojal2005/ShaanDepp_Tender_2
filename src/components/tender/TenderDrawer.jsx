@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Star, X } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, Star, X } from 'lucide-react';
+import { useAuth } from '../../auth/AuthContext.jsx';
 import { Button, ErrorNote, Loading } from '../ui.jsx';
+import RequestHelp from '../desk/RequestHelp.jsx';
 import { useToast } from '../Toast.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 import { api } from '../../lib/api.js';
@@ -30,6 +32,9 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [notes, setNotes] = useState('');
+  const [askDesk, setAskDesk] = useState(false);
+  const { user } = useAuth();
+  const isClient = user.role === 'subscriber' || user.role === 'tenant_admin';
   const detail = useAsync(async () => {
     const { tender } = await api.get(`/tenders/${tenderId}`);
     setNotes(tender.watchNotes ?? '');
@@ -105,6 +110,9 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
                 <Star size={15} fill={tender.watchlisted ? 'currentColor' : 'none'} />
                 {tender.watchlisted ? t('tender.unwatch') : t('tender.watch')}
               </Button>
+              {isClient && (
+                <Button variant="outline" onClick={() => setAskDesk(true)}><ClipboardCheck size={15} />{t('desk.request')}</Button>
+              )}
               {tender.sourceUrl && (
                 <a className="btn btn-outline" href={tender.sourceUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink size={15} />{t('tender.sourceLink')}
@@ -186,6 +194,7 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
           </div>
         )}
       </aside>
+      {askDesk && tender && <RequestHelp tenderId={tender.id} tenderTitle={tender.title} onClose={() => setAskDesk(false)} />}
     </div>
   );
 }

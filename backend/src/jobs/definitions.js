@@ -14,6 +14,7 @@ import { enqueueEmail } from '../services/mail/queue.js';
 import { runIngestion } from '../services/ingestion/runner.js';
 import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
+import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
 
 const SYSTEM = { scope: 'system' };
@@ -103,6 +104,18 @@ export function createJobs(db, deps = {}) {
       quiet: true,
       async run() {
         const result = await queueWatchlistReminders(db, { baseUrl });
+        return { ...result, activity: result.emails };
+      },
+    },
+
+    'case-reminders': {
+      label: 'Submission desk reminders',
+      description: 'Reminds the desk team about bid deadlines, due follow-ups and requests nobody owns.',
+      enabled: true,
+      cron: '10 * * * *',
+      quiet: true,
+      async run() {
+        const result = await queueCaseReminders(db, { baseUrl });
         return { ...result, activity: result.emails };
       },
     },

@@ -9,6 +9,7 @@ import { demoResults, demoTenders } from '../../seed/demoData.js';
 import { CATEGORIES, CITIES, DEPARTMENTS, STATES } from '../../seed/masters.js';
 import { loadProfileContext, sendDigestForProfile } from '../services/alerts/digest.js';
 import { createProfile, createProfileSchema } from '../services/alerts/profiles.js';
+import { addPrebid, assignCase, createCase, moveStage, saveInternal, saveResult, saveSubmission, updateCase, updateChecklistItem } from '../services/cases.js';
 import { generateBundle, releaseBundle } from '../services/bundle/index.js';
 import { addDays, previousWeekStart } from '../services/bundle/period.js';
 import { loadMasterIndex } from '../services/ingestion/masters.js';
@@ -94,6 +95,39 @@ export async function seedBaseline(db) {
 
 export const DEMO_PASSWORD = 'Demo-Pass-2026';
 
+/** Three sample submission-desk cases at different points of the workflow. */
+async function seedDemoCases(q, orgId) {
+  if ((await q.one('SELECT count(*)::int AS n FROM submission_cases WHERE organization_id = $1', [orgId])).n) return;
+  const person = async (email) => {
+    const u = await q.one('SELECT id, name, email, organization_id AS "orgId", role FROM users WHERE email = $1', [email]);
+    return { user: u, ip: null, canReopen: true };
+  };
+  const client = await person('owner@demo.test');
+  const manager = await person('manager@demo.test');
+  const tenders = await q.many(`SELECT id FROM tenders WHERE status = 'Open' AND submission_deadline > now() + interval '4 days' ORDER BY submission_deadline LIMIT 3`);
+  const base = config.publicBaseUrl;
+  const opts = { orgId, baseUrl: base };
+
+  const a = await createCase(q, client, { ...opts, tenderId: tenders[0]?.id, title: 'Sample request A', note: 'Please check whether our turnover qualifies.' });
+  await assignCase(q, manager, a, manager.user.id);
+  await updateCase(q, manager, a, { clientSummary: 'Works tender, 18 months. Needs Class A registration and two similar works of 40% value. Our check shows turnover qualifies.' });
+  await moveStage(q, manager, a, 'detail_study');
+  await moveStage(q, manager, a, 'eligibility');
+  const checks = await q.many(`SELECT id FROM submission_case_checklists WHERE case_id = $1 AND kind = 'eligibility' ORDER BY id LIMIT 3`, [a]);
+  for (const c of checks) await updateChecklistItem(q, manager, a, c.id, { status: 'pass' });
+  await addPrebid(q, manager, a, 'Is a joint venture permitted for this tender?');
+  await saveInternal(q, manager, a, { financialStrategy: 'Quote about 7% below the estimate; recent winning bids in this department sit there.', marginNotes: 'Expected margin 11%' });
+
+  if (tenders[1]) {
+    await createCase(q, client, { ...opts, tenderId: tenders[1].id, note: 'Urgent, deadline is close.' });
+  }
+  const closed = await createCase(q, client, { ...opts, title: 'Sample request C: supply of transformers, completed example' });
+  await assignCase(q, manager, closed, manager.user.id);
+  await saveSubmission(q, manager, closed, { mode: 'online', portalReference: 'MPT-2026-DEMO-17' });
+  await saveResult(q, manager, closed, { technicalStatus: 'qualified', financialStatus: 'evaluated', outcome: 'not_l1', ourAmount: 5_100_000, l1Amount: 4_900_000, resultDate: new Date().toISOString().slice(0, 10) });
+  await moveStage(q, manager, closed, 'follow_up');
+}
+
 /**
  * Development-only sample accounts so every role can be tried locally. All use
  * DEMO_PASSWORD. Refuses to run in production.
@@ -154,6 +188,7 @@ export async function seedDemo(db) {
         await sendDigestForProfile(q, profile, { baseUrl: config.publicBaseUrl });
       }
     }
+    await seedDemoCases(q, demoOrg.id);
     // The last two weekly reports, generated and released, so the Reports locker has something to open.
     const lastWeek = previousWeekStart();
     for (const periodStart of [addDays(lastWeek, -7), lastWeek]) {

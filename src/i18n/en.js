@@ -166,6 +166,33 @@ export default {
     unmatched: '{n} further tenders did not name a recognised state and are not on the map.', downloadBoth: 'The Excel sheet holds the data behind every chart.',
   },
 
+  desk: {
+    title: 'Submission Desk', subtitle: 'Hand a tender to our team. We study it, check your eligibility, prepare the bid and submit it, and you follow every step here.',
+    newRequest: 'New request', raiseTitle: 'Ask the desk to handle a tender', tenderTitle: 'Tender title or number', noteLabel: 'Anything we should know?',
+    notePlaceholder: 'Deadlines you are worried about, documents you already have, who to call...', send: 'Send request', sent: 'Request sent. The desk will pick it up shortly.',
+    empty: 'No requests yet', emptyHint: 'Open any tender and choose "Request submission help", or start one with the button above.',
+    tabOpen: 'Open', tabClosed: 'Closed', colTender: 'Tender', colStage: 'Stage', colDeadline: 'Deadline', colOwner: 'Handled by', colUpdated: 'Updated',
+    request: 'Request submission help', requestIntro: 'Our desk will study the tender, check eligibility, prepare the documents and submit your bid. You can follow each step in the Submission Desk.',
+    alreadyOpen: 'You already have an open request for this tender.', viewRequest: 'View request', back: 'All requests',
+    progress: 'Progress', summary: 'Summary from the desk', noSummary: 'The desk will share a summary once it has studied the tender.',
+    stage: {
+      intake: 'Request received', detail_study: 'Detail study', eligibility: 'Eligibility & compliance', technical_prep: 'Technical bid preparation',
+      financial_strategy: 'Financial bid strategy', prebid: 'Pre-bid queries', submission: 'Submission', evaluation: 'Opening & result', follow_up: 'Follow-up', closed: 'Closed',
+    },
+    eligibility: 'Eligibility & compliance', technical: 'Technical bid checklist', st: { pending: 'Pending', pass: 'Met', fail: 'Not met', na: 'Not applicable' },
+    noChecks: 'No checks yet.', prebid: 'Pre-bid queries', noPrebid: 'No pre-bid queries have been raised.', awaiting: 'Awaiting the department\'s response', response: 'Department\'s response',
+    submission: 'Submission', notSubmitted: 'Not submitted yet.', online: 'Submitted online', offline: 'Submitted offline', portalRef: 'Portal reference', courier: 'Courier', tracking: 'Tracking number', submittedOn: 'Submitted',
+    result: 'Result', noResult: 'The result is not out yet.', technicalStatus: 'Technical evaluation', financialStatus: 'Financial evaluation', won: 'Won: we are L1', notL1: 'Not L1', ourBid: 'Our bid', l1Bid: 'L1 bid',
+    tech: { pending: 'Pending', qualified: 'Qualified', disqualified: 'Disqualified' }, fin: { pending: 'Pending', opened: 'Opened', evaluated: 'Evaluated' },
+    emd: 'EMD', instrument: 'Instrument', validTill: 'Valid till', refund: 'Refund status', noEmd: 'No EMD details recorded.',
+    followups: 'After the result', noFollowups: 'Nothing to follow up yet.', fu: { emd_refund: 'EMD refund', purchase_order: 'Purchase order', payment: 'Payment' }, due: 'Due', done: 'Done', pendingStatus: 'Pending',
+    documents: 'Documents', noDocs: 'No documents yet.', upload: 'Add a document', chooseSlot: 'What is it?', chooseFile: 'Choose a file', uploading: 'Uploading...', uploaded: 'Document added.',
+    slots: { tender_document: 'Tender document', compliance_checklist: 'Compliance checklist', technical_bid: 'Technical bid', boq: 'BOQ', proof_of_submission: 'Proof of submission', emd_receipt: 'EMD receipt', work_order: 'Work order', other: 'Other' },
+    uploadHint: 'PDF, Word, Excel, images, ZIP or text, up to 15 MB.', download: 'Download',
+    assigned: 'Handled by', unassigned: 'Not assigned yet', deadline: 'Submission deadline', estimated: 'Estimated value', emdAmount: 'EMD amount', requested: 'Your note', closedNote: 'This request is closed.',
+    outcome: { pending: 'In progress', l1: 'Won', not_l1: 'Not L1', cancelled: 'Cancelled', withdrawn: 'Withdrawn' },
+  },
+
   alerts: {
     title: 'Alert Profiles', subtitle: 'Tell us what you bid on. The best new matches reach your inbox every morning.',
     new: 'New alert profile', edit: 'Edit alert profile', limit: 'Your plan allows {max} alert profiles ({used} in use).',

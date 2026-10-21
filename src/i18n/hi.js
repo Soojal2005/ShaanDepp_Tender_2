@@ -167,6 +167,33 @@ export default {
     unmatched: '{n} और टेंडरों ने मान्य राज्य नहीं बताया और वे नक्शे पर नहीं हैं।', downloadBoth: 'एक्सेल शीट में हर चार्ट के पीछे का डेटा है।',
   },
 
+  desk: {
+    title: 'सबमिशन डेस्क', subtitle: 'टेंडर हमारी टीम को सौंपें। हम उसका अध्ययन करते हैं, आपकी पात्रता जाँचते हैं, बोली तैयार करके जमा करते हैं, और हर चरण आप यहाँ देख सकते हैं।',
+    newRequest: 'नया अनुरोध', raiseTitle: 'डेस्क से टेंडर संभालने को कहें', tenderTitle: 'टेंडर का शीर्षक या संख्या', noteLabel: 'कुछ और जो हमें पता होना चाहिए?',
+    notePlaceholder: 'समय-सीमा की चिंता, जो दस्तावेज़ आपके पास हैं, किससे बात करनी है...', send: 'अनुरोध भेजें', sent: 'अनुरोध भेज दिया गया। डेस्क जल्द ही इसे उठाएगा।',
+    empty: 'अभी कोई अनुरोध नहीं', emptyHint: 'कोई भी टेंडर खोलकर "सबमिशन सहायता का अनुरोध" चुनें, या ऊपर के बटन से शुरू करें।',
+    tabOpen: 'खुले', tabClosed: 'बंद', colTender: 'टेंडर', colStage: 'चरण', colDeadline: 'अंतिम तिथि', colOwner: 'संभालने वाले', colUpdated: 'अपडेट',
+    request: 'सबमिशन सहायता का अनुरोध', requestIntro: 'हमारा डेस्क टेंडर का अध्ययन करेगा, पात्रता जाँचेगा, दस्तावेज़ तैयार करेगा और आपकी बोली जमा करेगा। हर चरण आप सबमिशन डेस्क में देख सकते हैं।',
+    alreadyOpen: 'इस टेंडर के लिए आपका अनुरोध पहले से खुला है।', viewRequest: 'अनुरोध देखें', back: 'सभी अनुरोध',
+    progress: 'प्रगति', summary: 'डेस्क का सारांश', noSummary: 'टेंडर का अध्ययन पूरा होने पर डेस्क सारांश साझा करेगा।',
+    stage: {
+      intake: 'अनुरोध प्राप्त', detail_study: 'विस्तृत अध्ययन', eligibility: 'पात्रता और अनुपालन', technical_prep: 'तकनीकी बोली की तैयारी',
+      financial_strategy: 'वित्तीय बोली रणनीति', prebid: 'प्री-बिड प्रश्न', submission: 'जमा करना', evaluation: 'खोलना और परिणाम', follow_up: 'अनुवर्ती', closed: 'बंद',
+    },
+    eligibility: 'पात्रता और अनुपालन', technical: 'तकनीकी बोली चेकलिस्ट', st: { pending: 'लंबित', pass: 'पूरा', fail: 'पूरा नहीं', na: 'लागू नहीं' },
+    noChecks: 'अभी कोई जाँच नहीं।', prebid: 'प्री-बिड प्रश्न', noPrebid: 'कोई प्री-बिड प्रश्न नहीं उठाया गया।', awaiting: 'विभाग के उत्तर की प्रतीक्षा', response: 'विभाग का उत्तर',
+    submission: 'जमा करना', notSubmitted: 'अभी जमा नहीं हुआ।', online: 'ऑनलाइन जमा', offline: 'ऑफ़लाइन जमा', portalRef: 'पोर्टल संदर्भ', courier: 'कूरियर', tracking: 'ट्रैकिंग संख्या', submittedOn: 'जमा किया',
+    result: 'परिणाम', noResult: 'परिणाम अभी घोषित नहीं हुआ।', technicalStatus: 'तकनीकी मूल्यांकन', financialStatus: 'वित्तीय मूल्यांकन', won: 'जीते: हम L1 हैं', notL1: 'L1 नहीं', ourBid: 'हमारी बोली', l1Bid: 'L1 बोली',
+    tech: { pending: 'लंबित', qualified: 'योग्य', disqualified: 'अयोग्य' }, fin: { pending: 'लंबित', opened: 'खुली', evaluated: 'मूल्यांकित' },
+    emd: 'EMD', instrument: 'साधन', validTill: 'वैधता', refund: 'वापसी की स्थिति', noEmd: 'EMD का विवरण दर्ज नहीं।',
+    followups: 'परिणाम के बाद', noFollowups: 'अभी कुछ अनुवर्ती नहीं।', fu: { emd_refund: 'EMD वापसी', purchase_order: 'क्रय आदेश', payment: 'भुगतान' }, due: 'देय', done: 'पूर्ण', pendingStatus: 'लंबित',
+    documents: 'दस्तावेज़', noDocs: 'अभी कोई दस्तावेज़ नहीं।', upload: 'दस्तावेज़ जोड़ें', chooseSlot: 'यह क्या है?', chooseFile: 'फ़ाइल चुनें', uploading: 'अपलोड हो रहा है...', uploaded: 'दस्तावेज़ जोड़ा गया।',
+    slots: { tender_document: 'टेंडर दस्तावेज़', compliance_checklist: 'अनुपालन चेकलिस्ट', technical_bid: 'तकनीकी बोली', boq: 'BOQ', proof_of_submission: 'जमा करने का प्रमाण', emd_receipt: 'EMD रसीद', work_order: 'कार्य आदेश', other: 'अन्य' },
+    uploadHint: 'PDF, Word, Excel, चित्र, ZIP या टेक्स्ट, अधिकतम 15 MB।', download: 'डाउनलोड',
+    assigned: 'संभालने वाले', unassigned: 'अभी किसी को नहीं सौंपा', deadline: 'जमा करने की अंतिम तिथि', estimated: 'अनुमानित मूल्य', emdAmount: 'EMD राशि', requested: 'आपका नोट', closedNote: 'यह अनुरोध बंद है।',
+    outcome: { pending: 'प्रगति में', l1: 'जीते', not_l1: 'L1 नहीं', cancelled: 'रद्द', withdrawn: 'वापस लिया' },
+  },
+
   alerts: {
     title: 'अलर्ट प्रोफ़ाइल', subtitle: 'बताइए आप किन टेंडरों में बोली लगाते हैं। हर सुबह सबसे उपयुक्त नए टेंडर आपके इनबॉक्स में पहुँचेंगे।',
     new: 'नई अलर्ट प्रोफ़ाइल', edit: 'अलर्ट प्रोफ़ाइल संपादित करें', limit: 'आपकी योजना में {max} अलर्ट प्रोफ़ाइल की अनुमति है ({used} उपयोग में)।',
