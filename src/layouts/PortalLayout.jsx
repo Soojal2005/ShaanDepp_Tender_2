@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Bell, Bookmark, Building2, ChevronDown, ClipboardCheck, FileBarChart, Globe, Inbox, Landmark,
+  Bell, Bookmark, Building2, ChevronDown, ClipboardCheck, Database, FileBarChart, Globe, Inbox, Landmark,
   LayoutDashboard, LifeBuoy, ListChecks, LogOut, Menu, Search, SlidersHorizontal, Users, ScrollText, Layers,
 } from 'lucide-react';
 import { can, useAuth } from '../auth/AuthContext.jsx';
@@ -22,6 +22,7 @@ const ADMIN_NAV = [
   { to: '/app/admin/organizations', label: 'nav.organizations', icon: Building2, permission: 'orgs:manage' },
   { to: '/app/admin/plans', label: 'nav.plans', icon: Layers, permission: 'plans:manage' },
   { to: '/app/admin/masters', label: 'nav.masters', icon: ListChecks, permission: 'masters:manage' },
+  { to: '/app/admin/ingestion', label: 'nav.ingestion', icon: Database, permission: 'ingestion:manage' },
   { to: '/app/admin/enquiries', label: 'nav.enquiries', icon: Inbox, permission: 'enquiries:view' },
   { to: '/app/admin/audit', label: 'nav.audit', icon: ScrollText, permission: 'audit:view' },
 ];

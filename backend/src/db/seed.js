@@ -5,7 +5,11 @@
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { demoResults, demoTenders } from '../../seed/demoData.js';
 import { CATEGORIES, CITIES, DEPARTMENTS, STATES } from '../../seed/masters.js';
+import { loadMasterIndex } from '../services/ingestion/masters.js';
+import { normalizeTenderbookResult, normalizeTenderbookTender } from '../services/ingestion/normalize.js';
+import { upsertAward, upsertTender } from '../services/ingestion/store.js';
 import { hashPassword } from '../auth/password.js';
 import { config } from '../config.js';
 import { log } from '../log.js';
@@ -117,7 +121,18 @@ export async function seedDemo(db) {
       );
       await q.query('INSERT INTO user_credentials (user_id, password_hash) VALUES ($1, $2)', [user.id, hash]);
     }
-    return { demoOrgId: demoOrg.id, accounts: people.map(([, , email, role]) => ({ email, role })) };
+    const index = await loadMasterIndex(q);
+    let tenders = 0;
+    for (const dto of demoTenders()) {
+      const { record, problems } = normalizeTenderbookTender(dto);
+      if (!problems.length && (await upsertTender(q, 'excel', record, index, dto)) === 'inserted') tenders++;
+    }
+    let results = 0;
+    for (const dto of demoResults()) {
+      const { record, problems } = normalizeTenderbookResult(dto);
+      if (!problems.length && (await upsertAward(q, 'excel', record, index, dto)) === 'inserted') results++;
+    }
+    return { demoOrgId: demoOrg.id, tenders, results, accounts: people.map(([, , email, role]) => ({ email, role })) };
   });
 }
 
@@ -133,6 +148,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     }
     if (process.argv.includes('--demo')) {
       const demo = await seedDemo(db);
+      console.log(`Demo data: ${demo.tenders} tenders, ${demo.results} results.`);
       console.log(`Demo accounts created (password: ${DEMO_PASSWORD}):`);
       for (const a of demo.accounts) console.log(`  ${a.role.padEnd(15)} ${a.email}`);
     }

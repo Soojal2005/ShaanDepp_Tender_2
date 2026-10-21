@@ -7,10 +7,13 @@ import { attachAuth, csrfProtect, requireAuth } from './auth/middleware.js';
 import { config } from './config.js';
 import { errorHandler, notFoundHandler } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
+import { adminIngestionRoutes } from './routes/adminIngestion.js';
 import { authRoutes } from './routes/auth.js';
+import { dashboardRoutes } from './routes/dashboard.js';
 import { mastersRoutes } from './routes/masters.js';
 import { orgRoutes } from './routes/org.js';
 import { publicRoutes } from './routes/public.js';
+import { savedSearchRoutes, tendersRoutes } from './routes/tenders.js';
 
 function buildLimiters(enabled) {
   const make = (limit, windowMs = 15 * 60 * 1000) =>
@@ -29,10 +32,11 @@ function buildLimiters(enabled) {
 /**
  * @param {{db: Awaited<ReturnType<typeof import('./db/index.js').createDatabase>>,
  *          rateLimits?: boolean,
+ *          makeTenderbookClient?: () => object,
  *          mount?: (api: import('express').Router, deps: object) => void}} options
- *   `mount` lets later modules (tenders, alerts, cases, ...) attach their routers.
+ *   `makeTenderbookClient` lets tests replace the network client; `mount` attaches extra routers.
  */
-export function createApp({ db, rateLimits = true, mount } = {}) {
+export function createApp({ db, rateLimits = true, makeTenderbookClient, mount } = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (config.isProd) app.set('trust proxy', 1);
@@ -63,6 +67,10 @@ export function createApp({ db, rateLimits = true, mount } = {}) {
   api.use('/auth', authRoutes({ limiters }));
   api.use('/org', orgRoutes());
   api.use('/masters', mastersRoutes());
+  api.use('/tenders', tendersRoutes());
+  api.use('/saved-searches', savedSearchRoutes());
+  api.use('/dashboard', dashboardRoutes());
+  api.use('/admin/ingestion', requireAuth, adminIngestionRoutes({ makeClient: makeTenderbookClient }));
   api.use('/admin', requireAuth, adminRoutes());
   mount?.(api, { db, limiters });
 
@@ -71,3 +79,4 @@ export function createApp({ db, rateLimits = true, mount } = {}) {
   app.use(errorHandler);
   return app;
 }
+
