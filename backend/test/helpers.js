@@ -10,6 +10,7 @@ const { createDatabase } = await import('../src/db/index.js');
 const { migrate } = await import('../src/db/migrate.js');
 const { ensureBootstrapAdmin, ensureStaffOrganization, seedMasters } = await import('../src/db/seed.js');
 const { createApp } = await import('../src/app.js');
+const { createJobs } = await import('../src/jobs/definitions.js');
 const { hashPassword } = await import('../src/auth/password.js');
 
 export const SYSTEM = { scope: 'system' };
@@ -25,8 +26,9 @@ export async function makeContext({ rateLimits = false, client = null } = {}) {
     await ensureBootstrapAdmin(q, orgId, { email: 'admin@test.local', password: PASSWORD, name: 'Test Admin' });
     return orgId;
   });
-  const app = createApp({ db, rateLimits, makeTenderbookClient: client ? () => client : undefined });
-  return { db, app, staffOrgId, close: () => db.close() };
+  const jobs = createJobs(db, { makeTenderbookClient: client ? () => client : undefined });
+  const app = createApp({ db, rateLimits, makeTenderbookClient: client ? () => client : undefined, jobs });
+  return { db, app, jobs, staffOrgId, close: () => db.close() };
 }
 
 export async function createOrg(db, { name = 'Acme Infra', planCode = 'standard', status = 'Active' } = {}) {

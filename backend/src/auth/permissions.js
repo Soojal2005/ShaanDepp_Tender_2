@@ -19,6 +19,7 @@ const PERMISSIONS = Object.freeze({
   'audit:view': ['platform_admin'],
   'ingestion:manage': ['platform_admin'],
   'queue:manage': ['platform_admin'],
+  'jobs:manage': ['platform_admin'],
   'reports:release': ['platform_admin', 'case_manager'],
   // Staff working areas
   'enquiries:view': ['platform_admin', 'analyst', 'case_manager'],

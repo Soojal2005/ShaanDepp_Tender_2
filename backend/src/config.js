@@ -30,6 +30,12 @@ const bool = z
   .optional()
   .transform((v) => v === 'true' || v === '1' || v === 'on');
 
+// A switch that is ON unless explicitly turned off.
+const boolDefaultOn = z
+  .enum(['true', 'false', '1', '0', 'on', 'off', ''])
+  .optional()
+  .transform((v) => !(v === 'false' || v === '0' || v === 'off'));
+
 const optionalString = z
   .string()
   .optional()
@@ -80,10 +86,11 @@ const schema = z.object({
   GRAPH_SENDER_MAILBOX: optionalString,
   GRAPH_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(25),
   GRAPH_DAILY_LIMIT: z.coerce.number().int().min(1).default(10000),
+  GRAPH_BOUNCE_POLL: bool,
   OPS_ALERT_EMAIL: optionalString,
 
-  // Scheduler
-  JOBS_ENABLED: bool,
+  // Scheduler (background jobs). On by default; set JOBS_ENABLED=off to run the API alone.
+  JOBS_ENABLED: boolDefaultOn,
 
   // Website
   WHATSAPP_NUMBER: z.string().default('918269868808'),
@@ -166,6 +173,7 @@ function load(env) {
       senderMailbox: c.GRAPH_SENDER_MAILBOX,
       perMinute: c.GRAPH_RATE_LIMIT_PER_MIN,
       perDay: c.GRAPH_DAILY_LIMIT,
+      pollBounces: c.GRAPH_BOUNCE_POLL,
       opsAlertEmail: c.OPS_ALERT_EMAIL,
     }),
     jobsEnabled: c.JOBS_ENABLED,

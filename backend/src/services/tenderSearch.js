@@ -36,6 +36,8 @@ export const filtersSchema = z.object({
   openingFrom: dateOnly.optional(),
   openingTo: dateOnly.optional(),
   status: z.enum(['open', 'closing_soon', 'closed', 'all']).default('open'),
+  // Relation to this organization's email alerts.
+  alerts: z.enum(['any', 'matched', 'in_digest', 'not_in_digest']).default('any'),
   sort: z.enum(['relevance', 'deadline', 'published', 'value']).optional(),
   watchlisted: z.preprocess((v) => v === true || v === 'true' || v === '1', z.boolean()).default(false),
 });
@@ -63,7 +65,7 @@ export function parseQuery(text = '') {
 }
 
 /** Builds WHERE conditions for a filter set. `omit` leaves out one facet so its own counts stay useful. */
-function buildWhere(filters, { userId = null, omit = null } = {}) {
+function buildWhere(filters, { userId = null, orgId = null, omit = null } = {}) {
   const params = [];
   const where = [];
   const add = (value) => { params.push(value); return `$${params.length}`; };
@@ -125,6 +127,14 @@ function buildWhere(filters, { userId = null, omit = null } = {}) {
     where.push(`t.status = 'Open' AND t.submission_deadline > now() AND t.submission_deadline <= now() + interval '72 hours'`);
   } else if (filters.status === 'closed') where.push(`NOT ${open}`);
 
+  if (filters.alerts !== 'any' && orgId) {
+    const seen = `SELECT 1 FROM alert_digest_items i JOIN alert_digests d ON d.id = i.digest_id
+                   WHERE i.tender_id = t.id AND d.organization_id = ${add(orgId)} AND NOT d.is_test`;
+    if (filters.alerts === 'matched') where.push(`EXISTS (${seen})`);
+    else if (filters.alerts === 'in_digest') where.push(`EXISTS (${seen} AND i.in_digest)`);
+    else where.push(`EXISTS (${seen}) AND NOT EXISTS (${seen} AND i.in_digest)`);
+  }
+
   if (filters.watchlisted && userId) {
     where.push(`EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = ${add(userId)})`);
   }
@@ -175,8 +185,8 @@ export const listView = (r) => ({
 
 const WATCH = (p) => `EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = ${p}) AS watchlisted`;
 
-export async function searchTenders(q, filters, paging, { userId = null } = {}) {
-  const { params, where, rank } = buildWhere(filters, { userId });
+export async function searchTenders(q, filters, paging, { userId = null, orgId = null } = {}) {
+  const { params, where, rank } = buildWhere(filters, { userId, orgId });
   const { page, pageSize } = paging;
 
   const sort = filters.sort ?? (rank ? 'relevance' : 'deadline');
@@ -184,21 +194,29 @@ export async function searchTenders(q, filters, paging, { userId = null } = {}) 
 
   const total = (await q.one(`SELECT count(*)::int AS n FROM tenders t WHERE ${where}`, params)).n;
 
-  const rowParams = [...params, pageSize, (page - 1) * pageSize, userId];
-  const n = params.length;
+  // Extra per-row columns, each with its own placeholder after the filter parameters.
+  const rowParams = [...params];
+  const add = (v) => { rowParams.push(v); return `$${rowParams.length}`; };
+  const limit = add(pageSize);
+  const offset = add((page - 1) * pageSize);
+  const watch = userId ? WATCH(add(userId)) : 'false AS watchlisted';
+  // NULL: no alert of this organization matched it; false: matched but held back; true: emailed.
+  const inDigest = orgId
+    ? `(SELECT bool_or(i.in_digest) FROM alert_digest_items i JOIN alert_digests d ON d.id = i.digest_id
+         WHERE i.tender_id = t.id AND d.organization_id = ${add(orgId)} AND NOT d.is_test) AS in_digest`
+    : 'NULL::boolean AS in_digest';
+
   const rows = await q.many(
-    `SELECT ${COLUMNS}, ${userId ? WATCH(`$${n + 3}`) : 'false AS watchlisted'}
-       FROM tenders t WHERE ${where}
-      ORDER BY ${orderBy} LIMIT $${n + 1} OFFSET $${n + 2}`,
-    userId ? rowParams : rowParams.slice(0, n + 2)
+    `SELECT ${COLUMNS}, ${watch}, ${inDigest} FROM tenders t WHERE ${where} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`,
+    rowParams
   );
   return { total, page, pageSize, pages: Math.ceil(total / pageSize), items: rows.map(listView), sort };
 }
 
 /** Counts per department / state / category / type for the filter panel. */
-export async function tenderFacets(q, filters) {
+export async function tenderFacets(q, filters, { orgId = null } = {}) {
   const facet = async (omit, column, labelColumn, key) => {
-    const { params, where } = buildWhere(filters, { omit });
+    const { params, where } = buildWhere(filters, { omit, orgId });
     const rows = await q.many(
       `SELECT ${column} AS id, ${labelColumn} AS label, count(*)::int AS count
          FROM tenders t WHERE ${where} AND ${column} IS NOT NULL
@@ -208,7 +226,7 @@ export async function tenderFacets(q, filters) {
     return [key, rows];
   };
   const types = async () => {
-    const { params, where } = buildWhere(filters, { omit: 'tenderTypes' });
+    const { params, where } = buildWhere(filters, { omit: 'tenderTypes', orgId });
     return ['tenderTypes', await q.many(
       `SELECT t.tender_type AS label, count(*)::int AS count FROM tenders t
         WHERE ${where} AND t.tender_type IS NOT NULL GROUP BY t.tender_type ORDER BY count DESC LIMIT 10`, params)];
@@ -222,20 +240,22 @@ export async function tenderFacets(q, filters) {
 }
 
 /** Rows for Excel export (same filters, capped). */
-export async function exportTenders(q, filters, { userId = null, limit = 10_000 } = {}) {
-  const { params, where, rank } = buildWhere(filters, { userId });
+export async function exportTenders(q, filters, { userId = null, orgId = null, limit = 10_000 } = {}) {
+  const { params, where, rank } = buildWhere(filters, { userId, orgId });
   const sort = filters.sort ?? (rank ? 'relevance' : 'deadline');
   const orderBy = sort === 'relevance' && rank ? `(${rank}) DESC, t.id DESC` : SORTS[sort === 'relevance' ? 'deadline' : sort];
   return q.many(`SELECT ${COLUMNS} FROM tenders t WHERE ${where} ORDER BY ${orderBy} LIMIT ${Number(limit)}`, params);
 }
 
-export async function getTender(q, id, { userId = null } = {}) {
+export async function getTender(q, id, { userId = null, orgId = null } = {}) {
   const row = await q.maybeOne(
     `SELECT ${COLUMNS}, t.eligibility_summary, t.payment_terms, t.delivery_terms, t.penalty_terms, t.last_source_update,
             ${userId ? WATCH('$2') : 'false AS watchlisted'},
+            (SELECT bool_or(i.in_digest) FROM alert_digest_items i JOIN alert_digests d ON d.id = i.digest_id
+              WHERE i.tender_id = t.id AND d.organization_id = $3 AND NOT d.is_test) AS in_digest,
             (SELECT notes FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $2) AS watch_notes
        FROM tenders t WHERE t.id = $1`,
-    [id, userId]
+    [id, userId, orgId]
   );
   if (!row) throw notFound('Tender not found');
   const [documents, boq, corrigenda] = await Promise.all([

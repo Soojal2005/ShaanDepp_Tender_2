@@ -8,6 +8,8 @@ import { config } from './config.js';
 import { errorHandler, notFoundHandler } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminIngestionRoutes } from './routes/adminIngestion.js';
+import { adminJobsRoutes, adminMailRoutes } from './routes/adminOps.js';
+import { adminAlertRoutes, alertRoutes } from './routes/alerts.js';
 import { authRoutes } from './routes/auth.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { mastersRoutes } from './routes/masters.js';
@@ -26,7 +28,16 @@ function buildLimiters(enabled) {
           message: { error: { message: 'Too many requests. Please try again later.', code: 'rate_limited' } },
         })
       : (req, res, next) => next();
-  return { login: make(20), passwordReset: make(10), enquiry: make(5) };
+  // Test sends are limited per signed-in person, not per address, so one office behind one IP is not blocked.
+  const perUser = (limit, windowMs) =>
+    enabled
+      ? rateLimit({
+          windowMs, limit, standardHeaders: 'draft-7', legacyHeaders: false,
+          keyGenerator: (req) => `user:${req.auth?.user?.id ?? 'anonymous'}`,
+          message: { error: { message: 'Too many test emails. Please try again later.', code: 'rate_limited' } },
+        })
+      : (req, res, next) => next();
+  return { login: make(20), passwordReset: make(10), enquiry: make(5), alertTest: perUser(10, 60 * 60 * 1000) };
 }
 
 /**
@@ -36,11 +47,13 @@ function buildLimiters(enabled) {
  *          mount?: (api: import('express').Router, deps: object) => void}} options
  *   `makeTenderbookClient` lets tests replace the network client; `mount` attaches extra routers.
  */
-export function createApp({ db, rateLimits = true, makeTenderbookClient, mount } = {}) {
+export function createApp({ db, rateLimits = true, makeTenderbookClient, jobs, schedulerRunning = false, mount } = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (config.isProd) app.set('trust proxy', 1);
   app.locals.db = db;
+  app.locals.jobs = jobs;
+  app.locals.schedulerRunning = schedulerRunning;
 
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({ origin: config.corsOrigins, credentials: true }));
@@ -70,7 +83,11 @@ export function createApp({ db, rateLimits = true, makeTenderbookClient, mount }
   api.use('/tenders', tendersRoutes());
   api.use('/saved-searches', savedSearchRoutes());
   api.use('/dashboard', dashboardRoutes());
+  api.use('/alert-profiles', alertRoutes({ limiters }));
   api.use('/admin/ingestion', requireAuth, adminIngestionRoutes({ makeClient: makeTenderbookClient }));
+  api.use('/admin/mail', requireAuth, adminMailRoutes());
+  api.use('/admin/jobs', requireAuth, adminJobsRoutes());
+  api.use('/admin/organizations', requireAuth, adminAlertRoutes({ limiters }));
   api.use('/admin', requireAuth, adminRoutes());
   mount?.(api, { db, limiters });
 

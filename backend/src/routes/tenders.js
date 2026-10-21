@@ -23,8 +23,8 @@ export function tendersRoutes() {
       const wantFacets = req.query.facets === '1';
       const started = Date.now();
       const result = await withUserDb(req, async (q) => {
-        const found = await searchTenders(q, filters, paging, { userId: req.auth.user.id });
-        const facets = wantFacets ? await tenderFacets(q, filters) : undefined;
+        const found = await searchTenders(q, filters, paging, { userId: req.auth.user.id, orgId: req.auth.user.orgId });
+        const facets = wantFacets ? await tenderFacets(q, filters, { orgId: req.auth.user.orgId }) : undefined;
         // Keep a light record of what people search for (used to tune filters and masters).
         if (paging.page === 1 && (filters.q || filters.departmentIds.length || filters.stateIds.length)) {
           await q.query(
@@ -43,7 +43,7 @@ export function tendersRoutes() {
     '/export.xlsx',
     asyncHandler(async (req, res) => {
       const filters = parseFilters(req.query);
-      const rows = await withUserDb(req, (q) => exportTenders(q, filters, { userId: req.auth.user.id }));
+      const rows = await withUserDb(req, (q) => exportTenders(q, filters, { userId: req.auth.user.id, orgId: req.auth.user.orgId }));
 
       const stamp = new Date().toISOString().slice(0, 10);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -89,7 +89,7 @@ export function tendersRoutes() {
     '/:tenderId',
     asyncHandler(async (req, res) => {
       const { tenderId } = parse(z.object({ tenderId: idSchema }), req.params);
-      res.json({ tender: await withUserDb(req, (q) => getTender(q, tenderId, { userId: req.auth.user.id })) });
+      res.json({ tender: await withUserDb(req, (q) => getTender(q, tenderId, { userId: req.auth.user.id, orgId: req.auth.user.orgId })) });
     })
   );
 
