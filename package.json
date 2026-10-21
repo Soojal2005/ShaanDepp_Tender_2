@@ -1,28 +1,30 @@
 {
-  "name": "shandeep-tender-intelligence-fullstack",
+  "name": "shandeep-tender-intelligence",
   "private": true,
-  "version": "2.1.2",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix backend\" \"vite\"",
+    "dev:web": "vite",
+    "dev:api": "npm run dev --prefix backend",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node backend/test/verify-suites.mjs",
-    "server:start": "node backend/src/server.js",
-    "test:fullstack": "node backend/test/verify-suites.mjs"
+    "test": "npm test --prefix backend",
+    "migrate": "npm run migrate --prefix backend",
+    "seed": "npm run seed --prefix backend",
+    "postinstall": "npm install --prefix backend"
   },
   "dependencies": {
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "^0.294.0",
-    "express": "^4.19.2",
-    "pg": "^8.11.5",
-    "cors": "^2.8.5",
-    "cookie-parser": "^1.4.6"
+    "react-router-dom": "^7.18.4",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^9.0.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.6"
