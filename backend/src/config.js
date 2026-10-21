@@ -92,6 +92,10 @@ const schema = z.object({
   // Scheduler (background jobs). On by default; set JOBS_ENABLED=off to run the API alone.
   JOBS_ENABLED: boolDefaultOn,
 
+  // Serve the built website from this process. Default: on in production when ../dist exists.
+  FRONTEND_DIR: optionalString,
+  SERVE_FRONTEND: bool,
+
   // Website
   WHATSAPP_NUMBER: z.string().default('918269868808'),
   CONTACT_PHONE: z.string().default('+91 82698 68808'),
@@ -175,6 +179,10 @@ function load(env) {
       perDay: c.GRAPH_DAILY_LIMIT,
       pollBounces: c.GRAPH_BOUNCE_POLL,
       opsAlertEmail: c.OPS_ALERT_EMAIL,
+    }),
+    frontend: Object.freeze({
+      dir: c.FRONTEND_DIR ? path.resolve(c.FRONTEND_DIR) : path.join(REPO_ROOT, 'dist'),
+      serve: c.SERVE_FRONTEND || isProd,
     }),
     jobsEnabled: c.JOBS_ENABLED,
     seedDemo: c.SEED_DEMO && !isProd,

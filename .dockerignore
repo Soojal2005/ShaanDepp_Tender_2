@@ -1,0 +1,14 @@
+node_modules
+backend/node_modules
+dist
+var
+backend/var
+.git
+.env
+.env.*
+*.zip
+*.pdf
+backend/test
+docs
+deploy
+**/*.log

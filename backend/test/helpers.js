@@ -17,8 +17,34 @@ export const SYSTEM = { scope: 'system' };
 export const PASSWORD = 'Passw0rd-Test1';
 export const API = '/api/v1';
 
+/**
+ * By default every test file gets its own in-memory PGlite database. Set
+ * TEST_PG_URL (a PostgreSQL superuser URL, e.g. postgres://postgres:pw@localhost:5432/postgres)
+ * to run the very same tests against a real PostgreSQL server instead: each file then
+ * gets a fresh, uniquely named database that is dropped afterwards.
+ */
+async function openDatabase() {
+  const base = process.env.TEST_PG_URL;
+  if (!base) return { db: await createDatabase({ driver: 'pglite', pgliteDir: 'memory://' }), dispose: async () => {} };
+  const { default: pg } = await import('pg');
+  const name = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const admin = new pg.Client({ connectionString: base });
+  await admin.connect();
+  await admin.query(`CREATE DATABASE ${name} ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0`);
+  const url = new URL(base);
+  url.pathname = `/${name}`;
+  const db = await createDatabase({ driver: 'pg', url: url.toString(), migrationUrl: url.toString() });
+  return {
+    db,
+    dispose: async () => {
+      await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`).catch(() => {});
+      await admin.end();
+    },
+  };
+}
+
 export async function makeContext({ rateLimits = false, client = null } = {}) {
-  const db = await createDatabase({ driver: 'pglite', pgliteDir: 'memory://' });
+  const { db, dispose } = await openDatabase();
   await migrate(db, { appPassword: undefined });
   const staffOrgId = await db.withContext(SYSTEM, async (q) => {
     const orgId = await ensureStaffOrganization(q);
@@ -28,7 +54,7 @@ export async function makeContext({ rateLimits = false, client = null } = {}) {
   });
   const jobs = createJobs(db, { makeTenderbookClient: client ? () => client : undefined });
   const app = createApp({ db, rateLimits, makeTenderbookClient: client ? () => client : undefined, jobs });
-  return { db, app, jobs, staffOrgId, close: () => db.close() };
+  return { db, app, jobs, staffOrgId, close: async () => { await db.close(); await dispose(); } };
 }
 
 export async function createOrg(db, { name = 'Acme Infra', planCode = 'standard', status = 'Active' } = {}) {

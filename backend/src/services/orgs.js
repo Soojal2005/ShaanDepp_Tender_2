@@ -58,8 +58,11 @@ export const memberView = (u) => ({
 });
 
 export async function getOrganization(q, orgId, { lock = false } = {}) {
-  const row = await q.maybeOne(`${ORG_SELECT} WHERE o.id = $1 ${lock ? 'FOR UPDATE OF o' : ''}`, [orgId]);
-  return row;
+  // Take the row lock in its own statement, THEN read. PostgreSQL decides what a statement can
+  // see before it waits for a lock, so counting seats in the same statement as FOR UPDATE would
+  // use a count from before the previous invitation committed, and two people could take the last seat.
+  if (lock) await q.query('SELECT 1 FROM organizations WHERE id = $1 FOR UPDATE', [orgId]);
+  return q.maybeOne(`${ORG_SELECT} WHERE o.id = $1`, [orgId]);
 }
 
 export async function listOrganizations(q) {

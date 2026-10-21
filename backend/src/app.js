@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -6,6 +8,7 @@ import helmet from 'helmet';
 import { attachAuth, csrfProtect, requireAuth } from './auth/middleware.js';
 import { config } from './config.js';
 import { errorHandler, notFoundHandler } from './errors.js';
+import { log } from './log.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminIngestionRoutes } from './routes/adminIngestion.js';
 import { adminJobsRoutes, adminMailRoutes } from './routes/adminOps.js';
@@ -40,7 +43,33 @@ function buildLimiters(enabled) {
           message: { error: { message: 'Too many test emails. Please try again later.', code: 'rate_limited' } },
         })
       : (req, res, next) => next();
-  return { login: make(20), passwordReset: make(10), enquiry: make(5), alertTest: perUser(10, 60 * 60 * 1000) };
+  // A generous ceiling for the whole API per address; the limits above are the tight ones.
+  const api = enabled && config.isProd ? make(3000) : (req, res, next) => next();
+  return { login: make(20), passwordReset: make(10), enquiry: make(5), alertTest: perUser(10, 60 * 60 * 1000), api };
+}
+
+// Paths the single-page app answers. Anything else gets a real 404 status (with the same page).
+const SPA_ROUTES = /^\/(?:$|services(?:\/|$)|about\/?$|contact\/?$|login\/?$|forgot-password\/?$|reset-password\/?$|app(?:\/|$))/;
+
+/** Serve the built website and let the browser router handle its own addresses. */
+export function serveFrontend(app, dir) {
+  const indexFile = path.join(dir, 'index.html');
+  if (!fs.existsSync(indexFile)) {
+    log.warn('website not served: no build found', { dir });
+    return;
+  }
+  app.use(express.static(dir, {
+    index: false,
+    setHeaders(res, file) {
+      // Built assets have content hashes in their names, so they can be cached for a year.
+      if (file.includes(`${path.sep}assets${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      else if (file.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  }));
+  app.get(/.*/, (req, res, next) => {
+    if (req.path.startsWith('/api') || !req.accepts('html')) return next();
+    res.status(SPA_ROUTES.test(req.path) ? 200 : 404).setHeader('Cache-Control', 'no-cache').sendFile(indexFile);
+  });
 }
 
 /**
@@ -58,7 +87,28 @@ export function createApp({ db, rateLimits = true, makeTenderbookClient, jobs, s
   app.locals.jobs = jobs;
   app.locals.schedulerRunning = schedulerRunning;
 
-  app.use(helmet({ contentSecurityPolicy: false }));
+  // The page and the API share one origin in production, so scripts, data requests and forms may
+  // only go to ourselves. Fonts come from Google Fonts; charts use inline style attributes.
+  app.use(helmet({
+    contentSecurityPolicy: config.isProd ? {
+      useDefaults: false,
+      directives: {
+        'default-src': ["'self'"],
+        'script-src': ["'self'"],
+        'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        'font-src': ["'self'", 'https://fonts.gstatic.com'],
+        'img-src': ["'self'", 'data:'],
+        'connect-src': ["'self'"],
+        'object-src': ["'none'"],
+        'base-uri': ["'self'"],
+        'form-action': ["'self'"],
+        'frame-ancestors': ["'none'"],
+        'upgrade-insecure-requests': [],
+      },
+    } : false,
+    crossOriginEmbedderPolicy: false,
+  }));
+  app.use((req, res, next) => { res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()'); next(); });
   app.use(cors({ origin: config.corsOrigins, credentials: true }));
   app.use(cookieParser());
   app.use(express.json({ limit: '1mb' }));
@@ -98,8 +148,9 @@ export function createApp({ db, rateLimits = true, makeTenderbookClient, jobs, s
   api.use('/admin', requireAuth, adminRoutes());
   mount?.(api, { db, limiters });
 
-  app.use('/api/v1', api);
+  app.use('/api/v1', limiters.api, api);
   app.use('/api', notFoundHandler);
+  if (config.frontend.serve) serveFrontend(app, config.frontend.dir);
   app.use(errorHandler);
   return app;
 }

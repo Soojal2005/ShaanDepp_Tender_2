@@ -1,0 +1,18 @@
+# Automatic HTTPS (Let's Encrypt) for the domain in SITE_DOMAIN. The DNS A record must already point here.
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Uploads are capped at 15 MB by the application; leave headroom for the form fields.
+	request_body {
+		max_size 20MB
+	}
+
+	reverse_proxy api:4000 {
+		health_uri /api/v1/health
+		health_interval 30s
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}

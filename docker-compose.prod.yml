@@ -1,0 +1,86 @@
+# Production stack: PostgreSQL 15, the application, HTTPS (Caddy) and nightly backups.
+#
+#   cp deploy/production.env.example .env      (then fill in every value)
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# The first start creates the database, applies the migrations and creates the first
+# administrator from BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD.
+name: procure-brain
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: shandeep
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shandeep"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Not published to the host: only the application and the backup job can reach it.
+
+  api:
+    build:
+      context: .
+      args:
+        SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      PUBLIC_BASE_URL: https://${SITE_DOMAIN}
+      # Migrations run as the database owner; the running application is the restricted role.
+      MIGRATION_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/shandeep
+      DATABASE_URL: postgres://app_api_user:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/shandeep
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - appdata:/data
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  backup:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: shandeep
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./deploy/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - appdata:/data:ro
+    entrypoint: ["/bin/sh", "/backup.sh"]
+
+volumes:
+  pgdata:
+  appdata:
+  caddy_data:
+  caddy_config:
