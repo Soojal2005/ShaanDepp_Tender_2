@@ -1,0 +1,113 @@
+/**
+ * Starter master data. These are defaults, not a fixed list: after the first
+ * run the client owns them through the admin console, and seeding only ever
+ * adds rows that are missing, so edits are never overwritten.
+ */
+
+// [name, Hindi name, code, aliases]
+export const STATES = [
+  ['Andhra Pradesh', 'आंध्र प्रदेश', 'AP', []],
+  ['Arunachal Pradesh', 'अरुणाचल प्रदेश', 'AR', []],
+  ['Assam', 'असम', 'AS', []],
+  ['Bihar', 'बिहार', 'BR', []],
+  ['Chhattisgarh', 'छत्तीसगढ़', 'CG', ['Chattisgarh']],
+  ['Goa', 'गोवा', 'GA', []],
+  ['Gujarat', 'गुजरात', 'GJ', []],
+  ['Haryana', 'हरियाणा', 'HR', []],
+  ['Himachal Pradesh', 'हिमाचल प्रदेश', 'HP', []],
+  ['Jharkhand', 'झारखंड', 'JH', []],
+  ['Karnataka', 'कर्नाटक', 'KA', []],
+  ['Kerala', 'केरल', 'KL', []],
+  ['Madhya Pradesh', 'मध्य प्रदेश', 'MP', ['M.P.', 'MP']],
+  ['Maharashtra', 'महाराष्ट्र', 'MH', []],
+  ['Manipur', 'मणिपुर', 'MN', []],
+  ['Meghalaya', 'मेघालय', 'ML', []],
+  ['Mizoram', 'मिज़ोरम', 'MZ', []],
+  ['Nagaland', 'नागालैंड', 'NL', []],
+  ['Odisha', 'ओडिशा', 'OD', ['Orissa']],
+  ['Punjab', 'पंजाब', 'PB', []],
+  ['Rajasthan', 'राजस्थान', 'RJ', []],
+  ['Sikkim', 'सिक्किम', 'SK', []],
+  ['Tamil Nadu', 'तमिलनाडु', 'TN', ['Tamilnadu']],
+  ['Telangana', 'तेलंगाना', 'TG', []],
+  ['Tripura', 'त्रिपुरा', 'TR', []],
+  ['Uttar Pradesh', 'उत्तर प्रदेश', 'UP', ['U.P.']],
+  ['Uttarakhand', 'उत्तराखंड', 'UK', ['Uttaranchal']],
+  ['West Bengal', 'पश्चिम बंगाल', 'WB', []],
+  ['Andaman and Nicobar Islands', 'अंडमान और निकोबार द्वीपसमूह', 'AN', ['Andaman & Nicobar Islands', 'Andaman & Nicobar']],
+  ['Chandigarh', 'चंडीगढ़', 'CH', []],
+  ['Dadra and Nagar Haveli and Daman and Diu', 'दादरा और नगर हवेली और दमन और दीव', 'DD',
+    ['Dadra & Nagar Haveli', 'Daman & Diu', 'Dadra and Nagar Haveli', 'Daman and Diu']],
+  ['Delhi', 'दिल्ली', 'DL', ['NCT of Delhi', 'New Delhi', 'Delhi NCR']],
+  ['Jammu and Kashmir', 'जम्मू और कश्मीर', 'JK', ['Jammu & Kashmir', 'J&K']],
+  ['Ladakh', 'लद्दाख', 'LA', []],
+  ['Lakshadweep', 'लक्षद्वीप', 'LD', []],
+  ['Puducherry', 'पुदुच्चेरी', 'PY', ['Pondicherry']],
+];
+
+// [state name, city name]
+export const CITIES = [
+  ['Madhya Pradesh', 'Bhopal'], ['Madhya Pradesh', 'Indore'], ['Madhya Pradesh', 'Jabalpur'],
+  ['Madhya Pradesh', 'Gwalior'], ['Madhya Pradesh', 'Ujjain'], ['Madhya Pradesh', 'Sagar'],
+  ['Madhya Pradesh', 'Rewa'], ['Madhya Pradesh', 'Satna'], ['Madhya Pradesh', 'Dewas'],
+  ['Maharashtra', 'Mumbai'], ['Maharashtra', 'Pune'], ['Maharashtra', 'Nagpur'], ['Maharashtra', 'Nashik'],
+  ['Gujarat', 'Ahmedabad'], ['Gujarat', 'Surat'], ['Gujarat', 'Vadodara'], ['Gujarat', 'Gandhinagar'],
+  ['Rajasthan', 'Jaipur'], ['Rajasthan', 'Jodhpur'], ['Rajasthan', 'Udaipur'],
+  ['Uttar Pradesh', 'Lucknow'], ['Uttar Pradesh', 'Kanpur'], ['Uttar Pradesh', 'Varanasi'], ['Uttar Pradesh', 'Noida'],
+  ['Delhi', 'New Delhi'], ['Haryana', 'Gurugram'], ['Punjab', 'Ludhiana'], ['Chandigarh', 'Chandigarh'],
+  ['Chhattisgarh', 'Raipur'], ['Chhattisgarh', 'Bilaspur'], ['Bihar', 'Patna'], ['Jharkhand', 'Ranchi'],
+  ['Odisha', 'Bhubaneswar'], ['West Bengal', 'Kolkata'], ['Assam', 'Guwahati'],
+  ['Karnataka', 'Bengaluru'], ['Tamil Nadu', 'Chennai'], ['Kerala', 'Thiruvananthapuram'],
+  ['Telangana', 'Hyderabad'], ['Andhra Pradesh', 'Visakhapatnam'], ['Andhra Pradesh', 'Amaravati'],
+  ['Uttarakhand', 'Dehradun'], ['Himachal Pradesh', 'Shimla'], ['Jammu and Kashmir', 'Srinagar'], ['Goa', 'Panaji'],
+];
+
+// [name, Hindi name, tier, aliases]
+export const DEPARTMENTS = [
+  ['National Highways Authority of India', 'भारतीय राष्ट्रीय राजमार्ग प्राधिकरण', 'Central', ['NHAI']],
+  ['Central Public Works Department', 'केंद्रीय लोक निर्माण विभाग', 'Central', ['CPWD']],
+  ['Military Engineer Services', 'सैन्य अभियंता सेवा', 'Central', ['MES']],
+  ['Indian Railways', 'भारतीय रेल', 'Central', ['Railways', 'Ministry of Railways', 'Railway Board']],
+  ['Ministry of Road Transport and Highways', 'सड़क परिवहन एवं राजमार्ग मंत्रालय', 'Central', ['MoRTH']],
+  ['Ministry of Defence', 'रक्षा मंत्रालय', 'Central', ['MoD', 'Defence']],
+  ['Public Works Department', 'लोक निर्माण विभाग', 'State', ['PWD', 'Public Works Dept']],
+  ['Public Health Engineering Department', 'लोक स्वास्थ्य यांत्रिकी विभाग', 'State', ['PHED', 'PHE', 'Jal Shakti']],
+  ['Water Resources Department', 'जल संसाधन विभाग', 'State', ['WRD', 'Irrigation Department', 'Irrigation']],
+  ['Rural Development Department', 'ग्रामीण विकास विभाग', 'State', ['RDD', 'PMGSY', 'Panchayat and Rural Development']],
+  ['Urban Development Department', 'नगरीय विकास विभाग', 'State', ['UDD', 'Urban Development and Housing']],
+  ['Health and Family Welfare Department', 'स्वास्थ्य एवं परिवार कल्याण विभाग', 'State', ['Health Department', 'Medical Education Department']],
+  ['School Education Department', 'स्कूल शिक्षा विभाग', 'State', ['Education Department', 'Samagra Shiksha']],
+  ['Energy Department', 'ऊर्जा विभाग', 'State', ['Power Department', 'Electricity Department']],
+  ['State Electricity Distribution Company', 'राज्य विद्युत वितरण कंपनी', 'State', ['DISCOM', 'Vidyut Vitaran', 'MPPKVVCL', 'MPMKVVCL', 'MPPaKVVCL']],
+  ['Forest Department', 'वन विभाग', 'State', ['Forest']],
+  ['Municipal Corporation', 'नगर निगम', 'Municipal', ['Nagar Nigam', 'Municipal Corp', 'MC']],
+  ['Smart City Development Corporation', 'स्मार्ट सिटी विकास निगम', 'Municipal', ['Smart City', 'Smart City Limited', 'SCDCL']],
+  ['NTPC Limited', 'एनटीपीसी लिमिटेड', 'PSU', ['NTPC']],
+  ['Solar Energy Corporation of India', 'भारतीय सौर ऊर्जा निगम', 'PSU', ['SECI']],
+  ['GAIL (India) Limited', 'गेल (इंडिया) लिमिटेड', 'PSU', ['GAIL']],
+  ['Bharat Heavy Electricals Limited', 'भारत हेवी इलेक्ट्रिकल्स लिमिटेड', 'PSU', ['BHEL']],
+  ['Oil and Natural Gas Corporation', 'तेल एवं प्राकृतिक गैस निगम', 'PSU', ['ONGC']],
+  ['Indian Oil Corporation Limited', 'इंडियन ऑयल कॉर्पोरेशन लिमिटेड', 'PSU', ['IOCL', 'IOC']],
+  ['Power Grid Corporation of India', 'पावर ग्रिड कॉर्पोरेशन ऑफ इंडिया', 'PSU', ['PGCIL', 'Powergrid']],
+  ['NHPC Limited', 'एनएचपीसी लिमिटेड', 'PSU', ['NHPC']],
+  ['Coal India Limited', 'कोल इंडिया लिमिटेड', 'PSU', ['CIL', 'Coal India']],
+  ['Steel Authority of India Limited', 'भारतीय इस्पात प्राधिकरण लिमिटेड', 'PSU', ['SAIL']],
+  ['Airports Authority of India', 'भारतीय विमानपत्तन प्राधिकरण', 'PSU', ['AAI']],
+  ['NBCC (India) Limited', 'एनबीसीसी (इंडिया) लिमिटेड', 'PSU', ['NBCC']],
+  ['RITES Limited', 'राइट्स लिमिटेड', 'PSU', ['RITES']],
+  ['Bharat Sanchar Nigam Limited', 'भारत संचार निगम लिमिटेड', 'PSU', ['BSNL']],
+];
+
+// [name, Hindi name, aliases]
+export const CATEGORIES = [
+  ['Civil Works & Infrastructure', 'सिविल कार्य एवं अवसंरचना', ['Works', 'Civil', 'Civil Works', 'Construction', 'Roads and Bridges', 'Buildings']],
+  ['Electrical & Power', 'विद्युत एवं ऊर्जा', ['Electrical', 'Power', 'Transmission', 'Substation']],
+  ['Water Supply & Sanitation', 'जल आपूर्ति एवं स्वच्छता', ['Water Supply', 'Sanitation', 'Sewerage', 'Water']],
+  ['Goods & Equipment', 'सामग्री एवं उपकरण', ['Goods', 'Supply', 'Equipment', 'Material Supply']],
+  ['IT & Electronics', 'आईटी एवं इलेक्ट्रॉनिक्स', ['IT', 'Electronics', 'Software', 'Computer Hardware']],
+  ['Medical & Healthcare', 'चिकित्सा एवं स्वास्थ्य सेवा', ['Medical', 'Healthcare', 'Hospital Equipment', 'Pharma']],
+  ['Services & Manpower', 'सेवाएं एवं जनशक्ति', ['Services', 'Manpower', 'Housekeeping', 'Security Services']],
+  ['Transport & Vehicles', 'परिवहन एवं वाहन', ['Transport', 'Vehicles', 'Vehicle Hiring']],
+  ['Renewable Energy', 'नवीकरणीय ऊर्जा', ['Solar', 'Wind', 'Renewable', 'Power & Infrastructure']],
+  ['Consultancy', 'परामर्श', ['Consultancy Services', 'Consulting', 'DPR', 'Project Management Consultancy']],
+];
