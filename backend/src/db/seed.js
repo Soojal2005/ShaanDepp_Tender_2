@@ -84,7 +84,44 @@ export async function seedBaseline(db) {
   });
 }
 
-// CLI: `npm run seed`
+export const DEMO_PASSWORD = 'Demo-Pass-2026';
+
+/**
+ * Development-only sample accounts so every role can be tried locally. All use
+ * DEMO_PASSWORD. Refuses to run in production.
+ */
+export async function seedDemo(db) {
+  if (config.isProd) throw new Error('Demo data must never be created in production.');
+  const hash = await hashPassword(DEMO_PASSWORD);
+  return db.withContext(SYSTEM, async (q) => {
+    const staffOrg = await ensureStaffOrganization(q);
+    let demoOrg = await q.maybeOne(`SELECT id FROM organizations WHERE name = 'Demo Infra Projects Pvt Ltd'`);
+    demoOrg ??= await q.one(
+      `INSERT INTO organizations (name, gstin, contact_name, plan_id)
+       VALUES ('Demo Infra Projects Pvt Ltd', '23APSPT2592R1ZR', 'Ravi Kumar', (SELECT id FROM plans WHERE code = 'standard'))
+       RETURNING id`
+    );
+    const people = [
+      [staffOrg, 'Demo Platform Admin', 'admin@demo.test', 'platform_admin'],
+      [staffOrg, 'Vikram Joshi', 'analyst@demo.test', 'analyst'],
+      [staffOrg, 'Meera Case Manager', 'manager@demo.test', 'case_manager'],
+      [demoOrg.id, 'Ravi Kumar', 'owner@demo.test', 'tenant_admin'],
+      [demoOrg.id, 'Sanjay Verma', 'subscriber@demo.test', 'subscriber'],
+    ];
+    for (const [orgId, name, email, role] of people) {
+      const existing = await q.maybeOne('SELECT id FROM users WHERE email = $1', [email]);
+      if (existing) continue;
+      const user = await q.one(
+        'INSERT INTO users (organization_id, name, email, role) VALUES ($1, $2, $3, $4) RETURNING id',
+        [orgId, name, email, role]
+      );
+      await q.query('INSERT INTO user_credentials (user_id, password_hash) VALUES ($1, $2)', [user.id, hash]);
+    }
+    return { demoOrgId: demoOrg.id, accounts: people.map(([, , email, role]) => ({ email, role })) };
+  });
+}
+
+// CLI: `npm run seed` (add --demo for development sample accounts)
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const db = await createDatabase();
   try {
@@ -93,6 +130,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log('Baseline ready.', result);
     if (!config.bootstrapAdmin.email) {
       console.log('Set BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD, then re-run, to create the first admin.');
+    }
+    if (process.argv.includes('--demo')) {
+      const demo = await seedDemo(db);
+      console.log(`Demo accounts created (password: ${DEMO_PASSWORD}):`);
+      for (const a of demo.accounts) console.log(`  ${a.role.padEnd(15)} ${a.email}`);
     }
   } catch (err) {
     console.error(err.message);

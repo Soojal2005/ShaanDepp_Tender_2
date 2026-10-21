@@ -5,6 +5,7 @@
  */
 import { Router } from 'express';
 import { requireAuth, requirePermission, withUserDb, withSystemDb } from '../auth/middleware.js';
+import { can } from '../auth/permissions.js';
 import { asyncHandler, badRequest, notFound } from '../errors.js';
 import { actorOf, audit } from '../services/audit.js';
 import { slugify } from '../util.js';
@@ -67,10 +68,12 @@ export function mastersRoutes() {
     '/',
     requireAuth,
     asyncHandler(async (req, res) => {
+      // Filters only offer active entries; administrators can ask for everything (?all=1).
+      const includeInactive = req.query.all === '1' && can(req.auth.user, 'masters:manage');
       const result = await withUserDb(req, async (q) => ({
         states: (await q.many('SELECT * FROM states ORDER BY name')).map(viewState),
-        departments: (await q.many('SELECT * FROM departments WHERE is_active ORDER BY name')).map(viewDept),
-        categories: (await q.many('SELECT * FROM tender_categories WHERE is_active ORDER BY name')).map(viewCat),
+        departments: (await q.many('SELECT * FROM departments WHERE is_active OR $1 ORDER BY name', [includeInactive])).map(viewDept),
+        categories: (await q.many('SELECT * FROM tender_categories WHERE is_active OR $1 ORDER BY name', [includeInactive])).map(viewCat),
       }));
       res.json(result);
     })

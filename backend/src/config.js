@@ -57,6 +57,9 @@ const schema = z.object({
   STORAGE_DIR: z.string().default('var/storage'),
   OUTBOX_DIR: z.string().default('var/outbox'),
 
+  // Development convenience: create sample accounts at start-up. Ignored in production.
+  SEED_DEMO: bool,
+
   // Bootstrap (first platform admin; created by `npm run seed`)
   BOOTSTRAP_ADMIN_EMAIL: optionalString,
   BOOTSTRAP_ADMIN_PASSWORD: optionalString,
@@ -166,6 +169,7 @@ function load(env) {
       opsAlertEmail: c.OPS_ALERT_EMAIL,
     }),
     jobsEnabled: c.JOBS_ENABLED,
+    seedDemo: c.SEED_DEMO && !isProd,
     site: Object.freeze({
       whatsappNumber: c.WHATSAPP_NUMBER,
       phone: c.CONTACT_PHONE,

@@ -6,13 +6,17 @@ import { createApp } from './app.js';
 import { config } from './config.js';
 import { closeDb, getDb } from './db/index.js';
 import { migrate } from './db/migrate.js';
-import { seedBaseline } from './db/seed.js';
+import { DEMO_PASSWORD, seedBaseline, seedDemo } from './db/seed.js';
 import { log } from './log.js';
 
 const db = await getDb();
 const { applied } = await migrate(db);
 if (applied.length) log.info('database migrated', { applied });
 await seedBaseline(db);
+if (config.seedDemo) {
+  await seedDemo(db);
+  log.warn('demo accounts available (development only)', { password: DEMO_PASSWORD });
+}
 
 const app = createApp({ db });
 const server = app.listen(config.port, () => {
