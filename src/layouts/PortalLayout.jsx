@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, Bookmark, Building2, ChevronDown, ClipboardCheck, Database, FileBarChart, Globe, Inbox, Landmark,
-  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Mail, Menu, Timer, Search, SlidersHorizontal, Users, ScrollText, Layers,
+  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Mail, Menu, Timer, Search, SlidersHorizontal, Users, ScrollText, Layers, Trophy,
 } from 'lucide-react';
 import { can, useAuth } from '../auth/AuthContext.jsx';
 import LangPill from '../components/LangPill.jsx';
@@ -14,6 +14,7 @@ const MAIN_NAV = [
   { to: '/app/search', key: 'nav.search', icon: Search },
   { to: '/app/watchlist', key: 'nav.watchlist', icon: Bookmark },
   { to: '/app/alerts', key: 'nav.alerts', icon: Bell },
+  { to: '/app/results', key: 'nav.results', icon: Trophy },
   { to: '/app/desk', key: 'nav.desk', icon: ClipboardCheck },
   { to: '/app/reports', key: 'nav.reports', icon: FileBarChart },
 ];
@@ -25,6 +26,7 @@ const ADMIN_NAV = [
   { to: '/app/admin/ingestion', label: 'nav.ingestion', icon: Database, permission: 'ingestion:manage' },
   { to: '/app/admin/mail', label: 'nav.mail', icon: Mail, permission: 'queue:manage' },
   { to: '/app/admin/jobs', label: 'nav.jobs', icon: Timer, permission: 'jobs:manage' },
+  { to: '/app/admin/reports', label: 'nav.weeklyReports', icon: FileBarChart, permission: 'reports:release' },
   { to: '/app/admin/enquiries', label: 'nav.enquiries', icon: Inbox, permission: 'enquiries:view' },
   { to: '/app/admin/audit', label: 'nav.audit', icon: ScrollText, permission: 'audit:view' },
 ];

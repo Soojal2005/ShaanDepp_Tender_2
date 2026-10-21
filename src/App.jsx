@@ -26,6 +26,10 @@ const Jobs = lazy(() => import('./pages/admin/Jobs.jsx'));
 const Alerts = lazy(() => import('./pages/portal/Alerts.jsx'));
 const Enquiries = lazy(() => import('./pages/admin/Enquiries.jsx'));
 const AuditLog = lazy(() => import('./pages/admin/AuditLog.jsx'));
+const Results = lazy(() => import('./pages/portal/Results.jsx'));
+const Reports = lazy(() => import('./pages/portal/Reports.jsx'));
+const ReportDetail = lazy(() => import('./pages/portal/Reports.jsx').then((m) => ({ default: m.ReportDetail })));
+const WeeklyReports = lazy(() => import('./pages/admin/WeeklyReports.jsx'));
 
 export default function App() {
   return (
@@ -44,7 +48,9 @@ export default function App() {
           <Route path="watchlist" element={<Watchlist />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="desk" element={<ComingSoon titleKey="nav.desk" />} />
-          <Route path="reports" element={<ComingSoon titleKey="nav.reports" />} />
+          <Route path="results" element={<Results />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="reports/:bundleId" element={<ReportDetail />} />
           <Route path="profile" element={<Profile />} />
           <Route path="help" element={<Help />} />
 
@@ -70,6 +76,9 @@ export default function App() {
             </Route>
             <Route element={<RequireAnyPermission permissions={['enquiries:view']} />}>
               <Route path="enquiries" element={<Enquiries />} />
+            </Route>
+            <Route element={<RequirePermission permission="reports:release" />}>
+              <Route path="reports" element={<WeeklyReports />} />
             </Route>
             <Route element={<RequirePermission permission="audit:view" />}>
               <Route path="audit" element={<AuditLog />} />

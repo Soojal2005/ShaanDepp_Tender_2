@@ -9,6 +9,8 @@ import { demoResults, demoTenders } from '../../seed/demoData.js';
 import { CATEGORIES, CITIES, DEPARTMENTS, STATES } from '../../seed/masters.js';
 import { loadProfileContext, sendDigestForProfile } from '../services/alerts/digest.js';
 import { createProfile, createProfileSchema } from '../services/alerts/profiles.js';
+import { generateBundle, releaseBundle } from '../services/bundle/index.js';
+import { addDays, previousWeekStart } from '../services/bundle/period.js';
 import { loadMasterIndex } from '../services/ingestion/masters.js';
 import { normalizeTenderbookResult, normalizeTenderbookTender } from '../services/ingestion/normalize.js';
 import { upsertAward, upsertTender } from '../services/ingestion/store.js';
@@ -151,6 +153,12 @@ export async function seedDemo(db) {
         const profile = await loadProfileContext(q, view.id);
         await sendDigestForProfile(q, profile, { baseUrl: config.publicBaseUrl });
       }
+    }
+    // The last two weekly reports, generated and released, so the Reports locker has something to open.
+    const lastWeek = previousWeekStart();
+    for (const periodStart of [addDays(lastWeek, -7), lastWeek]) {
+      const bundleId = await generateBundle(q, { id: demoOrg.id, name: 'Demo Infra Projects Pvt Ltd' }, periodStart);
+      await releaseBundle(q, { user: null }, bundleId);
     }
     return { demoOrgId: demoOrg.id, tenders, results, accounts: people.map(([, , email, role]) => ({ email, role })) };
   });
