@@ -1,15 +1,15 @@
-# Shan-Deep Tender Portal (procure-brain.com)
+﻿# Shan-Deep Tender Portal (procure-brain.com)
 
 A tender intelligence platform and company website for Shan-Deep Management Advisory, built to the signed proposal (modules A to G).
 
 | | Module | Where to find it |
 |---|---|---|
-| A | Email alerts: profiles, ranked and capped daily digests, closing-soon block, plan limits | Portal → Alert Profiles |
-| B | Search and web access: multi-keyword with exclusions, filters, saved searches, watchlist and reminders, Excel export | Portal → Search Tenders, Watchlist |
-| C | Monday analytical bundle: 7 charted sections, India map, PDF and Excel, released by staff | Portal → Reports; Admin → Weekly Reports |
-| D | Tender results and rate analysis: winners, L1 vs estimate, bid band, unit rates, bidder profiles | Portal → Tender Results |
-| E | Email through the client's own Microsoft 365 mailbox (Graph `sendMail`), throttle-safe queue, bounce tracking | Admin → Mail Queue |
-| F | Submission assistance desk: 9 stages, checklists, document vault, pre-bid, EMD, follow-ups, client tracker, dashboard | Portal → Submission Desk |
+| A | Email alerts: profiles, ranked and capped daily digests, closing-soon block, plan limits | Portal â†’ Alert Profiles |
+| B | Search and web access: multi-keyword with exclusions, filters, saved searches, watchlist and reminders, Excel export | Portal â†’ Search Tenders, Watchlist |
+| C | Monday analytical bundle: 7 charted sections, India map, PDF and Excel, released by staff | Portal â†’ Reports; Admin â†’ Weekly Reports |
+| D | Tender results and rate analysis: winners, L1 vs estimate, bid band, unit rates, bidder profiles | Portal â†’ Tender Results |
+| E | Email through the client's own Microsoft 365 mailbox (Graph `sendMail`), throttle-safe queue, bounce tracking | Admin â†’ Mail Queue |
+| F | Submission assistance desk: 9 stages, checklists, document vault, pre-bid, EMD, follow-ups, client tracker, dashboard | Portal â†’ Submission Desk |
 | G | Public website in English and Hindi: 8 service groups, 81 service pages, enquiry forms, WhatsApp and call buttons | `/` |
 
 Data honesty is a design rule: a figure the source did not publish is shown as "Not disclosed" or "Rate not published", never as zero or an estimate, and statistics on fewer than 5 records are withheld.
@@ -82,3 +82,5 @@ docs/           deployment, Microsoft 365, DNS, admin, operations, client inputs
 - [Operations: monitoring, backups, restore, rotating secrets](docs/OPERATIONS.md)
 - [What we need from Shan-Deep to go live](docs/CLIENT_INPUTS_CHECKLIST.md)
 - [Test report](docs/TEST_REPORT.md)
+- [Handoff: what exists, decisions, open items](docs/HANDOFF.md)
+
