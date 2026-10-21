@@ -4,6 +4,7 @@ import { RequireAnyPermission, RequireAuth, RequirePermission } from './auth/gua
 import { Loading } from './components/ui.jsx';
 import AuthLayout from './layouts/AuthLayout.jsx';
 import PortalLayout from './layouts/PortalLayout.jsx';
+import PublicLayout from './layouts/PublicLayout.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import Login from './pages/auth/Login.jsx';
@@ -30,6 +31,13 @@ const CaseDetail = lazy(() => import('./pages/portal/CaseDetail.jsx'));
 const Results = lazy(() => import('./pages/portal/Results.jsx'));
 const Reports = lazy(() => import('./pages/portal/Reports.jsx'));
 const ReportDetail = lazy(() => import('./pages/portal/Reports.jsx').then((m) => ({ default: m.ReportDetail })));
+const Home = lazy(() => import('./pages/public/Home.jsx'));
+const ServicesIndex = lazy(() => import('./pages/public/Services.jsx').then((m) => ({ default: m.ServicesIndex })));
+const GroupPage = lazy(() => import('./pages/public/Services.jsx').then((m) => ({ default: m.GroupPage })));
+const ServicePage = lazy(() => import('./pages/public/Services.jsx').then((m) => ({ default: m.ServicePage })));
+const About = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.About })));
+const Contact = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.Contact })));
+const SiteNotFound = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.SiteNotFound })));
 const WeeklyReports = lazy(() => import('./pages/admin/WeeklyReports.jsx'));
 
 export default function App() {
@@ -89,9 +97,16 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* The public company website takes over "/" in a later step. */}
-        <Route path="/" element={<Navigate to="/app" replace />} />
-        <Route path="*" element={<NotFound />} />
+        {/* The public company website. */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<ServicesIndex />} />
+          <Route path="/services/:group" element={<GroupPage />} />
+          <Route path="/services/:group/:item" element={<ServicePage />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<SiteNotFound />} />
+        </Route>
       </Routes>
     </Suspense>
   );
