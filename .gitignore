@@ -21,3 +21,6 @@ Thumbs.db
 # browser test output
 e2e-output/
 backups/
+
+# client documents (kept locally, never published)
+*.pdf
