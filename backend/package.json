@@ -1,0 +1,17 @@
+{
+  "name": "shandeep-backend-api-worker",
+  "version": "2.1.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/verify-suites.mjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.6"
+  }
+}

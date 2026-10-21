@@ -1,0 +1,19 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# dependencies and build output
+node_modules/
+dist/
+*.zip
+
+# runtime data (outbox, uploads, local PGlite database, backups)
+var/
+backend/var/
+*.log
+
+# editor / OS
+.vscode/
+.DS_Store
+Thumbs.db

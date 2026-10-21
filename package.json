@@ -1,0 +1,30 @@
+{
+  "name": "shandeep-tender-intelligence-fullstack",
+  "private": true,
+  "version": "2.1.2",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node backend/test/verify-suites.mjs",
+    "server:start": "node backend/src/server.js",
+    "test:fullstack": "node backend/test/verify-suites.mjs"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.294.0",
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.1.6"
+  }
+}
