@@ -21,6 +21,7 @@ const PERMISSIONS = Object.freeze({
   'queue:manage': ['platform_admin'],
   'jobs:manage': ['platform_admin'],
   'reports:release': ['platform_admin', 'case_manager'],
+  'reports:generate': ['platform_admin'],
   // Staff working areas
   'enquiries:view': ['platform_admin', 'analyst', 'case_manager'],
   'cases:work': ['platform_admin', 'analyst', 'case_manager'],

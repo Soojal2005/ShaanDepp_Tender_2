@@ -13,6 +13,7 @@ import { button, emailShell } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
 import { runIngestion } from '../services/ingestion/runner.js';
 import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
+import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
 
 const SYSTEM = { scope: 'system' };
@@ -78,6 +79,19 @@ export function createJobs(db, deps = {}) {
       async run() {
         const result = await pollBounces(db, createGraphClient());
         return { ...result, activity: result.bounces };
+      },
+    },
+
+    'weekly-bundle': {
+      label: 'Monday analytical bundles',
+      description: "Builds last week's report for every client organization (Monday 06:00 India time). Reports stay in the locker until released.",
+      enabled: true,
+      cron: '0 6 * * 1',
+      timezone: 'Asia/Kolkata',
+      async run({ periodStart } = {}) {
+        const result = await generateForOrganizations(db, { periodStart });
+        if (result.failed) throw new Error(`${result.failed} bundle(s) failed: ${result.errors.join('; ')}`);
+        return { ...result, activity: result.generated };
       },
     },
 

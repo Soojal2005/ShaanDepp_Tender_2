@@ -15,6 +15,8 @@ import { dashboardRoutes } from './routes/dashboard.js';
 import { mastersRoutes } from './routes/masters.js';
 import { orgRoutes } from './routes/org.js';
 import { publicRoutes } from './routes/public.js';
+import { adminReportRoutes, reportRoutes } from './routes/reports.js';
+import { resultsRoutes } from './routes/results.js';
 import { savedSearchRoutes, tendersRoutes } from './routes/tenders.js';
 
 function buildLimiters(enabled) {
@@ -84,7 +86,10 @@ export function createApp({ db, rateLimits = true, makeTenderbookClient, jobs, s
   api.use('/saved-searches', savedSearchRoutes());
   api.use('/dashboard', dashboardRoutes());
   api.use('/alert-profiles', alertRoutes({ limiters }));
+  api.use('/results', resultsRoutes());
+  api.use('/reports', reportRoutes());
   api.use('/admin/ingestion', requireAuth, adminIngestionRoutes({ makeClient: makeTenderbookClient }));
+  api.use('/admin/reports', requireAuth, adminReportRoutes());
   api.use('/admin/mail', requireAuth, adminMailRoutes());
   api.use('/admin/jobs', requireAuth, adminJobsRoutes());
   api.use('/admin/organizations', requireAuth, adminAlertRoutes({ limiters }));
