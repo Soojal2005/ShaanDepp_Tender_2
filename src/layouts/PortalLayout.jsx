@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, Bookmark, Building2, ChevronDown, ClipboardCheck, Database, FileBarChart, Globe, Inbox, Landmark,
-  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Menu, Search, SlidersHorizontal, Users, ScrollText, Layers,
+  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Mail, Menu, Timer, Search, SlidersHorizontal, Users, ScrollText, Layers,
 } from 'lucide-react';
 import { can, useAuth } from '../auth/AuthContext.jsx';
 import LangPill from '../components/LangPill.jsx';
@@ -23,6 +23,8 @@ const ADMIN_NAV = [
   { to: '/app/admin/plans', label: 'nav.plans', icon: Layers, permission: 'plans:manage' },
   { to: '/app/admin/masters', label: 'nav.masters', icon: ListChecks, permission: 'masters:manage' },
   { to: '/app/admin/ingestion', label: 'nav.ingestion', icon: Database, permission: 'ingestion:manage' },
+  { to: '/app/admin/mail', label: 'nav.mail', icon: Mail, permission: 'queue:manage' },
+  { to: '/app/admin/jobs', label: 'nav.jobs', icon: Timer, permission: 'jobs:manage' },
   { to: '/app/admin/enquiries', label: 'nav.enquiries', icon: Inbox, permission: 'enquiries:view' },
   { to: '/app/admin/audit', label: 'nav.audit', icon: ScrollText, permission: 'audit:view' },
 ];

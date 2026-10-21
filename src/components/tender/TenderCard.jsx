@@ -28,6 +28,8 @@ export default function TenderCard({ tender: t, onOpen, onToggleWatch, busy, com
         {!compact && <div className="tender-tags-row">
           {t.category && <span className="tender-category-tag procure">{t.category}</span>}
           {t.tenderType && <span className="tender-category-tag govt">{t.tenderType}</span>}
+          {t.inDigest === true && <span className="tender-category-tag open">✉ {tr('alerts.inDigest')}</span>}
+          {t.inDigest === false && <span className="tender-category-tag" style={{ background: '#FEF3C7', color: '#B45309' }}>{tr('alerts.notInDigest')}</span>}
           {t.hasBoq && <span className="tender-category-tag open"><Layers size={11} style={{ verticalAlign: -1 }} /> {tr('tender.hasBoq')}</span>}
           {t.hasDocuments && <span className="tender-category-tag govt"><FileText size={11} style={{ verticalAlign: -1 }} /> {tr('tender.hasDocs')}</span>}
         </div>}

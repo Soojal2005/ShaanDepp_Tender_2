@@ -81,6 +81,8 @@ const ROLE_PERMISSIONS = {
   'plans:manage': ['platform_admin'],
   'masters:manage': ['platform_admin'],
   'ingestion:manage': ['platform_admin'],
+  'queue:manage': ['platform_admin'],
+  'jobs:manage': ['platform_admin'],
   'audit:view': ['platform_admin'],
   'enquiries:view': ['platform_admin', 'analyst', 'case_manager'],
   'members:manage': ['tenant_admin'],

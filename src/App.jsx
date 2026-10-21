@@ -21,6 +21,9 @@ const OrganizationDetail = lazy(() => import('./pages/admin/OrganizationDetail.j
 const Plans = lazy(() => import('./pages/admin/Plans.jsx'));
 const Masters = lazy(() => import('./pages/admin/Masters.jsx'));
 const Ingestion = lazy(() => import('./pages/admin/Ingestion.jsx'));
+const MailQueue = lazy(() => import('./pages/admin/MailQueue.jsx'));
+const Jobs = lazy(() => import('./pages/admin/Jobs.jsx'));
+const Alerts = lazy(() => import('./pages/portal/Alerts.jsx'));
 const Enquiries = lazy(() => import('./pages/admin/Enquiries.jsx'));
 const AuditLog = lazy(() => import('./pages/admin/AuditLog.jsx'));
 
@@ -39,7 +42,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="search" element={<Search />} />
           <Route path="watchlist" element={<Watchlist />} />
-          <Route path="alerts" element={<ComingSoon titleKey="nav.alerts" />} />
+          <Route path="alerts" element={<Alerts />} />
           <Route path="desk" element={<ComingSoon titleKey="nav.desk" />} />
           <Route path="reports" element={<ComingSoon titleKey="nav.reports" />} />
           <Route path="profile" element={<Profile />} />
@@ -58,6 +61,12 @@ export default function App() {
             </Route>
             <Route element={<RequirePermission permission="ingestion:manage" />}>
               <Route path="ingestion" element={<Ingestion />} />
+            </Route>
+            <Route element={<RequirePermission permission="queue:manage" />}>
+              <Route path="mail" element={<MailQueue />} />
+            </Route>
+            <Route element={<RequirePermission permission="jobs:manage" />}>
+              <Route path="jobs" element={<Jobs />} />
             </Route>
             <Route element={<RequireAnyPermission permissions={['enquiries:view']} />}>
               <Route path="enquiries" element={<Enquiries />} />

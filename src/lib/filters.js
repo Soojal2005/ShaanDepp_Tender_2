@@ -6,11 +6,11 @@
  */
 const ID_LISTS = ['departmentIds', 'stateIds', 'cityIds', 'categoryIds'];
 const TEXT_LISTS = ['scope', 'tenderTypes'];
-const TEXT = ['q', 'exclude', 'valueMin', 'valueMax', 'publishFrom', 'publishTo', 'deadlineFrom', 'deadlineTo', 'status', 'sort'];
+const TEXT = ['q', 'exclude', 'valueMin', 'valueMax', 'publishFrom', 'publishTo', 'deadlineFrom', 'deadlineTo', 'status', 'alerts', 'sort'];
 
 export const EMPTY_FILTERS = Object.freeze({
   q: '', scope: [], exclude: '', departmentIds: [], stateIds: [], cityIds: [], categoryIds: [], tenderTypes: [],
-  valueMin: '', valueMax: '', publishFrom: '', publishTo: '', deadlineFrom: '', deadlineTo: '', status: 'open', sort: '',
+  valueMin: '', valueMax: '', publishFrom: '', publishTo: '', deadlineFrom: '', deadlineTo: '', status: 'open', alerts: 'any', sort: '',
 });
 
 const asList = (value) => (Array.isArray(value) ? value : value == null || value === '' ? [] : String(value).split(','));
@@ -35,7 +35,7 @@ export function toParams(filters, extra = {}) {
   const params = new URLSearchParams();
   for (const key of TEXT) {
     const v = filters[key];
-    if (v && !(key === 'status' && v === 'open')) params.set(key, v);
+    if (v && !(key === 'status' && v === 'open') && !(key === 'alerts' && v === 'any')) params.set(key, v);
   }
   for (const key of [...ID_LISTS, ...TEXT_LISTS]) if (filters[key]?.length) params.set(key, filters[key].join(','));
   for (const [k, v] of Object.entries(extra)) if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
@@ -45,7 +45,7 @@ export function toParams(filters, extra = {}) {
 /** Query object for the API client. */
 export function toQuery(filters, extra = {}) {
   const query = {};
-  for (const key of TEXT) if (filters[key]) query[key] = filters[key];
+  for (const key of TEXT) if (filters[key] && !(key === 'alerts' && filters[key] === 'any')) query[key] = filters[key];
   for (const key of [...ID_LISTS, ...TEXT_LISTS]) if (filters[key]?.length) query[key] = filters[key].join(',');
   return { ...query, ...extra };
 }
@@ -61,6 +61,7 @@ export function activeFilterCount(f) {
   if (f.publishFrom || f.publishTo) n++;
   if (f.deadlineFrom || f.deadlineTo) n++;
   if (f.status !== 'open') n++;
+  if (f.alerts !== 'any') n++;
   return n;
 }
 

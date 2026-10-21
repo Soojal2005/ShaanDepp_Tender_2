@@ -7,6 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { demoResults, demoTenders } from '../../seed/demoData.js';
 import { CATEGORIES, CITIES, DEPARTMENTS, STATES } from '../../seed/masters.js';
+import { loadProfileContext, sendDigestForProfile } from '../services/alerts/digest.js';
+import { createProfile, createProfileSchema } from '../services/alerts/profiles.js';
 import { loadMasterIndex } from '../services/ingestion/masters.js';
 import { normalizeTenderbookResult, normalizeTenderbookTender } from '../services/ingestion/normalize.js';
 import { upsertAward, upsertTender } from '../services/ingestion/store.js';
@@ -131,6 +133,24 @@ export async function seedDemo(db) {
     for (const dto of demoResults()) {
       const { record, problems } = normalizeTenderbookResult(dto);
       if (!problems.length && (await upsertAward(q, 'excel', record, index, dto)) === 'inserted') results++;
+    }
+    // Two sample alerts for the demo client, each with a first digest so flags and counts have something to show.
+    const existingProfiles = (await q.one('SELECT count(*)::int AS n FROM alert_profiles WHERE organization_id = $1', [demoOrg.id])).n;
+    if (existingProfiles === 0) {
+      const owner = await q.one(`SELECT id, email FROM users WHERE email = 'owner@demo.test'`);
+      const idOf = async (table, name) => (await q.maybeOne(`SELECT id FROM ${table} WHERE name = $1`, [name]))?.id;
+      const civil = await idOf('tender_categories', 'Civil Works & Infrastructure');
+      const phed = await idOf('departments', 'Public Health Engineering Department');
+      const states = (await q.many(`SELECT id FROM states WHERE name IN ('Madhya Pradesh', 'Maharashtra', 'Gujarat')`)).map((s) => s.id);
+      const samples = [
+        { name: 'Roads, bridges & highways', keywords: ['road', 'highway', 'bridge'], excludeKeywords: ['cctv'], categoryIds: civil ? [civil] : [] },
+        { name: 'Smart water & AMR meters', keywords: ['water meter', 'ultrasonic', 'amr'], departmentIds: phed ? [phed] : [], stateIds: states },
+      ];
+      for (const sample of samples) {
+        const view = await createProfile(q, { user: null }, { orgId: demoOrg.id, userId: owner.id, userEmail: owner.email }, createProfileSchema.parse(sample));
+        const profile = await loadProfileContext(q, view.id);
+        await sendDigestForProfile(q, profile, { baseUrl: config.publicBaseUrl });
+      }
     }
     return { demoOrgId: demoOrg.id, tenders, results, accounts: people.map(([, , email, role]) => ({ email, role })) };
   });

@@ -177,7 +177,7 @@ export async function recipientsFor(q, profile) {
   return rows.map((r) => r.email);
 }
 
-async function loadProfileContext(q, profileId) {
+export async function loadProfileContext(q, profileId) {
   return q.maybeOne(
     `SELECT p.*, o.name AS org_name, o.status AS org_status, o.language AS org_language,
             coalesce(o.alert_cap_override, pl.daily_alert_cap, 50) AS cap

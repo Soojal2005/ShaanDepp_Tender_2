@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bookmark, Download, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Bell, Bookmark, Download, SlidersHorizontal, Trash2 } from 'lucide-react';
 import TenderCard from '../../components/tender/TenderCard.jsx';
 import TenderDrawer from '../../components/tender/TenderDrawer.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -74,6 +74,38 @@ function SaveSearchModal({ filters, onClose, onSaved }) {
   );
 }
 
+function CreateAlertModal({ filters, onClose, onCreated }) {
+  const { t } = useI18n();
+  const { pending, run } = useAction();
+  const [name, setName] = useState(filters.q ? filters.q.slice(0, 60) : '');
+  const [frequency, setFrequency] = useState('daily');
+  const [error, setError] = useState(null);
+  const submit = async (e) => {
+    e.preventDefault();
+    const result = await run(() => api.post('/alert-profiles/from-filters', { name: name.trim(), frequency, filters: toQuery(filters) }));
+    if (!result.ok) return setError(result.error);
+    onCreated();
+  };
+  return (
+    <Modal title={t('alerts.fromFiltersTitle')} onClose={onClose}
+      footer={<><Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
+        <Button type="submit" form="from-filters-form" pending={pending} disabled={!name.trim()}>{t('alerts.new')}</Button></>}>
+      <ErrorNote error={error} />
+      <p className="cell-sub" style={{ marginBottom: 12 }}>{t('alerts.fromFiltersHint')}</p>
+      <form id="from-filters-form" onSubmit={submit}>
+        <Field label={t('alerts.name')}>{(p) => <input {...p} className="input" value={name} maxLength={150} onChange={(e) => setName(e.target.value)} required />}</Field>
+        <Field label={t('alerts.frequency')}>
+          {(p) => (
+            <select {...p} className="select" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+              <option value="daily">{t('alerts.daily')}</option><option value="alternate_day">{t('alerts.alternate')}</option><option value="weekly">{t('alerts.weekly')}</option>
+            </select>
+          )}
+        </Field>
+      </form>
+    </Modal>
+  );
+}
+
 function SavedSearchMenu({ onPick }) {
   const { t } = useI18n();
   const toast = useToast();
@@ -120,6 +152,7 @@ export default function Search() {
   const [busyId, setBusyId] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [creatingAlert, setCreatingAlert] = useState(false);
   const [qText, setQText] = useState(filters.q);
   const [excludeText, setExcludeText] = useState(filters.exclude);
 
@@ -183,6 +216,7 @@ export default function Search() {
           <>
             <SavedSearchMenu onPick={(saved) => go(filtersFrom(saved))} />
             <Button variant="outline" onClick={() => setSaving(true)}><Bookmark size={15} />{t('search.saveSearch')}</Button>
+            <Button variant="outline" onClick={() => setCreatingAlert(true)}><Bell size={15} />{t('alerts.fromFilters')}</Button>
             <a className="btn-export-excel-primary" style={{ textDecoration: 'none' }} href={api.url('/tenders/export.xlsx', toQuery(filters))} download>
               <Download size={15} /><span>{t('search.exportExcel')}</span>
             </a>
@@ -222,6 +256,16 @@ export default function Search() {
               <option value="closing_soon">{t('search.closingSoon')}</option>
               <option value="closed">{t('search.closed')}</option>
               <option value="all">{t('search.allStatus')}</option>
+            </select>
+          </div>
+
+          <div className="facet-filter-group">
+            <div className="facet-group-label-row"><span>{t('alerts.alertMatches')}</span></div>
+            <select className="select" value={filters.alerts} onChange={(e) => update({ alerts: e.target.value })} aria-label={t('alerts.alertMatches')}>
+              <option value="any">{t('alerts.any')}</option>
+              <option value="matched">{t('alerts.matchedAny')}</option>
+              <option value="in_digest">{t('alerts.emailed')}</option>
+              <option value="not_in_digest">{t('alerts.heldBack')}</option>
             </select>
           </div>
 
@@ -318,6 +362,7 @@ export default function Search() {
           onWatchChange={(id, watched) => setOverrides((o) => ({ ...o, [id]: watched }))}
         />
       )}
+      {creatingAlert && <CreateAlertModal filters={filters} onClose={() => setCreatingAlert(false)} onCreated={() => { setCreatingAlert(false); toast.success(t('alerts.createdFromSearch')); }} />}
       {saving && <SaveSearchModal filters={filters} onClose={() => setSaving(false)} onSaved={() => { setSaving(false); toast.success(t('search.saved')); }} />}
     </>
   );
