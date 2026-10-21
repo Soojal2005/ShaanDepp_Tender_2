@@ -1,4 +1,4 @@
-﻿# Shan-Deep Tender Portal (procure-brain.com)
+# Shan-Deep Tender Portal (procure-brain.com)
 
 A tender intelligence platform and company website for Shan-Deep Management Advisory, built to the signed proposal (modules A to G).
 
@@ -81,6 +81,7 @@ docs/           deployment, Microsoft 365, DNS, admin, operations, client inputs
 - [Administrator guide](docs/ADMIN_GUIDE.md)
 - [Operations: monitoring, backups, restore, rotating secrets](docs/OPERATIONS.md)
 - [What we need from Shan-Deep to go live](docs/CLIENT_INPUTS_CHECKLIST.md)
+- [Software Requirements Specification](docs/SRS.md)
 - [Test report](docs/TEST_REPORT.md)
 - [Handoff: what exists, decisions, open items](docs/HANDOFF.md)
 
