@@ -172,6 +172,7 @@ export default {
     heroKicker: 'Tenders, registrations and compliance, under one roof',
     heroTitle: 'Win government tenders with the right information and a team beside you',
     heroBody: 'Shan-Deep Management Advisory helps businesses find the right tenders every morning, bid with confidence, and take care of the registrations, certificates and filings that sit around them.',
+    sampleTitle: 'Sample tenders', sampleSub: 'Synthetic examples from our demonstration database.', sampleDeadline: 'Deadline',
     ctaPortal: 'Open the tender portal', ctaServices: 'See all services', ctaEnquire: 'Send an enquiry',
     trustTitle: 'Registered and accountable', trustBusiness: 'Business registration', trustGst: 'GST number',
     servicesTitle: 'Everything a bidder and a growing business needs', servicesSub: 'Eight service groups, each with its own pages. Pick one to see what we do and ask us directly.',

@@ -30,6 +30,8 @@ services:
       context: .
       args:
         SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
     restart: unless-stopped
     depends_on:
       db:

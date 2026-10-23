@@ -31,12 +31,11 @@ function buildLookup(rows) {
 }
 
 export async function loadMasterIndex(q) {
-  const [states, departments, categories, cities] = await Promise.all([
-    q.many('SELECT id, name, aliases FROM states'),
-    q.many('SELECT id, name, aliases FROM departments WHERE is_active'),
-    q.many('SELECT id, name, aliases FROM tender_categories WHERE is_active'),
-    q.many('SELECT id, state_id, name FROM cities'),
-  ]);
+  // q is one PostgreSQL transaction/connection; issue its queries sequentially.
+  const states = await q.many('SELECT id, name, aliases FROM states');
+  const departments = await q.many('SELECT id, name, aliases FROM departments WHERE is_active');
+  const categories = await q.many('SELECT id, name, aliases FROM tender_categories WHERE is_active');
+  const cities = await q.many('SELECT id, state_id, name FROM cities');
   const stateLookup = buildLookup(states);
   const deptLookup = buildLookup(departments);
   const catLookup = buildLookup(categories);

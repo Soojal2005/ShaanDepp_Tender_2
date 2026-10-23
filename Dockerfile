@@ -12,6 +12,9 @@ COPY scripts ./scripts
 COPY src ./src
 ARG SITE_URL=https://procure-brain.com
 ENV SITE_URL=$SITE_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 RUN npm run build
 
 # ---- 2. Generate the platform-independent Prisma client --------------------------------------

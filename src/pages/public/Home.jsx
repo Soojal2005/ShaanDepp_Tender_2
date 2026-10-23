@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgeCheck, Building2, ClipboardList, FileSearch, Landmark, Lightbulb, ScrollText, ShoppingBag } from 'lucide-react';
 import { DEPARTMENTS, GROUPS } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
+import { formatDate } from '../../lib/format.js';
 import EnquiryForm from '../../site/EnquiryForm.jsx';
 import FlowChart from '../../site/FlowChart.jsx';
 import { useSeo, useSiteConfig } from '../../site/hooks.js';
@@ -12,6 +14,16 @@ export default function Home() {
   const { t, lang } = useI18n();
   const site = useSiteConfig();
   const L = lang === 'HI' ? 'hi' : 'en';
+  const [samples, setSamples] = useState([]);
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) return;
+    let active = true;
+    import('../../lib/supabase.js')
+      .then(({ getSampleTenders }) => getSampleTenders())
+      .then((rows) => { if (active) setSamples(rows); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
   useSeo({ title: t('site.seo.homeTitle'), description: t('site.seo.homeDesc'), path: '/' });
   return (
     <>
@@ -36,6 +48,20 @@ export default function Home() {
           </aside>
         </div>
       </section>
+
+      {samples.length > 0 && <section className="site-section alt">
+        <div className="site-wrap">
+          <h2>{t('site.sampleTitle')}</h2>
+          <p className="site-sub">{t('site.sampleSub')}</p>
+          <div className="site-group-grid">
+            {samples.map((item) => <article key={item.id} className="site-group-card">
+              <h3>{item.title}</h3>
+              <p>{item.department || t('common.unavailable')}</p>
+              <p>{t('site.sampleDeadline')}: {formatDate(item.submission_deadline, lang)}</p>
+            </article>)}
+          </div>
+        </div>
+      </section>}
 
       <section className="site-section">
         <div className="site-wrap">

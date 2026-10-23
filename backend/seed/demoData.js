@@ -1,8 +1,8 @@
 /**
- * Sample tenders and award results for LOCAL DEVELOPMENT ONLY (npm run seed:demo,
- * or SEED_DEMO=on). They are stored under the "excel" provider so they are never
- * mixed up with live Tenderbook data, and they are never created in production.
- * The generator is deterministic, so every developer sees the same sample.
+ * Synthetic tender and award fixtures. Local development uses the full set under
+ * the "excel" provider. The optional managed showcase seed uses a small subset
+ * under the separate "sample" provider; neither is mixed with live Tenderbook data.
+ * The generator is deterministic for a given `now` value.
  */
 
 function mulberry32(seed) {

@@ -14,9 +14,11 @@
     "db:generate": "npm run db:generate --prefix backend",
     "db:validate": "npm run db:validate --prefix backend",
     "seed": "npm run seed --prefix backend",
+    "seed:showcase": "npm run seed:showcase --prefix backend",
     "postinstall": "npm install --prefix backend"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

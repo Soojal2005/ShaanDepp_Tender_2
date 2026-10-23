@@ -81,7 +81,9 @@ verifies certificates and overrides SSL query parameters in the URLs.
 
 Build and push the Docker image to your registry for ECS/App Runner, or use the Compose
 workflow below on EC2. Run `node src/db/migrate.js` once as a release task with the owner URL
-and `APP_DB_PASSWORD`. Only after it succeeds, roll out API containers with `DB_MIGRATE_ON_START=off`
+and `APP_DB_PASSWORD`. To load the optional synthetic examples, then run
+`node src/db/seed-showcase.js` as a separate task with the restricted runtime URL.
+Only after those tasks succeed, roll out API containers with `DB_MIGRATE_ON_START=off`
 and the runtime URL. Store credentials in your deployment's secret store. Supply owner
 credentials to the release task only.
 
@@ -98,15 +100,15 @@ Use a dedicated project with an empty application `public` schema. Keep Supabase
 schemas such as `auth` and `storage` separate. This app retains its own cookie authentication;
 adding Supabase PostgreSQL does not switch authentication or file uploads to Supabase services.
 
-Copy exact hosts and region from the project's **Connect** panel. Example shapes:
+The current Supabase project uses the shared pooler shown below. Check its **Connect**
+panel if the pooler host changes. The runtime password is generated separately from
+the database-owner password:
 
 ```dotenv
-# Runtime through Supavisor transaction pooler, with the custom runtime role.
-DATABASE_URL=postgresql://app_api_user.PROJECT_REF:ENCODED_APP_PASSWORD@POOLER_HOST:6543/postgres?sslmode=require
-# Owner through a direct endpoint (IPv6 connectivity required unless IPv4 is enabled).
-MIGRATION_DATABASE_URL=postgresql://postgres:ENCODED_OWNER_PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres?sslmode=require
-# If direct IPv6 is unavailable, use the SESSION pooler, never transaction pooling for migrations:
-# MIGRATION_DATABASE_URL=postgresql://postgres.PROJECT_REF:ENCODED_OWNER_PASSWORD@POOLER_HOST:5432/postgres?sslmode=require
+# Runtime: restricted app role through the transaction pooler.
+DATABASE_URL=postgresql://app_api_user.qtydolbquskvbpleudrm:ENCODED_APP_PASSWORD@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&uselibpqcompat=true
+# Release job: owner through the session pooler. DIRECT_URL is an alias for this variable.
+MIGRATION_DATABASE_URL=postgresql://postgres.qtydolbquskvbpleudrm:ENCODED_OWNER_PASSWORD@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require&uselibpqcompat=true
 APP_DB_PASSWORD=RAW_APP_PASSWORD
 DB_MIGRATE_ON_START=off
 DB_POOL_MAX=5
@@ -115,25 +117,63 @@ DB_POOL_MAX=5
 The release job creates/configures `app_api_user` before the API starts. Do not use a
 `BYPASSRLS` role as the runtime login. Prisma uses the `pg` adapter without named prepared
 statements; tenant settings and role changes are transaction-local, supporting transaction pooling.
+The `uselibpqcompat=true` parameter makes the Node `pg` driver treat `sslmode=require`
+like libpq: the connection is encrypted but its certificate is not verified. For
+certificate verification, download the project's root certificate from Supabase
+Database Settings and set `DB_SSL_CA_FILE` on both release and runtime processes.
+The owner's password and `MIGRATION_DATABASE_URL` belong only in the release job;
+the website and long-running API use the restricted `DATABASE_URL`.
 
-If only this backend accesses the database, disable the Supabase Data API in project API
-settings as recommended by the [Supabase Prisma guide](https://supabase.com/docs/guides/database/prisma).
-The app's policies depend on server-set context rather than Supabase JWT claims. If keeping
-the Data API enabled, review its grants independently; never give browser clients database credentials.
+After the release migration, run the optional seed task shown below. In Supabase's SQL Editor,
+verify it with:
+
+```sql
+SELECT provider_id, count(*) FROM public.tenders WHERE provider_id = 'sample' GROUP BY provider_id;
+SELECT provider, count(*) FROM public.historical_awards WHERE provider = 'sample' GROUP BY provider;
+```
+
+The expected counts are 12 tenders and five award results. Titles start with `[Sample]`,
+and rerunning the seed preserves edits to those records.
+
+Keep the Supabase Data API enabled to show the public synthetic tender examples on the
+website. Migration 009 grants the `anon` role read access to **only** tenders whose
+`provider_id = 'sample'`; other application tables remain inaccessible through the
+publishable key. The authenticated portal continues to use the server API and its own
+cookie sessions. Do not put database passwords or Supabase secret keys in `VITE_` variables.
+
+For the browser showcase, set these two public values **before building** the website
+(or before `docker compose ... build api`):
+
+```dotenv
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
+Vite embeds them in the website bundle at build time; changing the container's runtime
+environment alone will not update that bundle. For local development, put them in an
+ignored `.env.local`. With no values, the sample-tender section is hidden. After
+running migration 009 and `seed:showcase` against the Supabase database, the homepage
+shows three labelled synthetic tenders. The publishable key cannot apply migrations
+or insert seed rows; those steps use the owner and restricted runtime PostgreSQL URLs
+above, respectively.
 
 ## Managed database deployment with Docker Compose
 
 ```bash
 cp deploy/managed.env.example .env
-# Fill in domain, both URLs, app password and first administrator.
+# Fill in domain, both URLs, app password, first administrator and VITE values.
 docker compose -f docker-compose.managed.yml build api
 docker compose -f docker-compose.managed.yml --profile tools run --rm migrate
+docker compose -f docker-compose.managed.yml --profile tools run --rm seed
 docker compose -f docker-compose.managed.yml up -d api caddy
 ```
 
 For a custom CA add a read-only certificate volume to **both** `api` and `migrate` services
 before running those commands. Compose clears owner URLs and `APP_DB_PASSWORD` from the API's
-environment. Startup seeds the baseline lists and bootstrap admin using runtime credentials.
+environment. The optional `seed` step uses only runtime credentials and adds 12 synthetic
+tenders, five synthetic award results, a sample provider and an empty sample organization.
+It is safe to rerun and does not create demo logins or overwrite existing sample rows.
+Startup seeds the baseline lists and bootstrap admin using runtime credentials.
 On each update, build, migrate, then roll out the API in that order. Keep database backups/PITR
 enabled at the database provider and back up the app's persistent data volume separately.
 Verify `/api/v1/health`, login, master lists and a tenant read/write after deployment.

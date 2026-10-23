@@ -7,6 +7,8 @@ services:
       context: .
       args:
         SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -28,6 +30,18 @@ services:
     environment:
       NODE_ENV: production
     command: [node, src/db/migrate.js]
+
+  seed:
+    image: procure-brain:local
+    profiles: [tools]
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DB_MIGRATE_ON_START: 'off'
+      MIGRATION_DATABASE_URL: ''
+      DIRECT_URL: ''
+      APP_DB_PASSWORD: ''
+    command: [node, src/db/seed-showcase.js]
 
   caddy:
     image: caddy:2-alpine

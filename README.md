@@ -49,6 +49,7 @@ Email is in **dry-run** mode: messages are saved as HTML files in `backend/var/o
 | `npm run db:generate` / `npm run db:validate` | Generate the Prisma client / validate its schema without a database connection |
 | `npm run db:schema --prefix backend` | Regenerates `backend/prisma/schema.prisma` and the Prisma client from the migrations (needs `PRISMA_SYNC_PG_URL`, an owner URL with CREATE DATABASE/ROLE privileges; uses a scratch database). Run after every new migration. `db:schema:check` fails if it is stale |
 | `npm run seed` | Master lists and the first admin from `BOOTSTRAP_ADMIN_*` (`npm run seed:demo --prefix backend` adds sample data) |
+| `npm run seed:showcase` | Adds a small set of clearly labelled synthetic tenders and award results, including on managed PostgreSQL |
 
 ## Tests
 
