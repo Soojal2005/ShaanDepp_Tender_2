@@ -1,0 +1,50 @@
+# App on a server, database on RDS/Aurora or Supabase. See docs/PRISMA_DEPLOYMENT.md.
+name: procure-brain
+services:
+  api:
+    image: procure-brain:local
+    build:
+      context: .
+      args:
+        SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      PUBLIC_BASE_URL: https://${SITE_DOMAIN}
+      DB_MIGRATE_ON_START: 'off'
+      # Owner credentials are only available to the deployment job below.
+      MIGRATION_DATABASE_URL: ''
+      DIRECT_URL: ''
+      APP_DB_PASSWORD: ''
+    volumes:
+      - appdata:/data
+
+  migrate:
+    image: procure-brain:local
+    profiles: [tools]
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    command: [node, src/db/migrate.js]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  appdata:
+  caddy_data:
+  caddy_config:

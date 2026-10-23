@@ -4,7 +4,7 @@
  * can change them.
  */
 import { Router } from 'express';
-import { requireAuth, requirePermission, withUserDb, withSystemDb } from '../auth/middleware.js';
+import { requireAuth, requirePermission, withUserPrisma, withSystemDb } from '../auth/middleware.js';
 import { can } from '../auth/permissions.js';
 import { asyncHandler, badRequest, notFound } from '../errors.js';
 import { actorOf, audit } from '../services/audit.js';
@@ -70,10 +70,10 @@ export function mastersRoutes() {
     asyncHandler(async (req, res) => {
       // Filters only offer active entries; administrators can ask for everything (?all=1).
       const includeInactive = req.query.all === '1' && can(req.auth.user, 'masters:manage');
-      const result = await withUserDb(req, async (q) => ({
-        states: (await q.many('SELECT * FROM states ORDER BY name')).map(viewState),
-        departments: (await q.many('SELECT * FROM departments WHERE is_active OR $1 ORDER BY name', [includeInactive])).map(viewDept),
-        categories: (await q.many('SELECT * FROM tender_categories WHERE is_active OR $1 ORDER BY name', [includeInactive])).map(viewCat),
+      const result = await withUserPrisma(req, async (tx) => ({
+        states: (await tx.states.findMany({ orderBy: { name: 'asc' } })).map(viewState),
+        departments: (await tx.departments.findMany({ where: includeInactive ? {} : { is_active: true }, orderBy: { name: 'asc' } })).map(viewDept),
+        categories: (await tx.tender_categories.findMany({ where: includeInactive ? {} : { is_active: true }, orderBy: { name: 'asc' } })).map(viewCat),
       }));
       res.json(result);
     })
@@ -84,8 +84,8 @@ export function mastersRoutes() {
     requireAuth,
     asyncHandler(async (req, res) => {
       const { stateId } = parse(z.object({ stateId: id.optional() }), req.query);
-      const rows = await withUserDb(req, (q) =>
-        q.many('SELECT * FROM cities WHERE ($1::int IS NULL OR state_id = $1) ORDER BY name LIMIT 5000', [stateId ?? null])
+      const rows = await withUserPrisma(req, (tx) =>
+        tx.cities.findMany({ where: stateId == null ? {} : { state_id: stateId }, orderBy: { name: 'asc' }, take: 5000 })
       );
       res.json({ cities: rows.map(viewCity) });
     })

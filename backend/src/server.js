@@ -12,8 +12,10 @@ import { startScheduler } from './jobs/scheduler.js';
 import { log } from './log.js';
 
 const db = await getDb();
-const { applied } = await migrate(db);
-if (applied.length) log.info('database migrated', { applied });
+if (config.db.migrateOnStart) {
+  const { applied } = await migrate(db);
+  if (applied.length) log.info('database migrated', { applied });
+}
 await seedBaseline(db);
 if (config.seedDemo) {
   await seedDemo(db);

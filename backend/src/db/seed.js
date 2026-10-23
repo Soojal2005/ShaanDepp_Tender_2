@@ -203,7 +203,7 @@ export async function seedDemo(db) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const db = await createDatabase();
   try {
-    await migrate(db);
+    if (config.db.migrateOnStart) await migrate(db);
     const result = await seedBaseline(db);
     console.log('Baseline ready.', result);
     if (!config.bootstrapAdmin.email) {

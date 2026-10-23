@@ -1,0 +1,964 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model alert_digest_items {
+  id              BigInt        @id @default(autoincrement())
+  digest_id       Int
+  tender_id       BigInt
+  score           Int
+  rank_position   Int
+  in_digest       Boolean
+  is_closing_soon Boolean       @default(false)
+  alert_digests   alert_digests @relation(fields: [digest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenders         tenders       @relation(fields: [tender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([digest_id], map: "idx_digest_items_digest")
+  @@index([tender_id], map: "idx_digest_items_tender")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model alert_digests {
+  id                 Int                  @id @default(autoincrement())
+  organization_id    Int
+  profile_id         Int
+  digest_date        DateTime             @db.Date
+  is_test            Boolean              @default(false)
+  matched_count      Int                  @default(0)
+  included_count     Int                  @default(0)
+  cap                Int
+  generated_at       DateTime             @default(now()) @db.Timestamptz(6)
+  alert_digest_items alert_digest_items[]
+  organizations      organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  alert_profiles     alert_profiles       @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  email_queue        email_queue[]
+
+  @@unique([profile_id, digest_date], map: "uq_digest_profile_day", where: raw("(NOT is_test)"))
+  @@index([profile_id, digest_date(sort: Desc)], map: "idx_digests_profile_date")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model alert_profiles {
+  id                    Int             @id @default(autoincrement())
+  organization_id       Int
+  user_id               Int?
+  name                  String
+  keywords              String[]        @default([])
+  exclude_keywords      String[]        @default([])
+  tender_types          String[]        @default([])
+  value_min             Decimal?        @db.Decimal(18, 2)
+  value_max             Decimal?        @db.Decimal(18, 2)
+  recipient_emails      String[]        @default([])
+  frequency             String          @default("daily")
+  weekly_day            Int             @default(1)
+  status                String          @default("active")
+  last_run_at           DateTime?       @db.Timestamptz(6)
+  created_at            DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime        @default(now()) @db.Timestamptz(6)
+  category_ids          Int[]           @default([])
+  department_ids        Int[]           @default([])
+  state_ids             Int[]           @default([])
+  include_unknown_value Boolean         @default(true)
+  alert_digests         alert_digests[]
+  organizations         organizations   @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 users?          @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([organization_id], map: "idx_alert_profiles_org")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_events {
+  id              BigInt   @id @default(autoincrement())
+  organization_id Int?
+  user_id         Int?
+  actor_email     String?
+  action          String
+  resource_type   String
+  resource_id     String?
+  ip_address      String?
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, created_at(sort: Desc)], map: "idx_audit_org_time")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model award_bidders {
+  id                    Int               @id @default(autoincrement())
+  award_id              BigInt
+  bidder_name           String
+  quoted_amount         Decimal?          @db.Decimal(18, 2)
+  rank_position         Int?
+  technically_qualified Boolean?
+  is_l1                 Boolean           @default(false)
+  historical_awards     historical_awards @relation(fields: [award_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([award_id], map: "idx_award_bidders_award")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_activity_logs {
+  id               BigInt           @id @default(autoincrement())
+  case_id          Int
+  user_id          Int?
+  user_name        String
+  action           String
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?           @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_case_children_log")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_analyst_notes {
+  id               Int              @id @default(autoincrement())
+  case_id          Int
+  author_id        Int?
+  note_text        String
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  users            users?           @relation(fields: [author_id], references: [id], onUpdate: NoAction)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_documents {
+  id               Int              @id @default(autoincrement())
+  case_id          Int
+  slot             String           @default("other")
+  name             String
+  size_bytes       BigInt?
+  mime_type        String?
+  storage_key      String
+  visibility       String           @default("internal_only")
+  uploaded_by      Int?
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?           @relation(fields: [uploaded_by], references: [id], onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_case_children_docs")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_emd_tracking {
+  id                Int              @id @default(autoincrement())
+  case_id           Int
+  instrument_type   String?
+  issuing_bank      String?
+  instrument_number String?
+  amount            Decimal?         @db.Decimal(18, 2)
+  valid_till        DateTime?        @db.Date
+  refund_status     String           @default("Pending")
+  updated_at        DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases  submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_emd_case")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_followups {
+  id               Int              @id @default(autoincrement())
+  case_id          Int
+  kind             String
+  status           String           @default("pending")
+  due_date         DateTime?        @db.Date
+  amount           Decimal?         @db.Decimal(18, 2)
+  reference        String?
+  note             String?
+  completed_at     DateTime?        @db.Timestamptz(6)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_followups_case")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_internal {
+  case_id            Int              @id
+  financial_strategy String?
+  rate_analysis      Json?
+  margin_notes       String?
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases   submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_prebid_queries {
+  id                  Int              @id @default(autoincrement())
+  case_id             Int
+  query_text          String
+  raised_at           DateTime         @default(now()) @db.Timestamptz(6)
+  department_response String?
+  responded_at        DateTime?        @db.Timestamptz(6)
+  submission_cases    submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_prebid_case")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_reminders {
+  id               BigInt           @id @default(autoincrement())
+  case_id          Int
+  kind             String
+  ref              String           @default("")
+  sent_at          DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([case_id, kind, ref])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_results {
+  case_id          Int              @id
+  technical_status String?
+  financial_status String?
+  outcome          String           @default("pending")
+  our_amount       Decimal?         @db.Decimal(18, 2)
+  l1_amount        Decimal?         @db.Decimal(18, 2)
+  result_date      DateTime?        @db.Date
+  remarks          String?
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model case_submissions {
+  case_id          Int              @id
+  mode             String
+  portal_reference String?
+  courier_name     String?
+  tracking_number  String?
+  submitted_at     DateTime         @default(now()) @db.Timestamptz(6)
+  submitted_by     Int?
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?           @relation(fields: [submitted_by], references: [id], onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cities {
+  id       Int       @id @default(autoincrement())
+  state_id Int
+  name     String
+  states   states    @relation(fields: [state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenders  tenders[]
+
+  @@unique([state_id, name])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model departments {
+  id                Int                 @id @default(autoincrement())
+  slug              String              @unique
+  name              String
+  name_hi           String?
+  tier              String              @default("Central")
+  aliases           String[]            @default([])
+  is_active         Boolean             @default(true)
+  historical_awards historical_awards[]
+  tenders           tenders[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_bounce_records {
+  id              Int      @id @default(autoincrement())
+  recipient_email String
+  bounce_type     String
+  raw_diagnostic  String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([recipient_email], map: "idx_bounces_recipient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_delivery_logs {
+  id            BigInt      @id @default(autoincrement())
+  email_id      BigInt
+  response_code Int?
+  outcome       String
+  detail        String?
+  latency_ms    Int?
+  attempted_at  DateTime    @default(now()) @db.Timestamptz(6)
+  email_queue   email_queue @relation(fields: [email_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_queue {
+  id                  BigInt                @id @default(autoincrement())
+  organization_id     Int?
+  kind                String
+  recipient           String
+  subject             String
+  html_body           String
+  profile_name        String?
+  tenders_count       Int                   @default(0)
+  digest_id           Int?
+  status              String                @default("queued")
+  idempotency_key     String                @unique
+  attempts            Int                   @default(0)
+  max_attempts        Int                   @default(5)
+  next_attempt_at     DateTime              @default(now()) @db.Timestamptz(6)
+  last_error          String?
+  graph_message_id    String?
+  sent_at             DateTime?             @db.Timestamptz(6)
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  email_delivery_logs email_delivery_logs[]
+  alert_digests       alert_digests?        @relation(fields: [digest_id], references: [id], onUpdate: NoAction)
+  organizations       organizations?        @relation(fields: [organization_id], references: [id], onUpdate: NoAction)
+
+  @@index([status, next_attempt_at], map: "idx_email_queue_due")
+  @@index([organization_id, created_at(sort: Desc)], map: "idx_email_queue_org")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model enquiries {
+  id                     Int                 @id @default(autoincrement())
+  name                   String
+  company                String
+  phone                  String?
+  email                  String
+  service                String?
+  message                String?
+  language               String              @default("EN")
+  ip_address             String?
+  status                 String              @default("New")
+  consent_timestamp      DateTime            @default(now()) @db.Timestamptz(6)
+  privacy_notice_version String              @default("v2026.1")
+  created_at             DateTime            @default(now()) @db.Timestamptz(6)
+  enquiry_followups      enquiry_followups[]
+
+  @@index([status, created_at(sort: Desc)], map: "idx_enquiries_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model enquiry_followups {
+  id            Int       @id @default(autoincrement())
+  enquiry_id    Int
+  assigned_to   Int?
+  notes         String
+  followup_date DateTime? @db.Date
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  users         users?    @relation(fields: [assigned_to], references: [id], onUpdate: NoAction)
+  enquiries     enquiries @relation(fields: [enquiry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model historical_awards {
+  id                BigInt             @id @default(autoincrement())
+  provider          String
+  source_id         String
+  tender_id         BigInt?
+  tender_ref        String?
+  tender_title      String
+  department        String?
+  department_id     Int?
+  category          String?
+  category_id       Int?
+  state             String?
+  state_id          Int?
+  city              String?
+  estimated_value   Decimal?           @db.Decimal(18, 2)
+  awarded_value     Decimal?           @db.Decimal(18, 2)
+  winner_name       String?
+  l1_amount         Decimal?           @db.Decimal(18, 2)
+  l2_bidder_name    String?
+  l2_amount         Decimal?           @db.Decimal(18, 2)
+  rate_status       String             @default("not_published")
+  item_name         String?
+  unit              String?
+  unit_rate         Decimal?           @db.Decimal(18, 2)
+  bidder_count      Int?
+  qualified_count   Int?
+  award_date        DateTime?          @db.Date
+  work_order_ref    String?
+  source_portal     String?
+  created_at        DateTime           @default(now()) @db.Timestamptz(6)
+  source_tender_ref String?
+  award_bidders     award_bidders[]
+  tender_categories tender_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  departments       departments?       @relation(fields: [department_id], references: [id], onUpdate: NoAction)
+  states            states?            @relation(fields: [state_id], references: [id], onUpdate: NoAction)
+  tenders           tenders?           @relation(fields: [tender_id], references: [id], onUpdate: NoAction)
+
+  @@unique([provider, source_id])
+  @@index([category_id], map: "idx_awards_category")
+  @@index([award_date(sort: Desc)], map: "idx_awards_date")
+  @@index([department_id], map: "idx_awards_dept")
+  @@index([department_id, award_date(sort: Desc)], map: "idx_awards_dept_date")
+  @@index([source_tender_ref], map: "idx_awards_source_tender_ref")
+  @@index([state_id], map: "idx_awards_state")
+  @@index([winner_name], map: "idx_awards_winner")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_runs {
+  id            Int       @id @default(autoincrement())
+  provider_id   String
+  kind          String
+  trigger       String
+  status        String    @default("running")
+  params        Json?
+  fetched       Int       @default(0)
+  inserted      Int       @default(0)
+  updated       Int       @default(0)
+  skipped       Int       @default(0)
+  errors        Int       @default(0)
+  error_message String?
+  health        Json?
+  started_at    DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at   DateTime? @db.Timestamptz(6)
+  warnings      Json      @default("[]")
+  providers     providers @relation(fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([provider_id, kind, started_at(sort: Desc)], map: "idx_ingestion_runs_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model job_runs {
+  id          BigInt    @id @default(autoincrement())
+  job         String
+  trigger     String    @default("schedule")
+  status      String    @default("running")
+  detail      Json?
+  error       String?
+  started_at  DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at DateTime? @db.Timestamptz(6)
+
+  @@index([job, started_at(sort: Desc)], map: "idx_job_runs_job_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model master_suggestions {
+  id            Int      @id @default(autoincrement())
+  kind          String
+  raw_value     String
+  provider_id   String?
+  seen_count    Int      @default(1)
+  status        String   @default("open")
+  mapped_to_id  Int?
+  first_seen_at DateTime @default(now()) @db.Timestamptz(6)
+  last_seen_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([kind, raw_value])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model organizations {
+  id                  Int                 @id @default(autoincrement())
+  name                String
+  domain              String?
+  gstin               String?
+  contact_name        String?
+  contact_phone       String?
+  plan_id             Int?
+  alert_cap_override  Int?
+  seat_limit_override Int?
+  status              String              @default("Active")
+  is_staff_org        Boolean             @default(false)
+  language            String              @default("EN")
+  timezone            String              @default("Asia/Kolkata")
+  created_at          DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime            @default(now()) @db.Timestamptz(6)
+  alert_digests       alert_digests[]
+  alert_profiles      alert_profiles[]
+  email_queue         email_queue[]
+  plans               plans?              @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  privacy_requests    privacy_requests[]
+  report_bundles      report_bundles[]
+  report_downloads    report_downloads[]
+  saved_searches      saved_searches[]
+  search_query_logs   search_query_logs[]
+  submission_cases    submission_cases[]
+  user_sessions       user_sessions[]
+  users               users[]
+  watchlist_items     watchlist_items[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model password_reset_tokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model plans {
+  id                 Int             @id @default(autoincrement())
+  code               String          @unique
+  name               String
+  daily_alert_cap    Int
+  max_seats          Int             @default(3)
+  max_alert_profiles Int             @default(5)
+  is_active          Boolean         @default(true)
+  sort_order         Int             @default(0)
+  organizations      organizations[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model privacy_requests {
+  id              Int           @id @default(autoincrement())
+  organization_id Int
+  user_id         Int
+  request_type    String
+  status          String        @default("Pending")
+  requested_at    DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at    DateTime?     @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model providers {
+  id                     String           @id
+  name                   String
+  type                   String
+  base_url               String?
+  status                 String           @default("Active")
+  sync_frequency_minutes Int              @default(120)
+  min_expected_records   Int              @default(1)
+  last_success_at        DateTime?        @db.Timestamptz(6)
+  ingestion_runs         ingestion_runs[]
+  tenders                tenders[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model raw_tender_payloads {
+  id          BigInt   @id @default(autoincrement())
+  provider    String
+  kind        String   @default("tender")
+  source_id   String
+  raw_json    Json
+  checksum    String
+  ingested_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([provider, kind, source_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model report_bundles {
+  id               Int                @id @default(autoincrement())
+  organization_id  Int
+  period_start     DateTime           @db.Date
+  period_end       DateTime           @db.Date
+  title            String
+  status           String             @default("generated")
+  snapshot         Json?
+  pdf_key          String?
+  xlsx_key         String?
+  size_bytes       BigInt?
+  generated_at     DateTime           @default(now()) @db.Timestamptz(6)
+  organizations    organizations      @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  report_downloads report_downloads[]
+
+  @@unique([organization_id, period_start])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model report_downloads {
+  id              BigInt         @id @default(autoincrement())
+  bundle_id       Int
+  organization_id Int
+  user_id         Int?
+  format          String
+  downloaded_at   DateTime       @default(now()) @db.Timestamptz(6)
+  report_bundles  report_bundles @relation(fields: [bundle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations   organizations  @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users?         @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model report_releases {
+  id                  Int      @id @default(autoincrement())
+  organization_id     Int
+  bundle_id           Int
+  bundle_title        String
+  scope               String
+  plan_code           String?
+  released_by_user_id Int?
+  released_by_name    String?
+  released_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([organization_id, bundle_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model saved_searches {
+  id              Int           @id @default(autoincrement())
+  organization_id Int
+  user_id         Int
+  name            String
+  query_params    Json
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([organization_id], map: "idx_saved_searches_org")
+}
+
+model schema_migrations {
+  version    String   @id
+  name       String
+  checksum   String
+  applied_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model search_query_logs {
+  id              BigInt        @id @default(autoincrement())
+  organization_id Int
+  user_id         Int?
+  query_text      String?
+  filters_applied Json?
+  results_count   Int?
+  latency_ms      Int?
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users?        @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model states {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  name_hi           String?
+  code              String?
+  aliases           String[]            @default([])
+  cities            cities[]
+  historical_awards historical_awards[]
+  tenders           tenders[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model submission_case_checklists {
+  id               Int              @id @default(autoincrement())
+  case_id          Int
+  kind             String
+  label            String
+  status           String           @default("pending")
+  note             String?
+  updated_by       Int?
+  updated_at       DateTime         @default(now()) @db.Timestamptz(6)
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?           @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_checklists_case")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model submission_case_stages {
+  id               Int              @id @default(autoincrement())
+  case_id          Int
+  stage            String
+  entered_at       DateTime         @default(now()) @db.Timestamptz(6)
+  completed_at     DateTime?        @db.Timestamptz(6)
+  moved_by         Int?
+  submission_cases submission_cases @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?           @relation(fields: [moved_by], references: [id], onUpdate: NoAction)
+
+  @@index([case_id], map: "idx_stages_case")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model submission_cases {
+  id                                         Int                          @id @default(autoincrement())
+  organization_id                            Int
+  tender_id                                  BigInt?
+  tender_ref                                 String?
+  tender_title                               String
+  department                                 String?
+  client_name                                String
+  requested_by                               Int?
+  assigned_to                                Int?
+  assigned_name                              String?
+  stage                                      String                       @default("intake")
+  deadline                                   DateTime?                    @db.Timestamptz(6)
+  estimated_value                            Decimal?                     @db.Decimal(18, 2)
+  emd_amount                                 Decimal?                     @db.Decimal(18, 2)
+  client_summary                             String?
+  outcome                                    String                       @default("pending")
+  created_at                                 DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                 DateTime                     @default(now()) @db.Timestamptz(6)
+  closed_at                                  DateTime?                    @db.Timestamptz(6)
+  request_note                               String?
+  sla_note                                   String?
+  case_activity_logs                         case_activity_logs[]
+  case_analyst_notes                         case_analyst_notes[]
+  case_documents                             case_documents[]
+  case_emd_tracking                          case_emd_tracking[]
+  case_followups                             case_followups[]
+  case_internal                              case_internal?
+  case_prebid_queries                        case_prebid_queries[]
+  case_reminders                             case_reminders[]
+  case_results                               case_results?
+  case_submissions                           case_submissions?
+  submission_case_checklists                 submission_case_checklists[]
+  submission_case_stages                     submission_case_stages[]
+  users_submission_cases_assigned_toTousers  users?                       @relation("submission_cases_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  organizations                              organizations                @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_submission_cases_requested_byTousers users?                       @relation("submission_cases_requested_byTousers", fields: [requested_by], references: [id], onUpdate: NoAction)
+  tenders                                    tenders?                     @relation(fields: [tender_id], references: [id], onUpdate: NoAction)
+
+  @@unique([organization_id, tender_id], map: "uq_open_case_per_tender", where: raw("((tender_id IS NOT NULL) AND (stage <> 'closed'::text))"))
+  @@index([assigned_to], map: "idx_cases_assigned", where: raw("(stage <> 'closed'::text)"))
+  @@index([organization_id], map: "idx_cases_org")
+  @@index([stage], map: "idx_cases_stage")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model system_config {
+  key         String   @id
+  value       Json
+  description String?
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tender_boq_items {
+  id             Int      @id @default(autoincrement())
+  tender_id      BigInt
+  item_code      String?
+  item_name      String
+  quantity       Decimal? @db.Decimal(18, 3)
+  unit           String?
+  estimated_rate Decimal? @db.Decimal(18, 2)
+  total_amount   Decimal? @db.Decimal(18, 2)
+  tenders        tenders  @relation(fields: [tender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tender_id], map: "idx_tender_boq_tender")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tender_categories {
+  id                Int                 @id @default(autoincrement())
+  slug              String              @unique
+  name              String
+  name_hi           String?
+  aliases           String[]            @default([])
+  is_active         Boolean             @default(true)
+  historical_awards historical_awards[]
+  tenders           tenders[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tender_corrigenda {
+  id                 Int      @id @default(autoincrement())
+  tender_id          BigInt
+  corrigendum_number String
+  subject            String
+  issue_date         DateTime @db.Date
+  attachment_url     String?
+  tenders            tenders  @relation(fields: [tender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tender_documents {
+  id          Int      @id @default(autoincrement())
+  tender_id   BigInt
+  name        String
+  doc_type    String?
+  size_label  String?
+  url         String?
+  external_id String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  tenders     tenders  @relation(fields: [tender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tender_id], map: "idx_tender_docs_tender")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tenders {
+  id                  BigInt                   @id @default(autoincrement())
+  provider_id         String
+  source_id           String
+  source_url          String?
+  title               String
+  description         String?
+  department          String?
+  department_id       Int?
+  category            String?
+  category_id         Int?
+  state               String?
+  state_id            Int?
+  city                String?
+  city_id             Int?
+  org_type            String?
+  tender_type         String?
+  estimated_value     Decimal?                 @db.Decimal(18, 2)
+  emd_amount          Decimal?                 @db.Decimal(18, 2)
+  emd_status          String                   @default("not_published")
+  tender_fee          Decimal?                 @db.Decimal(18, 2)
+  publish_date        DateTime?                @db.Timestamptz(6)
+  prebid_date         DateTime?                @db.Timestamptz(6)
+  submission_deadline DateTime?                @db.Timestamptz(6)
+  opening_date        DateTime?                @db.Timestamptz(6)
+  status              String                   @default("Open")
+  has_boq             Boolean                  @default(false)
+  has_documents       Boolean                  @default(false)
+  eligibility_summary String?
+  payment_terms       String?
+  delivery_terms      String?
+  penalty_terms       String?
+  boq_text            String?
+  payload_checksum    String?
+  title_tsv           Unsupported("tsvector")?
+  desc_tsv            Unsupported("tsvector")?
+  boq_tsv             Unsupported("tsvector")?
+  last_source_update  DateTime                 @default(now()) @db.Timestamptz(6)
+  created_at          DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                 @default(now()) @db.Timestamptz(6)
+  tender_no           String?
+  alert_digest_items  alert_digest_items[]
+  historical_awards   historical_awards[]
+  submission_cases    submission_cases[]
+  tender_boq_items    tender_boq_items[]
+  tender_corrigenda   tender_corrigenda[]
+  tender_documents    tender_documents[]
+  tender_categories   tender_categories?       @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  cities              cities?                  @relation(fields: [city_id], references: [id], onUpdate: NoAction)
+  departments         departments?             @relation(fields: [department_id], references: [id], onUpdate: NoAction)
+  providers           providers                @relation(fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  states              states?                  @relation(fields: [state_id], references: [id], onUpdate: NoAction)
+  watchlist_items     watchlist_items[]
+
+  @@unique([provider_id, source_id])
+  @@index([boq_tsv], map: "idx_tenders_boq_tsv", type: Gin)
+  @@index([category_id], map: "idx_tenders_category")
+  @@index([submission_deadline], map: "idx_tenders_deadline")
+  @@index([department_id], map: "idx_tenders_dept")
+  @@index([desc_tsv], map: "idx_tenders_desc_tsv", type: Gin)
+  @@index([publish_date(sort: Desc)], map: "idx_tenders_publish")
+  @@index([state_id], map: "idx_tenders_state")
+  @@index([tender_no], map: "idx_tenders_tender_no")
+  @@index([title_tsv], map: "idx_tenders_title_tsv", type: Gin)
+  @@index([estimated_value], map: "idx_tenders_value")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_credentials {
+  user_id             Int       @id
+  password_hash       String
+  password_changed_at DateTime  @default(now()) @db.Timestamptz(6)
+  failed_login_count  Int       @default(0)
+  locked_until        DateTime? @db.Timestamptz(6)
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_sessions {
+  id              String        @id
+  user_id         Int
+  organization_id Int
+  ip_address      String?
+  user_agent      String?
+  csrf_secret     String
+  expires_at      DateTime      @db.Timestamptz(6)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  last_seen_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "idx_sessions_expiry")
+  @@index([user_id], map: "idx_sessions_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id                                                    Int                          @id @default(autoincrement())
+  organization_id                                       Int
+  name                                                  String
+  email                                                 String                       @unique(map: "uq_users_email")
+  phone                                                 String?
+  role                                                  String                       @default("subscriber")
+  is_active                                             Boolean                      @default(true)
+  language                                              String                       @default("EN")
+  consent_timestamp                                     DateTime                     @default(now()) @db.Timestamptz(6)
+  privacy_notice_version                                String                       @default("v2026.1")
+  last_login_at                                         DateTime?                    @db.Timestamptz(6)
+  created_at                                            DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                            DateTime                     @default(now()) @db.Timestamptz(6)
+  alert_profiles                                        alert_profiles[]
+  case_activity_logs                                    case_activity_logs[]
+  case_analyst_notes                                    case_analyst_notes[]
+  case_documents                                        case_documents[]
+  case_submissions                                      case_submissions[]
+  enquiry_followups                                     enquiry_followups[]
+  password_reset_tokens                                 password_reset_tokens[]
+  privacy_requests                                      privacy_requests[]
+  report_downloads                                      report_downloads[]
+  saved_searches                                        saved_searches[]
+  search_query_logs                                     search_query_logs[]
+  submission_case_checklists                            submission_case_checklists[]
+  submission_case_stages                                submission_case_stages[]
+  submission_cases_submission_cases_assigned_toTousers  submission_cases[]           @relation("submission_cases_assigned_toTousers")
+  submission_cases_submission_cases_requested_byTousers submission_cases[]           @relation("submission_cases_requested_byTousers")
+  user_credentials                                      user_credentials?
+  user_sessions                                         user_sessions[]
+  organizations                                         organizations                @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  watchlist_items                                       watchlist_items[]
+
+  @@index([organization_id], map: "idx_users_org")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model watchlist_items {
+  id                  Int                   @id @default(autoincrement())
+  organization_id     Int
+  user_id             Int
+  tender_id           BigInt
+  notes               String?
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  organizations       organizations         @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenders             tenders               @relation(fields: [tender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  watchlist_reminders watchlist_reminders[]
+
+  @@unique([user_id, tender_id])
+  @@index([organization_id], map: "idx_watchlist_org")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model watchlist_reminders {
+  id                Int             @id @default(autoincrement())
+  watchlist_item_id Int
+  kind              String
+  sent_at           DateTime        @default(now()) @db.Timestamptz(6)
+  watchlist_items   watchlist_items @relation(fields: [watchlist_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([watchlist_item_id, kind])
+}

@@ -14,12 +14,22 @@ ARG SITE_URL=https://procure-brain.com
 ENV SITE_URL=$SITE_URL
 RUN npm run build
 
-# ---- 2. API + built website -----------------------------------------------------------------
+# ---- 2. Generate the platform-independent Prisma client --------------------------------------
+FROM node:22-alpine AS api-build
+WORKDIR /app/backend
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY backend/prisma ./prisma
+COPY backend/prisma.config.mjs ./
+RUN npm run db:generate && npm prune --omit=dev --ignore-scripts && node -e "require('@prisma/client').PrismaClient"
+
+# ---- 3. API + built website -----------------------------------------------------------------
 FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /app/backend
-COPY backend/package.json backend/package-lock.json ./
-RUN npm ci --omit=dev
+COPY --from=api-build /app/backend/package.json /app/backend/package-lock.json ./
+COPY --from=api-build /app/backend/node_modules ./node_modules
+COPY backend/prisma ./prisma
 COPY backend/migrations ./migrations
 COPY backend/seed ./seed
 COPY backend/src ./src

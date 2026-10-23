@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "test": "npm test --prefix backend",
     "migrate": "npm run migrate --prefix backend",
+    "db:generate": "npm run db:generate --prefix backend",
+    "db:validate": "npm run db:validate --prefix backend",
     "seed": "npm run seed --prefix backend",
     "postinstall": "npm install --prefix backend"
   },

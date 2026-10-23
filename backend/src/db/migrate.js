@@ -48,7 +48,11 @@ async function configureAppRole(admin, password) {
  * @returns {Promise<{applied: string[], upToDate: boolean}>}
  */
 export async function migrate(db, { dir = MIGRATIONS_DIR, appPassword = config.db.appPassword } = {}) {
-  const { admin } = db;
+  const run = (admin) => migrateConnection(admin, { dir, appPassword });
+  return db.admin.withConnection ? db.admin.withConnection(run) : run(db.admin);
+}
+
+async function migrateConnection(admin, { dir, appPassword }) {
   // Hindi text, firm names and tender titles need a UTF-8 database; refuse to run on anything else.
   const encoding = (await admin.query('SHOW server_encoding')).rows[0]?.server_encoding;
   if (encoding && encoding.toUpperCase() !== 'UTF8') {

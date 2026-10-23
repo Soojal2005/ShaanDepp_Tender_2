@@ -16,7 +16,7 @@ Data honesty is a design rule: a figure the source did not publish is shown as "
 
 ## Run it on your machine
 
-Needs **Node 20.12 or later** (Node 22 recommended). No database to install: development uses an embedded PostgreSQL (PGlite) with the same SQL as production.
+Needs **Node 20.19+ or Node 22.12+** (Node 22 recommended). No database to install: development uses an embedded PostgreSQL (PGlite) with the same SQL as production. Prisma Client is generated automatically during installation.
 
 ```bash
 npm install              # installs the website and the API
@@ -46,6 +46,8 @@ Email is in **dry-run** mode: messages are saved as HTML files in `backend/var/o
 | `npm run build` | Builds the website into `dist/` (and regenerates `sitemap.xml` and `robots.txt`) |
 | `npm test` | The API's test suite (see below) |
 | `npm run migrate` | Applies database migrations |
+| `npm run db:generate` / `npm run db:validate` | Generate the Prisma client / validate its schema without a database connection |
+| `npm run db:schema --prefix backend` | Regenerates `backend/prisma/schema.prisma` and the Prisma client from the migrations (needs `PRISMA_SYNC_PG_URL`, an owner URL with CREATE DATABASE/ROLE privileges; uses a scratch database). Run after every new migration. `db:schema:check` fails if it is stale |
 | `npm run seed` | Master lists and the first admin from `BOOTSTRAP_ADMIN_*` (`npm run seed:demo --prefix backend` adds sample data) |
 
 ## Tests
@@ -76,6 +78,7 @@ docs/           deployment, Microsoft 365, DNS, admin, operations, client inputs
 ## Documentation
 
 - [Deploying to a server](docs/DEPLOYMENT.md)
+- [Prisma on AWS RDS/Aurora or Supabase](docs/PRISMA_DEPLOYMENT.md)
 - [Sending email through Microsoft 365](docs/AZURE_M365_SETUP.md)
 - [DNS: website, SPF, DKIM, DMARC](docs/DNS_SPF_DKIM_DMARC.md)
 - [Administrator guide](docs/ADMIN_GUIDE.md)

@@ -10,6 +10,9 @@
 import fs from 'node:fs';
 import pg from 'pg';
 import { PGlite } from '@electric-sql/pglite';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { config } from '../config.js';
 
 const OID_INT8 = 20;
@@ -94,24 +97,53 @@ async function applyContext(tx, ctx) {
 async function createPglite(options) {
   if (options.pgliteDir !== 'memory://') fs.mkdirSync(options.pgliteDir, { recursive: true });
   const engine = await PGlite.create({ dataDir: options.pgliteDir, parsers: PGLITE_PARSERS });
+  const prisma = new PrismaClient({ adapter: new PrismaPGlite(engine) });
   return {
     kind: 'pglite',
+    prisma,
     async transaction(fn) {
       return engine.transaction((tx) => fn(tx));
     },
     exec: (sql) => engine.exec(sql),
     query: (sql, params) => engine.query(sql, params),
-    close: () => engine.close(),
+    close: async () => { await prisma.$disconnect(); await engine.close(); },
   };
 }
 
 async function createPg(options) {
-  const runtime = new pg.Pool({ connectionString: options.url, max: 10 });
+  const poolOptions = {
+    connectionTimeoutMillis: options.connectTimeoutMs ?? 10000,
+    idleTimeoutMillis: options.idleTimeoutMs ?? 30000,
+  };
+  const connectionOptions = (url) => {
+    if (!options.sslCaFile) return { connectionString: url };
+    // pg URL SSL options override the explicit ssl object; remove them when using a CA file.
+    const connection = new URL(url);
+    for (const key of ['sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'ssl']) connection.searchParams.delete(key);
+    return {
+      connectionString: connection.toString(),
+      ssl: { ca: fs.readFileSync(options.sslCaFile, 'utf8'), rejectUnauthorized: true },
+    };
+  };
+  const runtime = new pg.Pool({ ...poolOptions, ...connectionOptions(options.url), max: options.poolMax ?? 10 });
+  const prisma = new PrismaClient({ adapter: new PrismaPg(runtime) });
   const migration = options.migrationUrl === options.url
     ? runtime
-    : new pg.Pool({ connectionString: options.migrationUrl, max: 2 });
+    : new pg.Pool({ ...poolOptions, ...connectionOptions(options.migrationUrl || options.url), max: 2 });
   return {
     kind: 'pg',
+    prisma,
+    async withAdminConnection(fn) {
+      const client = await migration.connect();
+      try {
+        // Session lock serializes migration runners from concurrent deployments.
+        await client.query('SELECT pg_advisory_lock(734021, 1)');
+        return await fn({ exec: (sql) => client.query(sql), query: (sql, params) => client.query(sql, params) });
+      } finally {
+        await client.query('SELECT pg_advisory_unlock(734021, 1)').catch(() => {});
+        client.release();
+      }
+    },
     async transaction(fn) {
       const client = await runtime.connect();
       try {
@@ -129,6 +161,7 @@ async function createPg(options) {
     exec: (sql) => migration.query(sql),
     query: (sql, params) => migration.query(sql, params),
     close: async () => {
+      await prisma.$disconnect();
       await runtime.end();
       if (migration !== runtime) await migration.end();
     },
@@ -143,8 +176,21 @@ export async function createDatabase(options = config.db) {
 
   return {
     kind: engine.kind,
-    /** Superuser-level access for migrations and role bootstrap only. */
-    admin: { exec: engine.exec, query: engine.query },
+    /** Database-owner access for migrations and role bootstrap only. */
+    admin: { exec: engine.exec, query: engine.query, withConnection: engine.withAdminConnection },
+
+    /** Prisma model queries use the same forced RLS and transaction-local context as SQL. */
+    async withPrismaContext(ctx, fn) {
+      assertContext(ctx);
+      return engine.prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe('SET LOCAL ROLE app_api_user');
+        await tx.$queryRaw`
+          SELECT set_config('app.current_organization_id', ${ctx.orgId == null ? '' : String(ctx.orgId)}, true),
+                 set_config('app.actor_scope', ${ctx.scope}, true),
+                 set_config('app.current_user_id', ${ctx.userId == null ? '' : String(ctx.userId)}, true)`;
+        return fn(tx);
+      }, { maxWait: options.connectTimeoutMs ?? 10000, timeout: options.transactionTimeoutMs ?? 120000 });
+    },
 
     /**
      * Run fn(q) in one transaction under the given request context.
@@ -159,8 +205,11 @@ export async function createDatabase(options = config.db) {
     },
 
     async health() {
-      const { rows } = await engine.query('SELECT 1 AS ok');
-      return rows[0]?.ok === 1;
+      // Probe the runtime credentials and Prisma path, never the migration connection.
+      return this.withPrismaContext({ scope: 'system' }, async (tx) => {
+        const rows = await tx.$queryRaw`SELECT 1 AS ok`;
+        return rows[0]?.ok === 1;
+      });
     },
 
     close: () => engine.close(),

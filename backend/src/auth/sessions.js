@@ -29,40 +29,34 @@ export async function createSession(q, { userId, orgId, ip, userAgent }) {
 /** Resolve a cookie token to the signed-in identity, or null. */
 export async function loadSession(db, token) {
   if (!token || typeof token !== 'string' || token.length > 200) return null;
-  return db.withContext({ scope: 'system' }, async (q) => {
-    const row = await q.maybeOne(
-      `SELECT s.id AS session_id, s.csrf_secret, s.expires_at, s.last_seen_at,
-              u.id AS user_id, u.organization_id, u.name, u.email, u.phone, u.role, u.language, u.is_active,
-              o.name AS org_name, o.status AS org_status, o.is_staff_org,
-              p.code AS plan_code, p.name AS plan_name
-         FROM user_sessions s
-         JOIN users u ON u.id = s.user_id
-         JOIN organizations o ON o.id = u.organization_id
-         LEFT JOIN plans p ON p.id = o.plan_id
-        WHERE s.id = $1 AND s.expires_at > now()`,
-      [hashToken(token)]
-    );
-    if (!row || !row.is_active || row.org_status !== 'Active') return null;
+  return db.withPrismaContext({ scope: 'system' }, async (tx) => {
+    const row = await tx.user_sessions.findFirst({
+      where: { id: hashToken(token), expires_at: { gt: new Date() } },
+      include: { users: { include: { organizations: { include: { plans: true } } } } },
+    });
+    if (!row || !row.users.is_active || row.users.organizations.status !== 'Active') return null;
+    const user = row.users;
+    const org = user.organizations;
 
     if (Date.now() - new Date(row.last_seen_at).getTime() > TOUCH_AFTER_MS) {
-      await q.query('UPDATE user_sessions SET last_seen_at = now() WHERE id = $1', [row.session_id]);
+      await tx.user_sessions.update({ where: { id: row.id }, data: { last_seen_at: new Date() } });
     }
     return {
-      sessionId: row.session_id,
+      sessionId: row.id,
       csrfToken: row.csrf_secret,
       expiresAt: row.expires_at,
       user: {
-        id: row.user_id,
-        orgId: row.organization_id,
-        name: row.name,
-        email: row.email,
-        phone: row.phone,
-        role: row.role,
-        language: row.language,
-        isStaff: isStaffRole(row.role),
-        orgName: row.org_name,
-        planCode: row.plan_code,
-        planName: row.plan_name,
+        id: user.id,
+        orgId: user.organization_id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        language: user.language,
+        isStaff: isStaffRole(user.role),
+        orgName: org.name,
+        planCode: org.plans?.code ?? null,
+        planName: org.plans?.name ?? null,
       },
     };
   });

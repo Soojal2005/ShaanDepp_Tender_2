@@ -16,7 +16,7 @@ All seven modules of the signed proposal (A to G) are built, tested and document
 | F. Submission desk | Done | 9 stages, checklists, vault, pre-bid, EMD, follow-ups, client tracker, dashboard, reminders |
 | G. Website (EN/HI) | Done | 8 groups, 81 service pages, enquiries to the admin inbox. Hindi is a draft; contact details are placeholders |
 
-Test status: 308 API tests pass on both the embedded database and real PostgreSQL; 189 browser checks pass. Details and the honest list of what was **not** tested: [TEST_REPORT.md](TEST_REPORT.md).
+Test status: 319 API tests discovered; 316 pass on the embedded database and three PostgreSQL-only checks are skipped there. The Prisma login, tenant isolation and schema check also pass on disposable real PostgreSQL. The prior 189 browser checks are documented in [TEST_REPORT.md](TEST_REPORT.md); they were not rerun for this database change.
 
 ## 2. Where things are
 
@@ -33,7 +33,7 @@ backend/src/
   jobs/              scheduler and job definitions
   auth/              sessions, permissions table, middleware
   db/                driver for PGlite and PostgreSQL, migrations runner, seeds
-backend/migrations/  forward-only SQL, 001 to 007
+backend/migrations/  forward-only SQL, 001 to 008
 backend/test/        308 tests (node:test + supertest)
 e2e/                 browser tests (Playwright)
 deploy/ + Dockerfile + docker-compose.prod.yml   production stack
@@ -99,7 +99,7 @@ The full list with owners is [CLIENT_INPUTS_CHECKLIST.md](CLIENT_INPUTS_CHECKLIS
 | Alert scoring weights | `backend/src/services/alerts/ranking.js` (title keyword 30, category 25, description/BOQ 15, department 15, freshness 15) |
 | A schedule | `backend/src/jobs/definitions.js` |
 | Default case checklists | `ELIGIBILITY_DEFAULTS` and `TECHNICAL_DEFAULTS` in `backend/src/services/cases.js` |
-| Database structure | A new numbered file in `backend/migrations/`, plus a test; never edit an old one |
+| Database structure | A new numbered file in `backend/migrations/`, plus a test; never edit an old one. Then run `npm run db:schema --prefix backend` to update `backend/prisma/schema.prisma` (generated; never edit by hand). SQL migrations, roles and row-level security stay authoritative. Model operations use `withPrismaContext()`; SQL uses `withContext()`, both with forced RLS. The schema check runs in the real-PostgreSQL test run (`TEST_PG_URL`). See [Prisma deployment](PRISMA_DEPLOYMENT.md) for AWS/Supabase connections and release steps. |
 | Who can do what | `backend/src/auth/permissions.js` and its mirror in `src/auth/AuthContext.jsx`; add a test in `rls.test.js` or the area's file |
 
 ## 9. Suggested next steps

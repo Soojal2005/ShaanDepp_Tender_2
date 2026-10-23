@@ -51,6 +51,9 @@ export function csrfProtect({ exempt = [] } = {}) {
 /** Run fn(q) under the signed-in user's own database context (tenant or staff). */
 export const withUserDb = (req, fn) => req.app.locals.db.withContext(contextFor(req.auth.user), fn);
 
+/** Run Prisma model operations with the same verified user context and RLS. */
+export const withUserPrisma = (req, fn) => req.app.locals.db.withPrismaContext(contextFor(req.auth.user), fn);
+
 /**
  * Run fn(q) with full (system) scope. Only call this AFTER the route has
  * authorised the action and bound every query to the caller's organization.

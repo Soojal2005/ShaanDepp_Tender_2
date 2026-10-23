@@ -65,7 +65,7 @@ Migrations run automatically at start and are forward-only. A migration that was
 
 ## Running without Docker
 
-You can also run the API directly (`node backend/src/server.js`) behind your own reverse proxy: Node 20.12 or later, PostgreSQL 15 or later with a **UTF-8** database, and the website built with `npm run build` (the API serves the `dist` folder). The environment variables are the same as in `deploy/production.env.example`; also set `NODE_ENV=production`, `DATABASE_URL` (the restricted `app_api_user` login) and `MIGRATION_DATABASE_URL` (the database owner).
+You can also run the API directly (`node backend/src/server.js`) behind your own reverse proxy: Node 20.19+/22.12+, PostgreSQL 15 or later with a **UTF-8** database, and the website built with `npm run build` (the API serves the `dist` folder). The environment variables are the same as in `deploy/production.env.example`; also set `NODE_ENV=production`, `DATABASE_URL` (the restricted `app_api_user` login) and `MIGRATION_DATABASE_URL` (the database owner). For RDS/Aurora or Supabase PostgreSQL, use the [managed database guide](PRISMA_DEPLOYMENT.md).
 
 ## Database notes
 
