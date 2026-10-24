@@ -28,6 +28,13 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = 
   const [form, setForm] = useState(blank);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
+  const nameValid = form.name.trim().length >= 2;
+  const companyValid = form.company.trim().length >= 2;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+  const canSubmit = nameValid && companyValid && emailValid && form.consent;
+  const formHint = !nameValid || !companyValid ? t('site.f.needDetails')
+    : !emailValid ? t('site.f.needEmail')
+      : !form.consent ? t('site.f.needConsent') : t('site.f.ready');
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
 
   const submit = async (e) => {
@@ -66,9 +73,10 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = 
         <input type="checkbox" checked={form.consent} onChange={set('consent')} />
         <span>{t('site.f.consent')}</span>
       </label>
+      <p className={`site-form-feedback ${canSubmit ? 'is-ready' : ''}`} role="status" aria-live="polite">{formHint}</p>
       <p className="cell-sub">{t('site.privacy')}</p>
       <ErrorNote error={error} />
-      <Button type="submit" pending={pending} disabled={!form.consent || !form.name.trim() || !form.company.trim() || !form.email.trim()}>
+      <Button type="submit" pending={pending} disabled={pending || !canSubmit}>
         {pending ? t('site.f.sending') : t('site.f.send')}{compact && !pending && <ArrowRight size={17} />}
       </Button>
     </form>

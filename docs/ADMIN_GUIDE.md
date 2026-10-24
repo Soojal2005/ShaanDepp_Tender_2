@@ -81,6 +81,8 @@ The **desk dashboard** (top of Submission Desk) shows open cases by stage, deadl
 
 Every enquiry from the public site lands under **Website Enquiries** with the service the visitor was looking at. Move each through New, Contacted, Qualified and Closed.
 
+Sign in with a Platform Admin, Case Manager or Analyst account, then open **Administration → Website Enquiries** in the left sidebar (`/app/admin/enquiries`). The **Show** filter defaults to **All**; choose **New** for unread leads. A successful form submission displays a thank-you message to the visitor. The inbox is stored in the API database; the Vite frontend alone cannot receive enquiries. When developing locally, use the normal `npm run dev` setup so the embedded database persists in `backend/var/pgdata`. The `PGLITE_DIR=memory` browser-test setup loses enquiries whenever that API process restarts.
+
 ## Audit log
 
 Platform Admin only. Records who did what and when (sign-ins, organization and user changes, releases, case stage changes, uploads). It cannot be edited.

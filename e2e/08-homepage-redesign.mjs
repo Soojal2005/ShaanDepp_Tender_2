@@ -90,8 +90,10 @@ try {
   await check('language preference persists', 'document.documentElement.lang === "hi"');
   await evaluate('document.querySelectorAll(".site-nav .lang-btn")[0].click()');
   await check('enquiry requires consent', 'document.querySelector("form.site-form button[type=submit]").disabled');
+  await check('form explains the required name and business fields', 'document.querySelector(".site-form-feedback").textContent.includes("name and business name")');
   await evaluate(`(() => { for(const [key,value] of Object.entries({name:'Homepage Review',company:'Reference Layout Test',email:'homepage-review@example.test',phone:'9876543210',message:'Checking the redesigned homepage enquiry.'})) { const el=document.getElementById('home-'+key); const type=el.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement; Object.getOwnPropertyDescriptor(type.prototype,'value').set.call(el,value); el.dispatchEvent(new Event('input',{bubbles:true})); } })()`);
   await check('consent remains required after fields are populated', 'document.querySelector("form.site-form button[type=submit]").disabled');
+  await check('form explains the consent requirement', 'document.querySelector(".site-form-feedback").textContent.includes("Tick the consent box")');
   await evaluate('document.querySelector("form.site-form .site-consent input").click()');
   await check('enquiry enables with required information and consent', '!document.querySelector("form.site-form button[type=submit]").disabled');
   await evaluate('document.querySelector("form.site-form button[type=submit]").click()');
@@ -105,6 +107,17 @@ try {
   await check('service page fits mobile', 'document.documentElement.scrollWidth <= innerWidth + 1');
   await navigate('/contact');
   await check('contact page retains required company field and consent', 'document.querySelector("#contact-company").required && !!document.querySelector(".site-consent input")');
+  await cdp('Page.navigate', { url: `${origin}/login` });
+  await until('!!document.querySelector("input[type=password]")');
+  await evaluate(`(() => { for(const [selector,value] of [['input[type=email]','admin@demo.test'],['input[type=password]','Demo-Pass-2026']]) { const el=document.querySelector(selector); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,value); el.dispatchEvent(new Event('input',{bubbles:true})); } })()`);
+  await until('!document.querySelector("form button[type=submit]").disabled');
+  await evaluate('document.querySelector("form button[type=submit]").click()');
+  await until('location.pathname.startsWith("/app/")');
+  await cdp('Page.navigate', { url: `${origin}/app/admin/enquiries` });
+  await until('!!document.querySelector(".page-headline-block") && document.querySelector(".page-headline-block").textContent.includes("Website enquiries")');
+  await until('document.body.textContent.includes("Reference Layout Test") || !!document.querySelector(".page-content .note-error")');
+  await check('submitted enquiry is visible in the staff inbox', 'document.body.textContent.includes("Reference Layout Test")');
+  await check('admin navigation exposes Website Enquiries', '[...document.querySelectorAll("a")].some(a=>a.getAttribute("href")==="/app/admin/enquiries")');
   assert.equal(browserErrors.length, 0, browserErrors.join('\n')); console.log('PASS no browser JavaScript exceptions');
   console.log(`Screenshots saved in ${output}`);
 } finally { socket.close(); }
