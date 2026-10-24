@@ -83,7 +83,7 @@ export function Field({ label, hint, error, children, optional }) {
   const control = typeof children === 'function' ? children({ id, 'aria-invalid': Boolean(error) || undefined }) : children;
   return (
     <div className="field">
-      <label htmlFor={id}>
+      <label htmlFor={control?.props?.id || id}>
         {label}
         {optional && <span className="field-optional"> ({optional})</span>}
       </label>

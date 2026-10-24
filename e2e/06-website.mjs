@@ -29,6 +29,7 @@ try {
   await shot('01-home');
 
   // interactive flow chart
+  await page.click('.home-process details > summary');
   await page.click('.flow-step >> nth=4');
   check('the flow chart explains the chosen step', (await page.textContent('.flow-detail')).includes('Financial strategy'));
   await page.click('.flow-step >> nth=8');

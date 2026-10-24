@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, MessageCircle, Phone } from 'lucide-react';
+import { ArrowRight, CheckCircle2, MessageCircle, Phone } from 'lucide-react';
 import { Button, ErrorNote, Field } from '../components/ui.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { api } from '../lib/api.js';
@@ -21,7 +21,7 @@ export function ContactButtons({ topic }) {
 }
 
 /** Enquiry form. Each submission lands in the staff inbox; `service` records what the visitor was looking at. */
-export default function EnquiryForm({ service = '', idPrefix = 'enq' }) {
+export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = false }) {
   const { t, lang } = useI18n();
   const { pending, run } = useAction();
   const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '' };
@@ -50,14 +50,14 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq' }) {
     );
   }
   return (
-    <form className="site-form" onSubmit={submit} noValidate>
+    <form className={`site-form ${compact ? 'site-form-compact' : ''}`} onSubmit={submit} noValidate={!compact}>
       <div className="site-form-grid">
-        <Field label={t('site.f.name')}>{(p) => <input {...p} id={`${idPrefix}-name`} className="input" required maxLength={150} autoComplete="name" value={form.name} onChange={set('name')} />}</Field>
-        <Field label={t('site.f.company')}>{(p) => <input {...p} id={`${idPrefix}-company`} className="input" required maxLength={200} autoComplete="organization" value={form.company} onChange={set('company')} />}</Field>
-        <Field label={t('site.f.email')}>{(p) => <input {...p} id={`${idPrefix}-email`} className="input" type="email" required maxLength={150} autoComplete="email" value={form.email} onChange={set('email')} />}</Field>
-        <Field label={t('site.f.phone')} optional={t('common.optional')}>{(p) => <input {...p} id={`${idPrefix}-phone`} className="input" type="tel" maxLength={50} autoComplete="tel" value={form.phone} onChange={set('phone')} />}</Field>
+        <Field label={t('site.f.name')}>{(p) => <input {...p} id={`${idPrefix}-name`} aria-label={t('site.f.name')} placeholder={compact ? t('site.f.name') : undefined} className="input" required minLength={2} maxLength={150} autoComplete="name" value={form.name} onChange={set('name')} />}</Field>
+        <Field label={t('site.f.company')}>{(p) => <input {...p} id={`${idPrefix}-company`} aria-label={t('site.f.company')} placeholder={compact ? t('site.f.company') : undefined} className="input" required minLength={2} maxLength={200} autoComplete="organization" value={form.company} onChange={set('company')} />}</Field>
+        <Field label={t('site.f.email')}>{(p) => <input {...p} id={`${idPrefix}-email`} aria-label={t('site.f.email')} placeholder={compact ? t('site.f.email') : undefined} className="input" type="email" required maxLength={150} autoComplete="email" value={form.email} onChange={set('email')} />}</Field>
+        <Field label={t('site.f.phone')} optional={t('common.optional')}>{(p) => <input {...p} id={`${idPrefix}-phone`} aria-label={t('site.f.phone')} placeholder={compact ? t('site.f.phone') : undefined} className="input" type="tel" maxLength={50} autoComplete="tel" value={form.phone} onChange={set('phone')} />}</Field>
       </div>
-      <Field label={t('site.f.message')} optional={t('common.optional')}>{(p) => <textarea {...p} id={`${idPrefix}-message`} className="input" rows={4} maxLength={4000} value={form.message} onChange={set('message')} />}</Field>
+      <Field label={t('site.f.message')} optional={t('common.optional')}>{(p) => <textarea {...p} id={`${idPrefix}-message`} aria-label={t('site.f.message')} placeholder={compact ? t('site.f.message') : undefined} className="input textarea" rows={compact ? 1 : 4} maxLength={4000} value={form.message} onChange={set('message')} />}</Field>
       {/* Honeypot: hidden from people, filled by bots. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
         <label>Website<input tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} /></label>
@@ -69,7 +69,7 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq' }) {
       <p className="cell-sub">{t('site.privacy')}</p>
       <ErrorNote error={error} />
       <Button type="submit" pending={pending} disabled={!form.consent || !form.name.trim() || !form.company.trim() || !form.email.trim()}>
-        {pending ? t('site.f.sending') : t('site.f.send')}
+        {pending ? t('site.f.sending') : t('site.f.send')}{compact && !pending && <ArrowRight size={17} />}
       </Button>
     </form>
   );

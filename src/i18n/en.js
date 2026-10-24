@@ -167,6 +167,19 @@ export default {
   },
 
   site: {
+    home: {
+      benefitsLabel: 'Why Shan-Deep', benefits: ['Daily tender alerts', 'Expert support', 'End-to-end compliance', 'Trusted & registered'],
+      allTenders: 'View all tenders', exampleDate: 'Illustrative example', portalDetails: 'Explore all portal features',
+      samples: [{ title: 'Supply of IT Equipment', department: 'Ministry of Education' }, { title: 'Road Maintenance Works', department: 'Public Works Department' }, { title: 'Medicines Supply', department: 'Health & Family Welfare' }],
+      portalFeatures: ['Daily tender alerts', 'Search across departments and states', 'Results and rate analysis', 'Weekly reports', 'A desk that prepares and submits your bid'],
+      processTitle: 'How the tender process works', fullProcess: 'Explore our complete nine-step process',
+      process: [{ title: 'Find tenders', body: 'Match and shortlist opportunities' }, { title: 'Analyse and prepare', body: 'Documents, compliance and pricing support' }, { title: 'Submit your bid', body: 'End-to-end filing and follow up' }, { title: 'Track results', body: 'See results and learn for next time' }],
+      departmentsTitle: 'Departments we cover', departments: ['Central Government', 'State Governments', 'PSUs', 'Municipal Bodies', 'ULBs', 'Autonomous Bodies', 'More Departments'],
+      enquiryBody: 'Tell us what you are looking for and we will get back to you.',
+      previewLabel: 'Open the Shan-Deep tender portal, desktop and mobile preview', previewNav: ['Dashboard', 'Search', 'Alerts', 'Submissions', 'Reports', 'Settings'],
+      previewTitle: 'Latest tenders', previewSearch: 'Search tenders...', previewTender: 'Tender title', previewDepartment: 'Department', previewOpen: 'Open', previewReady: 'Your next opportunity awaits',
+      rights: 'All rights reserved.', sitemap: 'Sitemap',
+    },
     nav: { home: 'Home', services: 'Services', about: 'About', contact: 'Contact', portal: 'Tender Portal', signIn: 'Sign in', call: 'Call', whatsapp: 'WhatsApp', menu: 'Menu' },
     brand: 'Shan-Deep Management Advisory', city: 'Bhopal, Madhya Pradesh',
     heroKicker: 'Tenders, registrations and compliance, under one roof',
