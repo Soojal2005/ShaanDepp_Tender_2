@@ -21,7 +21,7 @@ export function ContactButtons({ topic }) {
 }
 
 /** Enquiry form. Each submission lands in the staff inbox; `service` records what the visitor was looking at. */
-export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = false, sendLabel }) {
+export default function EnquiryForm({ service = '', kind = 'general', idPrefix = 'enq', compact = false, sendLabel }) {
   const { t, lang } = useI18n();
   const { pending, run } = useAction();
   const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '' };
@@ -42,7 +42,7 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = 
     setError(null);
     const out = await run(() => api.post('/public/enquiries', {
       name: form.name.trim(), company: form.company.trim(), email: form.email.trim(), phone: form.phone.trim() || undefined,
-      service: service || undefined, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
+      service: service || undefined, kind, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
     }));
     if (out.ok) { setDone(true); setForm(blank); } else setError(out.error);
   };

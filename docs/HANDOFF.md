@@ -33,7 +33,7 @@ backend/src/
   jobs/              scheduler and job definitions
   auth/              sessions, permissions table, middleware
   db/                driver for PGlite and PostgreSQL, migrations runner, seeds
-backend/migrations/  forward-only SQL, 001 to 008
+backend/migrations/  forward-only SQL, 001 to 010
 backend/test/        308 tests (node:test + supertest)
 e2e/                 browser tests (Playwright)
 deploy/ + Dockerfile + docker-compose.prod.yml   production stack
@@ -47,7 +47,7 @@ Keep these in mind before changing things.
 1. **Tenant isolation is enforced by the database.** Every table has row-level security *forced*. Each request runs as the restricted `app_api_user` role with a scope: `tenant` (a client), `staff` or `system` (jobs and pre-login paths). Client writes that must touch staff-only tables (raising a case, adding a shared document) run in system scope **after** an explicit ownership check in the route. Never widen a policy to make a feature easier.
 2. **Roles and permissions** live in one table, `backend/src/auth/permissions.js`, mirrored for hiding UI in `src/auth/AuthContext.jsx`. The server is the authority; the mirror is cosmetic.
 3. **Honesty rule.** A figure the source did not publish stays `NULL` and is shown as "Not disclosed" or "Rate not published". Never `0`, never estimated. Statistics on fewer than 5 records are withheld (`MIN_SAMPLE` in `services/results.js`).
-4. **Migrations are forward-only and checksummed.** Never edit an applied migration; add `008_...sql`. The runner refuses to start if an applied file changed.
+4. **Migrations are forward-only and checksummed.** Never edit an applied migration; add the next numbered file (the latest is `010_access_requests.sql`). The runner refuses to start if an applied file changed.
 5. **Dry-run by default.** `MAIL_MODE=dry_run` and `TENDERBOOK_SYNC=off` unless explicitly enabled; `MAIL_MODE=live` without the four Azure values refuses to start. Demo accounts and sample data are refused in production.
 6. **Alert ceiling applies per digest email** (Basic 50, Standard 100, Premium 150), not per account per day. A plan also limits alert profiles (2/5/10) and logins (3).
 7. **Weekly bundle scope** comes from the client's active alert profiles: a dimension is unrestricted if any profile leaves it open; no profiles means the whole market. The bundle is stored as a JSON snapshot; the screen, the PDF and the Excel all render from it so they cannot disagree.

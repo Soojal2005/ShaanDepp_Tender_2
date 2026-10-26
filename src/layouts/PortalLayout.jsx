@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, Bookmark, Building2, ChevronDown, ClipboardCheck, Database, FileBarChart, Globe, Inbox, Landmark,
-  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Mail, Menu, Timer, Search, SlidersHorizontal, Users, ScrollText, Layers, Trophy,
+  LayoutDashboard, LifeBuoy, ListChecks, LogOut, Mail, Menu, Timer, Search, SlidersHorizontal, UserPlus, Users, ScrollText, Layers, Trophy,
 } from 'lucide-react';
+import { api } from '../lib/api.js';
 import { can, useAuth } from '../auth/AuthContext.jsx';
 import LangPill from '../components/LangPill.jsx';
 import { useI18n } from '../i18n/index.jsx';
@@ -27,17 +28,19 @@ const ADMIN_NAV = [
   { to: '/app/admin/mail', label: 'nav.mail', icon: Mail, permission: 'queue:manage' },
   { to: '/app/admin/jobs', label: 'nav.jobs', icon: Timer, permission: 'jobs:manage' },
   { to: '/app/admin/reports', label: 'nav.weeklyReports', icon: FileBarChart, permission: 'reports:release' },
-  { to: '/app/admin/enquiries', label: 'nav.enquiries', icon: Inbox, permission: 'enquiries:view' },
+  { to: '/app/admin/access-requests', label: 'nav.accessRequests', icon: UserPlus, permission: 'enquiries:view', badge: 'newAccessRequests' },
+  { to: '/app/admin/enquiries', label: 'nav.enquiries', icon: Inbox, permission: 'enquiries:view', badge: 'newGeneral' },
   { to: '/app/admin/audit', label: 'nav.audit', icon: ScrollText, permission: 'audit:view' },
 ];
 
-function NavItem({ to, icon: Icon, children, onNavigate }) {
+function NavItem({ to, icon: Icon, children, onNavigate, badge }) {
   return (
     <NavLink to={to} onClick={onNavigate} className={({ isActive }) => `sidebar-link-btn ${isActive ? 'active' : ''}`}>
       <div className="sidebar-link-left">
         <Icon size={17} />
         <span>{children}</span>
       </div>
+      {badge > 0 && <span className="sidebar-item-badge" aria-label={`${badge} new`}>{badge}</span>}
     </NavLink>
   );
 }
@@ -121,6 +124,18 @@ export default function PortalLayout() {
   const adminLinks = ADMIN_NAV.filter((item) => can(user, item.permission));
   const closeMenu = () => setMenuOpen(false);
 
+  // New items waiting in the staff inboxes. Refreshed on navigation and once a minute; a failed fetch just hides the badges.
+  const [inboxCounts, setInboxCounts] = useState({});
+  const watchesInbox = can(user, 'enquiries:view');
+  useEffect(() => {
+    if (!watchesInbox) return undefined;
+    let active = true;
+    const load = () => api.get('/admin/enquiries/summary').then((c) => { if (active) setInboxCounts(c); }).catch(() => {});
+    load();
+    const timer = setInterval(load, 60_000);
+    return () => { active = false; clearInterval(timer); };
+  }, [watchesInbox, location.pathname]);
+
   const submitSearch = (e) => {
     e.preventDefault();
     navigate(query.trim() ? `/app/search?q=${encodeURIComponent(query.trim())}` : '/app/search');
@@ -178,7 +193,7 @@ export default function PortalLayout() {
                 <div className="sidebar-nav-divider" />
                 <div className="sidebar-section">{t('nav.admin')}</div>
                 {adminLinks.map((item) => (
-                  <NavItem key={item.to} to={item.to} icon={item.icon} onNavigate={closeMenu}>{t(item.label)}</NavItem>
+                  <NavItem key={item.to} to={item.to} icon={item.icon} onNavigate={closeMenu} badge={inboxCounts[item.badge]}>{t(item.label)}</NavItem>
                 ))}
               </>
             )}

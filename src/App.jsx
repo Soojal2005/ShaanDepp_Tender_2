@@ -86,7 +86,8 @@ export default function App() {
               <Route path="jobs" element={<Jobs />} />
             </Route>
             <Route element={<RequireAnyPermission permissions={['enquiries:view']} />}>
-              <Route path="enquiries" element={<Enquiries />} />
+              <Route path="enquiries" element={<Enquiries key="general" />} />
+              <Route path="access-requests" element={<Enquiries key="access_request" kind="access_request" />} />
             </Route>
             <Route element={<RequirePermission permission="reports:release" />}>
               <Route path="reports" element={<WeeklyReports />} />

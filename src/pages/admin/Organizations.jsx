@@ -9,12 +9,13 @@ import { useAction, useAsync } from '../../lib/hooks.js';
 
 export const statusTone = { Active: 'green', Suspended: 'red', Pending: 'amber' };
 
-function NewOrganization({ plans, onClose, onCreated }) {
+/** `prefill` and `fromEnquiryId` are set when the organization is created from a website access request. */
+export function NewOrganization({ plans, onClose, onCreated, prefill = {}, fromEnquiryId }) {
   const { pending, run } = useAction();
   const [error, setError] = useState(null);
   const [form, setForm] = useState({
     name: '', planCode: plans[0]?.code ?? '', gstin: '', contactName: '', contactPhone: '', language: 'EN',
-    adminName: '', adminEmail: '',
+    adminName: '', adminEmail: '', ...prefill,
   });
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -30,6 +31,7 @@ function NewOrganization({ plans, onClose, onCreated }) {
         contactPhone: form.contactPhone.trim() || undefined,
         language: form.language,
         admin: { name: form.adminName.trim(), email: form.adminEmail.trim() },
+        fromEnquiryId,
       })
     );
     if (!result.ok) return setError(result.error);
@@ -50,6 +52,7 @@ function NewOrganization({ plans, onClose, onCreated }) {
       }
     >
       <ErrorNote error={error} />
+      {fromEnquiryId && <div className="note note-info">Details are filled in from the access request. Check them, choose a plan and create the organization; the request is then marked Converted.</div>}
       <form id="new-org-form" onSubmit={submit}>
         <div className="form-grid">
           <Field label="Organization name">{(p) => <input {...p} className="input" value={form.name} onChange={set('name')} required />}</Field>

@@ -20,7 +20,7 @@ export default {
     results: 'टेंडर परिणाम', weeklyReports: 'साप्ताहिक रिपोर्ट',
     desk: 'सबमिशन डेस्क', reports: 'रिपोर्ट और विश्लेषण', profile: 'प्रोफ़ाइल और योजना', help: 'सहायता',
     website: 'कंपनी वेबसाइट', admin: 'प्रशासन', organizations: 'संगठन', plans: 'योजनाएं',
-    masters: 'मास्टर सूचियाँ', ingestion: 'डेटा फ़ीड', mail: 'मेल कतार', jobs: 'बैकग्राउंड जॉब', enquiries: 'वेबसाइट पूछताछ', audit: 'ऑडिट लॉग', menu: 'मेनू',
+    masters: 'मास्टर सूचियाँ', ingestion: 'डेटा फ़ीड', mail: 'मेल कतार', jobs: 'बैकग्राउंड जॉब', accessRequests: 'पहुँच अनुरोध', enquiries: 'वेबसाइट पूछताछ', audit: 'ऑडिट लॉग', menu: 'मेनू',
     signOut: 'साइन आउट', home: 'होम', advanced: 'विस्तृत खोज',
     searchPlaceholder: 'टेंडर शीर्षक, विभाग, स्थान, BOQ आइटम या कीवर्ड खोजें...',
   },

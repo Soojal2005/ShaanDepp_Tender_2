@@ -340,8 +340,14 @@ model enquiries {
   consent_timestamp      DateTime            @default(now()) @db.Timestamptz(6)
   privacy_notice_version String              @default("v2026.1")
   created_at             DateTime            @default(now()) @db.Timestamptz(6)
+  kind                   String              @default("general")
+  organization_id        Int?
+  converted_at           DateTime?           @db.Timestamptz(6)
+  organizations          organizations?      @relation(fields: [organization_id], references: [id], onUpdate: NoAction)
   enquiry_followups      enquiry_followups[]
 
+  @@index([kind, status, created_at(sort: Desc)], map: "idx_enquiries_kind_status")
+  @@index([organization_id], map: "idx_enquiries_organization")
   @@index([status, created_at(sort: Desc)], map: "idx_enquiries_status")
 }
 
@@ -484,6 +490,7 @@ model organizations {
   alert_digests       alert_digests[]
   alert_profiles      alert_profiles[]
   email_queue         email_queue[]
+  enquiries           enquiries[]
   plans               plans?              @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   privacy_requests    privacy_requests[]
   report_bundles      report_bundles[]

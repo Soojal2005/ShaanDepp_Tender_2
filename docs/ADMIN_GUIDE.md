@@ -79,9 +79,19 @@ The **desk dashboard** (top of Submission Desk) shows open cases by stage, deadl
 
 ## Website enquiries
 
-Every enquiry from the public site lands under **Website Enquiries** with the service the visitor was looking at. Move each through New, Contacted, Qualified and Closed.
+Every general enquiry from the public site lands under **Website Enquiries** with the service the visitor was looking at. Requests for a portal account go to [Access requests](#access-requests) instead. Move each through New, Contacted, Qualified and Closed.
 
 Sign in with a Platform Admin, Case Manager or Analyst account, then open **Administration → Website Enquiries** in the left sidebar (`/app/admin/enquiries`). The **Show** filter defaults to **All**; choose **New** for unread leads. A successful form submission displays a thank-you message to the visitor. The inbox is stored in the API database; the Vite frontend alone cannot receive enquiries. When developing locally, use the normal `npm run dev` setup so the embedded database persists in `backend/var/pgdata`. The `PGLITE_DIR=memory` browser-test setup loses enquiries whenever that API process restarts.
+
+## Access requests
+
+There is no public sign-up: accounts are created by the team. A business asks for one on the website's **Request access** page (`/request-access`, also linked from the header, the home page and the sign-in page). Each request lands under **Administration → Access Requests** (`/app/admin/access-requests`), separate from general enquiries, and a count of new requests shows beside it in the sidebar. A notice email also goes to `OPS_ALERT_EMAIL` (or `CONTACT_EMAIL` if that is blank).
+
+1. **Contact them.** Use the email, phone and WhatsApp buttons on the card. Record what you agreed as follow-up notes, and move the request through New, Contacted, Qualified and Closed. Case Managers and Analysts can do this.
+2. **Create the organization.** A Platform Admin sees **Create organization** on the card. It opens the usual new-organization form with the business, contact and first administrator already filled in. Choose the plan and confirm.
+3. **They are invited.** The first administrator gets the usual email to set their password. The request is marked **Converted** and links to the new organization, so nobody creates it twice. A converted request's status is fixed.
+
+Close a request you will not take forward. Choose **Converted** in the **Show** filter to see who has been onboarded from the website.
 
 ## Audit log
 

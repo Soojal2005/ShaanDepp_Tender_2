@@ -63,6 +63,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Migrations run automatically at start and are forward-only. A migration that was already applied is checksummed: the application refuses to start if one has been edited, rather than risk a mismatched database.
 
+**Release note, access requests (migration 010).** It adds `kind`, `organization_id` and `converted_at` to `enquiries` and a `Converted` status. The new API reads and writes those columns, so apply the migration **before** starting the new API (with `DB_MIGRATE_ON_START=off`, run `npm run migrate` with the owner URL first). The migration is additive, so the previous API keeps working while it runs.
+
 ## Running without Docker
 
 You can also run the API directly (`node backend/src/server.js`) behind your own reverse proxy: Node 20.19+/22.12+, PostgreSQL 15 or later with a **UTF-8** database, and the website built with `npm run build` (the API serves the `dist` folder). The environment variables are the same as in `deploy/production.env.example`; also set `NODE_ENV=production`, `DATABASE_URL` (the restricted `app_api_user` login) and `MIGRATION_DATABASE_URL` (the database owner). For RDS/Aurora or Supabase PostgreSQL, use the [managed database guide](PRISMA_DEPLOYMENT.md).

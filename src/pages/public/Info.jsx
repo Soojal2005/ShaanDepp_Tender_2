@@ -54,7 +54,7 @@ export function Contact() {
   );
 }
 
-/** Staff filter the enquiries inbox on this label, so it stays English whatever language the visitor uses. */
+/** Kept in English whatever language the visitor uses; the admin queue itself is selected by `kind`. */
 const ACCESS_SERVICE = 'Portal access request';
 
 /** Portal accounts are created by staff, so this is an enquiry tagged for the inbox rather than a signup. */
@@ -76,7 +76,7 @@ export function RequestAccess() {
         <aside className="site-side-card">
           <h2>{t('site.access.formTitle')}</h2>
           <p className="cell-sub">{t('site.access.formHint')}</p>
-          <EnquiryForm idPrefix="access" service={ACCESS_SERVICE} sendLabel={t('site.access.send')} />
+          <EnquiryForm idPrefix="access" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.access.send')} />
         </aside>
       </div>
     </div>

@@ -20,7 +20,7 @@ export default {
     results: 'Tender Results', weeklyReports: 'Weekly Reports',
     desk: 'Submission Desk', reports: 'Reports & Analytics', profile: 'Profile & Plans', help: 'Help & Support',
     website: 'Company Website', admin: 'Administration', organizations: 'Organizations', plans: 'Plans',
-    masters: 'Master Lists', ingestion: 'Data Feeds', mail: 'Mail Queue', jobs: 'Background Jobs', enquiries: 'Website Enquiries', audit: 'Audit Log', menu: 'Menu',
+    masters: 'Master Lists', ingestion: 'Data Feeds', mail: 'Mail Queue', jobs: 'Background Jobs', accessRequests: 'Access Requests', enquiries: 'Website Enquiries', audit: 'Audit Log', menu: 'Menu',
     signOut: 'Sign out', home: 'Home', advanced: 'Advanced search',
     searchPlaceholder: 'Search tender title, department, location, BOQ items, keywords...',
   },
