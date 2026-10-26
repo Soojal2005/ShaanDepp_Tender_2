@@ -157,19 +157,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- Latest tenders ---- */}
-      <section className="lp-section" aria-labelledby="tenders-title">
-        <div className="site-wrap">
-          <Heading id="tenders-title" kicker={t('site.lp.tendersKicker')} a={t('site.lp.tendersTitle')} sub={t('site.lp.tendersSub')}
-            action={<Link className="lp-link" to="/login">{t('site.lp.tendersAll')} <ArrowRight size={16} /></Link>} />
-          <div className="lp-tender-grid" aria-busy={loading}>
-            {loading
-              ? [0, 1, 2].map((i) => <div key={i} className="lp-tender lp-skeleton" aria-hidden="true"><i /><i /><i /><i /></div>)
-              : tenders.map((item, i) => <TenderCard key={item.id || item.title} item={item} lang={lang} t={t} tone={i % 3} />)}
-          </div>
-        </div>
-      </section>
-
       {/* ---- Our Services ---- */}
       <section className="lp-section" aria-labelledby="services-title">
         <div className="site-wrap">
@@ -185,6 +172,35 @@ export default function Home() {
                 <span className="lp-service-arrow"><ArrowRight size={18} /></span>
               </Link>
             ); })}
+          </div>
+        </div>
+      </section>
+
+      {/* ---- How we help ---- */}
+      <section className="lp-section" aria-labelledby="process-title">
+        <div className="site-wrap">
+          <Heading id="process-title" kicker={t('site.lp.helpKicker')} a={t('site.lp.processTitle')} sub={t('site.lp.processSub')}
+            action={<button type="button" className="lp-link" aria-expanded={showFlow} aria-controls="flow-panel" onClick={() => setShowFlow(!showFlow)}>{showFlow ? t('site.lp.processHide') : t('site.lp.processAll')} <ArrowRight size={16} /></button>} />
+          <ol className="lp-steps">
+            {t('site.lp.steps').map((step, i) => (
+              <li key={step.title}><span className="lp-step-num">{i + 1}</span><h3>{step.title}</h3><p>{step.body}</p></li>
+            ))}
+          </ol>
+          <div id="flow-panel" className="lp-expand" hidden={!showFlow}>
+            {showFlow && <div className="lp-panel"><h3>{t('site.flowTitle')}</h3><p className="lp-head-sub">{t('site.flowSub')}</p><FlowChart /></div>}
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Latest tenders ---- */}
+      <section className="lp-section" aria-labelledby="tenders-title">
+        <div className="site-wrap">
+          <Heading id="tenders-title" kicker={t('site.lp.tendersKicker')} a={t('site.lp.tendersTitle')} sub={t('site.lp.tendersSub')}
+            action={<Link className="lp-link" to="/login">{t('site.lp.tendersAll')} <ArrowRight size={16} /></Link>} />
+          <div className="lp-tender-grid" aria-busy={loading}>
+            {loading
+              ? [0, 1, 2].map((i) => <div key={i} className="lp-tender lp-skeleton" aria-hidden="true"><i /><i /><i /><i /></div>)
+              : tenders.map((item, i) => <TenderCard key={item.id || item.title} item={item} lang={lang} t={t} tone={i % 3} />)}
           </div>
         </div>
       </section>
@@ -208,21 +224,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- How we help ---- */}
-      <section className="lp-section" aria-labelledby="process-title">
-        <div className="site-wrap">
-          <Heading id="process-title" kicker={t('site.lp.helpKicker')} a={t('site.lp.processTitle')} sub={t('site.lp.processSub')}
-            action={<button type="button" className="lp-link" aria-expanded={showFlow} aria-controls="flow-panel" onClick={() => setShowFlow(!showFlow)}>{showFlow ? t('site.lp.processHide') : t('site.lp.processAll')} <ArrowRight size={16} /></button>} />
-          <ol className="lp-steps">
-            {t('site.lp.steps').map((step, i) => (
-              <li key={step.title}><span className="lp-step-num">{i + 1}</span><h3>{step.title}</h3><p>{step.body}</p></li>
-            ))}
-          </ol>
-          <div id="flow-panel" className="lp-expand" hidden={!showFlow}>
-            {showFlow && <div className="lp-panel"><h3>{t('site.flowTitle')}</h3><p className="lp-head-sub">{t('site.flowSub')}</p><FlowChart /></div>}
-          </div>
-        </div>
-      </section>
 
       {/* ---- About ---- */}
       <section className="lp-section" aria-labelledby="about-title">
