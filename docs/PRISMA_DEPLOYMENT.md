@@ -174,6 +174,26 @@ environment. The optional `seed` step uses only runtime credentials and adds 12 
 tenders, five synthetic award results, a sample provider and an empty sample organization.
 It is safe to rerun and does not create demo logins or overwrite existing sample rows.
 Startup seeds the baseline lists and bootstrap admin using runtime credentials.
+
+### Optional demo-role logins on a managed Supabase project
+
+The normal production seed intentionally does not create the five `@demo.test` logins.
+When a demo of every role is explicitly needed, run the scoped account seed from
+`backend/` with the project's runtime and owner URLs configured:
+
+```bash
+node scripts/seed-demo-accounts.mjs --project-ref=YOUR_PROJECT_REF --apply
+node scripts/audit-demo-accounts.mjs
+node scripts/check-db-demo-logins.mjs
+node scripts/check-live-demo-logins.mjs --url=https://YOUR_SITE_DOMAIN
+```
+
+The account seed creates only the missing demo organization and five role accounts.
+It refuses a mismatched project reference and leaves existing users' passwords and
+roles untouched. All five use the published `Demo-Pass-2026` password, so remove or
+disable these accounts before using the project for real client data. These are
+application database users, not Supabase Auth users.
+
 On each update, build, migrate, then roll out the API in that order. Keep database backups/PITR
 enabled at the database provider and back up the app's persistent data volume separately.
 Verify `/api/v1/health`, login, master lists and a tenant read/write after deployment.

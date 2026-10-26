@@ -43,7 +43,7 @@ export default function Home() {
               <div className="site-cta-row">
                 <Link className="btn btn-primary" to="/login">{t('site.ctaPortal')} <ArrowRight size={17} /></Link>
                 <Link className="btn btn-outline" to="/services">{t('site.ctaServices')}</Link>
-                <Link className="btn btn-ghost" to="/contact">{t('site.ctaEnquire')} <ArrowRight size={17} /></Link>
+                <Link className="btn btn-ghost" to="/request-access">{t('site.nav.requestAccess')} <ArrowRight size={17} /></Link>
               </div>
             </div>
             <aside className="site-trust" aria-label={t('site.trustTitle')}>

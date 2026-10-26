@@ -37,6 +37,7 @@ const GroupPage = lazy(() => import('./pages/public/Services.jsx').then((m) => (
 const ServicePage = lazy(() => import('./pages/public/Services.jsx').then((m) => ({ default: m.ServicePage })));
 const About = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.About })));
 const Contact = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.Contact })));
+const RequestAccess = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.RequestAccess })));
 const SiteNotFound = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.SiteNotFound })));
 const WeeklyReports = lazy(() => import('./pages/admin/WeeklyReports.jsx'));
 
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="/services/:group/:item" element={<ServicePage />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/request-access" element={<RequestAccess />} />
           <Route path="*" element={<SiteNotFound />} />
         </Route>
       </Routes>

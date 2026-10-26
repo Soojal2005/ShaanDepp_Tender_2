@@ -21,7 +21,7 @@ export function ContactButtons({ topic }) {
 }
 
 /** Enquiry form. Each submission lands in the staff inbox; `service` records what the visitor was looking at. */
-export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = false }) {
+export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = false, sendLabel }) {
   const { t, lang } = useI18n();
   const { pending, run } = useAction();
   const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '' };
@@ -77,7 +77,7 @@ export default function EnquiryForm({ service = '', idPrefix = 'enq', compact = 
       <p className="cell-sub">{t('site.privacy')}</p>
       <ErrorNote error={error} />
       <Button type="submit" pending={pending} disabled={pending || !canSubmit}>
-        {pending ? t('site.f.sending') : t('site.f.send')}{compact && !pending && <ArrowRight size={17} />}
+        {pending ? t('site.f.sending') : (sendLabel || t('site.f.send'))}{compact && !pending && <ArrowRight size={17} />}
       </Button>
     </form>
   );

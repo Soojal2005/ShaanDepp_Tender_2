@@ -34,7 +34,7 @@ Open http://localhost:5173. With `SEED_DEMO=on` (the default in `.env.example`) 
 | `manager@demo.test` | Case manager |
 | `analyst@demo.test` | Analyst |
 
-Demo accounts and sample data are **refused in production**.
+Automatic demo seeding is **refused in production**. Managed Supabase deployments can opt in to the narrowly scoped demo-role account seed described in [the managed database guide](docs/PRISMA_DEPLOYMENT.md).
 
 Email is in **dry-run** mode: messages are saved as HTML files in `backend/var/outbox/` and shown as such, never as sent. Tender data comes from the sample set until a Tenderbook key is configured.
 

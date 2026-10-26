@@ -54,6 +54,35 @@ export function Contact() {
   );
 }
 
+/** Staff filter the enquiries inbox on this label, so it stays English whatever language the visitor uses. */
+const ACCESS_SERVICE = 'Portal access request';
+
+/** Portal accounts are created by staff, so this is an enquiry tagged for the inbox rather than a signup. */
+export function RequestAccess() {
+  const { t } = useI18n();
+  useSeo({ title: t('site.access.seoTitle'), description: t('site.access.seoDesc'), path: '/request-access' });
+  return (
+    <div className="site-wrap site-page">
+      <h1>{t('site.access.title')}</h1>
+      <p className="site-sub">{t('site.access.sub')}</p>
+      <div className="site-two-col">
+        <div>
+          <h2>{t('site.access.stepsTitle')}</h2>
+          <ol className="site-portal-list site-access-steps">
+            {t('site.access.steps').map((step, i) => <li key={step.title}><b>{i + 1}</b><span><strong>{step.title}</strong>{step.body}</span></li>)}
+          </ol>
+          <p className="site-reg-line">{t('site.access.haveAccount')} <Link to="/login">{t('site.nav.signIn')}</Link></p>
+        </div>
+        <aside className="site-side-card">
+          <h2>{t('site.access.formTitle')}</h2>
+          <p className="cell-sub">{t('site.access.formHint')}</p>
+          <EnquiryForm idPrefix="access" service={ACCESS_SERVICE} sendLabel={t('site.access.send')} />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 export function SiteNotFound() {
   const { t } = useI18n();
   useSeo({ title: t('site.notFoundTitle'), description: t('site.notFoundBody'), path: window.location.pathname });

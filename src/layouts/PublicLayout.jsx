@@ -27,6 +27,7 @@ export default function PublicLayout() {
             {links.map(([to, key, end]) => <NavLink key={to} to={to} end={end}>{t(`site.nav.${key}`)}</NavLink>)}
             <div className="site-nav-actions">
               <LangPill />
+              <Link className="btn btn-outline btn-sm" to="/request-access">{t('site.nav.requestAccess')}</Link>
               <Link className="btn btn-primary btn-sm" to="/login">{t('site.nav.portal')} <ArrowRight size={16} /></Link>
             </div>
           </nav>

@@ -67,6 +67,9 @@ export default function Login() {
       <div className="gate-row">
         <Link to="/forgot-password">{t('auth.forgot')}</Link>
       </div>
+      <div className="gate-row">
+        <span>{t('auth.noAccount')} <Link to="/request-access">{t('auth.requestAccess')}</Link></span>
+      </div>
     </div>
   );
 }
