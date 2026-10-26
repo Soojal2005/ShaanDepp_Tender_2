@@ -81,11 +81,13 @@ export default function PublicLayout() {
         </div>
 
         {/* Contact row */}
-        <div className="site-wrap site-footer-contact">
+        <div className="site-wrap">
+         <div className="site-footer-contact">
           <a href={telHref(site.phone)}><span className="site-footer-ci"><Phone size={16} /></span><span><small>{t('site.lp.callUs')}</small><b>{site.phone}</b></span></a>
           <a href={waHref} target="_blank" rel="noopener noreferrer"><span className="site-footer-ci site-footer-ci-wa"><MessageCircle size={16} /></span><span><small>{t('site.lp.whatsapp')}</small><b>{site.phone}</b></span></a>
           <a href={`mailto:${site.email}`}><span className="site-footer-ci"><Mail size={16} /></span><span><small>{t('site.lp.email')}</small><b>{site.email}</b></span></a>
           <span className="site-footer-office"><span className="site-footer-ci"><MapPin size={16} /></span><span><small>{t('site.lp.office')}</small><b>{t('site.lp.address')}</b></span></span>
+         </div>
         </div>
 
         {/* Registration row */}
@@ -99,7 +101,8 @@ export default function PublicLayout() {
         </div>
 
         {/* Bottom bar */}
-        <div className="site-wrap site-copy">
+        <div className="site-wrap">
+         <div className="site-copy">
           <span>© {new Date().getFullYear()} {t('site.brand')}. {t('site.home.rights')}</span>
           <nav className="site-legal" aria-label="Legal">
             <Link to="/privacy">{t('site.lp.legal.privacy')}</Link>
@@ -107,8 +110,9 @@ export default function PublicLayout() {
             <Link to="/disclaimer">{t('site.lp.legal.disclaimer')}</Link>
             <a href="/sitemap.xml">{t('site.lp.legal.sitemap')}</a>
           </nav>
+         </div>
+         <p className="site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
         </div>
-        <p className="site-wrap site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
       </footer>
     </div>
   );

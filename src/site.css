@@ -239,8 +239,11 @@
 .site-footer-reg-sub { font-weight: 400 !important; font-size: 12px !important; color: #8698B5 !important; }
 .site-footer-reg-lang dd { margin-top: 6px; }
 .site-footer .site-copy { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 24px 0 0; margin-top: 24px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: 13px; opacity: 1; color: #93A3BE; }
+.site-footer .lang-btn, .site-footer .lang-btn.active { color: #C9D6EA; }
+.site-footer .lang-btn.active { color: #fff; font-weight: 700; }
+.site-footer .lang-btn + .lang-btn { border-left-color: rgba(255, 255, 255, .35); }
 .site-legal { display: flex; gap: 22px; flex-wrap: wrap; }
-.site-footer-note { display: flex; align-items: center; gap: 8px; max-width: none; margin: 14px auto 0; font-size: 12px; line-height: 1.6; color: #778AA8; }
+.site-footer-note { display: flex; align-items: center; gap: 8px; max-width: none; margin: 14px 0 0; font-size: 12px; line-height: 1.6; color: #778AA8; }
 
 @media (max-width: 1080px) {
   .site-menu-btn { display: block; margin-left: auto; }
