@@ -249,6 +249,8 @@ export default {
         { title: 'Business Licences & IPR', body: 'Assistance with key licences, registrations, trademarks, copyrights and other IPR services.' },
       ],
       // Portal
+      statusCol: 'Status',
+      portalStatus: ['Open', 'Closing', 'New'],
       portalKicker: 'The Shan-Deep tender portal', portalTitle: 'One workspace for every tender',
       portalBody: 'Subscribers get daily ranked alerts, search across departments and states, results and rate analysis, a weekly report and a submission desk that prepares and files the bid.',
       // How we help

@@ -1,23 +1,57 @@
-import { Bell, BarChart3, ClipboardList, Home, Landmark, Search, Settings, ShieldCheck } from 'lucide-react';
+import { BarChart3, Bell, ClipboardCheck, LayoutDashboard, Landmark, Search, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/index.jsx';
 
-/** A decorative, code-rendered preview; the actual portal opens at sign-in. */
+const NAV_ICONS = [LayoutDashboard, Search, Bell, ClipboardCheck, BarChart3, Settings];
+const ROW_DATES = ['10 Oct', '02 Nov', '21 Nov'];
+const ROW_STATUS = ['open', 'soon', 'new'];
+
+/** A decorative but readable "app window" preview of the portal. The real portal opens at sign-in. */
 export default function PortalPreview() {
   const { t } = useI18n();
-  const items = t('site.home.previewNav');
-  const icons = [Home, Search, Bell, ClipboardList, BarChart3, Settings];
+  const nav = t('site.home.previewNav');
+  const status = t('site.lp.portalStatus');
+  const rows = t('site.lp.samples').slice(0, 3).map((s, i) => ({
+    title: s.title, dept: s.department, date: ROW_DATES[i], status: ROW_STATUS[i], label: status[i],
+  }));
+
   return (
-    <Link to="/login" className="portal-device-preview" aria-label={t('site.home.previewLabel')}>
-      <div className="preview-orbit" aria-hidden="true" />
-      <div className="preview-laptop" aria-hidden="true">
-        <div className="preview-screen">
-          <aside className="preview-sidebar"><b><Landmark size={12} /> Shan-Deep</b>{items.map((item, i) => { const Icon = icons[i]; return <span key={item}><Icon size={9} />{item}</span>; })}</aside>
-          <div className="preview-main"><div className="preview-topbar">Shan-Deep <span>● EN</span></div><div className="preview-page"><h4>{t('site.home.previewTitle')}</h4><div className="preview-search"><Search size={8} />{t('site.home.previewSearch')}</div><div className="preview-table"><div className="preview-table-head"><span>{t('site.home.previewTender')}</span><span>{t('site.home.previewDepartment')}</span><span>{t('site.sampleDeadline')}</span></div>{t('site.home.samples').concat(t('site.home.samples')).map((item, i) => <div key={i}><span>{item.title}</span><span>{item.department}</span><span className="preview-status">{t('site.home.previewOpen')}</span></div>)}</div></div></div>
-        </div>
-        <div className="preview-laptop-base" />
+    <Link to="/login" className="lp-app" aria-label={t('site.home.previewLabel')}>
+      <div className="lp-app-bar" aria-hidden="true">
+        <span className="lp-app-dots"><i /><i /><i /></span>
+        <span className="lp-app-title"><Landmark size={14} />{t('brand.name')} · {t('site.nav.portal')}</span>
+        <span className="lp-app-live">Live</span>
       </div>
-      <div className="preview-phone" aria-hidden="true"><div className="preview-phone-speaker" /><div className="preview-phone-top"><Landmark size={10} />Shan-Deep</div>{items.map((item, i) => { const Icon = icons[i]; return <div className="preview-phone-item" key={item}><Icon size={12} />{item}</div>; })}<div className="preview-phone-card"><ShieldCheck size={19} /><span>{t('site.home.previewReady')}</span></div><div className="preview-phone-bottom" /></div>
+      <div className="lp-app-body" aria-hidden="true">
+        <aside className="lp-app-nav">
+          <span className="lp-app-brand"><Landmark size={14} />{t('brand.name')}</span>
+          {nav.map((item, i) => { const Icon = NAV_ICONS[i]; return (
+            <span key={item} className={`lp-app-link ${i === 0 ? 'on' : ''}`}><Icon size={14} />{item}</span>
+          ); })}
+        </aside>
+        <div className="lp-app-main">
+          <div className="lp-app-head">
+            <h4>{t('site.home.previewTitle')}</h4>
+            <span className="lp-app-search"><Search size={13} />{t('site.home.previewSearch')}</span>
+          </div>
+          <div className="lp-app-table">
+            <div className="lp-app-row lp-app-row-head">
+              <span>{t('site.home.previewTender')}</span>
+              <span className="lp-app-c-dept">{t('site.home.previewDepartment')}</span>
+              <span className="lp-app-c-date">{t('site.lp.deadline')}</span>
+              <span>{t('site.lp.statusCol')}</span>
+            </div>
+            {rows.map((r) => (
+              <div className="lp-app-row" key={r.title}>
+                <span className="lp-app-cell">{r.title.replace(/^\[sample\]\s*/i, '')}</span>
+                <span className="lp-app-cell lp-app-c-dept">{r.dept}</span>
+                <span className="lp-app-c-date">{r.date}</span>
+                <span className={`lp-app-status lp-app-status-${r.status}`}>{r.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }
