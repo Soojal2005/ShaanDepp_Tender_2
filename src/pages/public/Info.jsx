@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Mail, MapPin, Phone } from 'lucide-react';
 import { useI18n } from '../../i18n/index.jsx';
-import EnquiryForm, { ContactButtons } from '../../site/EnquiryForm.jsx';
+import EnquiryForm, { ACCESS_SERVICE, ContactButtons } from '../../site/EnquiryForm.jsx';
 import { telHref, useSeo, useSiteConfig } from '../../site/hooks.js';
 
 export function About() {
@@ -53,9 +53,6 @@ export function Contact() {
     </div>
   );
 }
-
-/** Kept in English whatever language the visitor uses; the admin queue itself is selected by `kind`. */
-const ACCESS_SERVICE = 'Portal access request';
 
 /** Portal accounts are created by staff, so this is an enquiry tagged for the inbox rather than a signup. */
 export function RequestAccess() {

@@ -8,6 +8,7 @@ import { I18nProvider } from './i18n/index.jsx';
 import './styles.css';
 import './ui.css';
 import './site.css';
+import './landing.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

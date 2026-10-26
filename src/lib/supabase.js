@@ -13,7 +13,7 @@ export async function getSampleTenders() {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from('tenders')
-    .select('id,title,department,submission_deadline')
+    .select('id,title,department,state,estimated_value,tender_no,submission_deadline')
     .eq('provider_id', 'sample')
     .order('id', { ascending: false })
     .limit(3);

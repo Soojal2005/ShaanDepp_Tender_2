@@ -37,7 +37,7 @@ const shot = (n) => page.screenshot({ path: path.join(shots, `${n}.png`), fullPa
 
 try {
   await page.goto(`${base}/`);
-  await page.waitForSelector('.site-group-card');
+  await page.waitForSelector('.lp-service');
   check('the home page renders under the policy with no console errors', errors.length === 0, errors.join(' | '));
 
   // public enquiry

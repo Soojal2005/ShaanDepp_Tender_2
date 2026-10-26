@@ -145,7 +145,7 @@ export function findItem(groupSlug, itemSlug) {
   const item = group && itemsOf(group).find((i) => i.slug === itemSlug);
   return item ? { group, item } : null;
 }
-export const allPaths = () => ['/', '/services', '/about', '/contact', '/request-access', ...GROUPS.flatMap((g) => [`/services/${g.slug}`, ...itemsOf(g).map((i) => `/services/${g.slug}/${i.slug}`)])];
+export const allPaths = () => ['/', '/services', '/about', '/contact', '/request-access', '/privacy', '/terms', '/disclaimer', ...GROUPS.flatMap((g) => [`/services/${g.slug}`, ...itemsOf(g).map((i) => `/services/${g.slug}/${i.slug}`)])];
 
 export const SERVICE_COUNT = GROUPS.reduce((n, g) => n + g.items.length, 0);
 

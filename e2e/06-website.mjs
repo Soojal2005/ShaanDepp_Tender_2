@@ -19,24 +19,25 @@ const meta = (sel, attr) => page.$eval(sel, (el, a) => el.getAttribute(a), attr)
 try {
   // ---- Home ----------------------------------------------------------------------------------
   await page.goto(`${base}/`);
-  await page.waitForSelector('.site-group-card');
-  check('the website is at "/" and shows the hero', (await page.textContent('h1')).includes('government tenders'));
-  check('eight service groups are shown', (await page.$$('.site-group-card')).length === 8);
-  check('registration and GST numbers are shown', (await page.textContent('.site-trust')).includes('BHOP260407SE000586') && (await page.textContent('.site-trust')).includes('23APSPT2592R1ZR'));
+  await page.waitForSelector('.lp-service');
+  check('the website is at "/" and shows the hero', (await page.textContent('h1')).includes('Government Tenders'));
+  check('eight service groups are shown', (await page.$$('.lp-service')).length === 8);
+  check('registration and GST numbers are shown in the footer', (await page.textContent('.site-footer-reg')).includes('BHOP260407SE000586') && (await page.textContent('.site-footer-reg')).includes('23APSPT2592R1ZR'));
   check('page title and description are set for search engines', (await page.title()).includes('Shan-Deep') && (await meta('meta[name=description]', 'content'))?.length > 40);
   check('a canonical address is set', (await meta('link[rel=canonical]', 'href')) === `${base}/`);
-  check('the department wall lists names without claiming logos', (await page.$$('.site-dept-wall li')).length === 12);
+  await page.click('button[aria-controls=dept-panel]');
+  check('the department wall lists names without claiming logos', (await page.$$('.lp-dept-wall li')).length === 12);
   await shot('01-home');
 
   // interactive flow chart
-  await page.click('.home-process details > summary');
+  await page.click('button[aria-controls=flow-panel]');
   await page.click('.flow-step >> nth=4');
   check('the flow chart explains the chosen step', (await page.textContent('.flow-detail')).includes('Financial strategy'));
   await page.click('.flow-step >> nth=8');
   check('the flow chart has nine steps and updates', (await page.$$('.flow-step')).length === 9 && (await page.textContent('.flow-detail')).includes('EMD refund'));
 
   // ---- Group and service pages -------------------------------------------------------------------
-  await page.click('.site-group-card:has-text("GeM Portal Specialist")');
+  await page.click('.lp-service:has-text("GeM Portal Services")');
   await page.waitForSelector('.site-item-grid');
   check('the GeM group lists all 12 services', (await page.$$('.site-item-grid li')).length === 12);
   check('the group page title names the group', (await page.title()).includes('GeM Portal Specialist'));
@@ -83,10 +84,10 @@ try {
 
   // ---- Hindi --------------------------------------------------------------------------------------------
   await page.goto(`${base}/`);
-  await page.waitForSelector('.site-group-card');
+  await page.waitForSelector('.lp-service');
   await page.click('.lang-btn >> nth=1');
   await page.waitForTimeout(400);
-  check('the whole home page switches to Hindi', /[ऀ-ॿ]/.test(await page.textContent('h1')) && /[ऀ-ॿ]/.test(await page.textContent('.site-group-card')));
+  check('the whole home page switches to Hindi', /[ऀ-ॿ]/.test(await page.textContent('h1')) && /[ऀ-ॿ]/.test(await page.textContent('.lp-service')));
   check('the page title is in Hindi', /[ऀ-ॿ]/.test(await page.title()));
   await shot('04-home-hindi');
   await page.goto(`${base}/services/business-setup`);
@@ -101,7 +102,7 @@ try {
   await page.waitForURL('**/login');
   check('the portal link goes to sign-in', true);
   const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
-  check('the sitemap lists every service page', sitemap.includes('/services/iso-certifications/iso-27001') && (sitemap.match(/<loc>/g) ?? []).length === 93);
+  check('the sitemap lists every service page', sitemap.includes('/services/iso-certifications/iso-27001') && (sitemap.match(/<loc>/g) ?? []).length === 97);
   const robots = await (await fetch(`${base}/robots.txt`)).text();
   check('robots.txt keeps the portal out of search results', robots.includes('Disallow: /app/') && robots.includes('Sitemap:'));
 
@@ -118,7 +119,7 @@ try {
   // ---- Mobile ---------------------------------------------------------------------------------------------------
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto(`${base}/`);
-  await page.waitForSelector('.site-group-card');
+  await page.waitForSelector('.lp-service');
   check('home has no horizontal scroll on mobile', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   check('the menu is hidden until opened', !(await page.isVisible('.site-nav a:has-text("Services")')));
   await page.click('.site-menu-btn');

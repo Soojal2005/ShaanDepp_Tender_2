@@ -1,39 +1,56 @@
 # Homepage redesign
 
-Implemented from the supplied `Shan-Deep Government Tender Advisory Homepage.png` reference. The UI remains native React and CSS, with a generated photographic background.
+The public landing page follows the supplied six-screen reference: a serif-headed B2B layout with a **keyword tender-search hero**, a parliament image **pinned behind the whole page** while content scrolls over it, white cards, a bright-blue accent, two-tone serif section titles, and a dark **mega footer**. It is native React and CSS.
 
-## Original functionality retained
+## Fixed background
 
-- All eight service groups and their 81 linked service offerings.
-- Hero registration and GST details, plus the same details in the footer.
-- All original hero actions and navigation destinations.
-- English and Hindi, including translated new sections and saved language preference.
-- Existing public Supabase sample-tender loading; explicitly labeled synthetic examples appear when sample data is unavailable. No invented live deadlines are shown.
-- Original portal description, weekly reports, and four detailed features (including the 150-tender limit and search criteria), available under “Explore all portal features.”
-- Four-step overview plus the original nine-step interactive workflow under “Explore our complete nine-step process.”
-- Department-category overview plus all 12 original department names in the expandable coverage list, with the original association note.
-- Original introductory enquiry text, required name/business/email, optional phone/message, consent, privacy wording, bot honeypot, API submission, errors, loading, and success state with call/WhatsApp links.
-- Phone, email, WhatsApp, sign-in, footer information note, and per-page SEO metadata.
+`.lp-bg` is `position: fixed` behind everything (`public/images/parliament-hero.png`), softened with a mask and a light wash so dark text stays readable; the content sections are transparent/white cards that scroll over it, and the footer is solid dark. The whole site shell (`.site-landing`) is transparent on `/` so the fixed layer shows through. To replace the image, drop a new file at the same path (landscape, subject on the right, airy sky).
 
-The desktop/mobile portal illustration is decorative HTML/CSS with an accessible sign-in link. It is not a screenshot of live account data.
+## Where things are
 
-## Generated background
+| What | File |
+|---|---|
+| Page and its sections | `src/pages/public/Home.jsx` |
+| Landing styles (all scoped to `.lp`) | `src/landing.css` |
+| Shared header, footer, buttons, tokens | `src/site.css` (below the "Public site shell" comment) and `src/layouts/PublicLayout.jsx` |
+| Landing text, English and Hindi | `src/i18n/en.js`, `hi.js` under `site.lp` |
+| Legal pages (English only) | `src/content/legal.js`, `src/pages/public/Legal.jsx` |
+| Hero background | `public/images/parliament-hero.png` (1536 x 1024) |
 
-- Mode: built-in `image_gen` tool; imagegen skill.
-- Project asset: `public/images/parliament-hero.png` (1536 × 1024 PNG).
-- Original generation saved at `C:/Users/lnc/.codex/generated_images/01a16c6a-eecc-7810-9c64-acbd723ce858/exec-adcdd3ba-80c6-48c5-8a3e-9d24628e70c2.png` and copied into the project.
-- Used only as decorative background; no generated text is embedded in the UI.
+## Sections, top to bottom
 
-Final generation prompt:
+1. **Header**: brand, Home / Services / About / Contact, EN | हिंदी, **Request Access**, **Tender Portal**. Collapses to a menu below 1080px.
+2. **Hero**: kicker, "Find Government Tenders. **Win with Confidence.**", a **keyword search box** with Tender-Type and Value filters and "More filters", popular-search chips, **Request Access** / **Explore Services**, and a four-stat strip. The search is real: it builds the portal's filter query and routes through sign-in to the results (`/login` with a `from=/app/search?…` redirect).
+3. **Latest government tenders**: three cards (department, deadline, title, state, value, reference). Live synthetic rows come from the public Supabase table; otherwise labelled illustrations, with a loading skeleton.
+4. **Our Services**: the eight groups, each linking to its page (81 services). Card wording follows the reference, e.g. "GeM Portal Services" (the group page keeps its canonical "GeM Portal Specialist").
+5. **The portal**: what subscribers get, with the code-drawn laptop and phone illustration.
+6. **How We Help You Win**: four steps, with "View detailed process" revealing the interactive nine-step chart.
+7. **About Shan-Deep**: intro, four feature cards (tender intelligence, compliance, submission desk, coverage) and a three-stat strip.
+8. **Government departments we cover**: seven categories, "View all departments" revealing the 12 named departments and the no-association note.
+9. **Get in Touch**: phone / email / office / WhatsApp cards and an office-location card (hours, prime location, easy access), with Request-a-Callback and email buttons.
+10. **Request Access**: the enquiry form with leading field icons and a character counter (creates an *access request* for staff, see ADMIN_GUIDE) beside a side panel (quick response, expert advisory, immediate assistance, who gets access).
+11. **Mega footer**: brand + tagline + three trust badges; Services (the 8 groups), Company and Get Started columns; a contact row (call, WhatsApp, email, office); a registration block (business registration, GST, address, language); and the legal bar (Privacy, Terms, Disclaimer, Sitemap).
 
-> Use case: photorealistic-natural. Asset type: wide website hero background, landscape 1536x1024. Create a premium realistic architectural photograph of India's historic circular Parliament House, warm cream sandstone colonnades curving across the LOWER RIGHT of frame, recognizable graceful central dome visible above columns, and a tall Indian national tricolor flag waving clearly in the UPPER RIGHT with correct saffron white green stripes and navy Ashoka Chakra. Bright fresh blue sky with soft white clouds, small green trees and garden at bottom right. Building occupies rightmost 48 percent and bottom 60 percent. Leftmost 52 percent is only very pale icy blue sky fading almost to white, quiet and completely empty for an HTML headline; no building, trees or flag on left half. Wide composition, gently low camera angle, natural sunlit stone details, professional trustworthy corporate website aesthetic, crisp realistic photography. No text, letters, logos, watermark, borders, UI, people or collage. Reference is a government tender advisory homepage, but generate only the photographic background, never a website screenshot.
+## Contact details are live, not the mockup's placeholders
 
-## Validation
+The reference screens show sample numbers (e.g. `+91 755 491 2345`, `info@shandeepadvisory.in`, a GST like `23ABCDE…`). The page does **not** hard-code those — phone, email, WhatsApp, business registration and GST all come from the server (`useSiteConfig` / site-config), so they stay correct and editable without a rebuild. The office address shows the general Bhopal, MP location and the office hours are a sensible default; confirm both with Shan-Deep (see CLIENT_INPUTS_CHECKLIST).
 
-- Production Vite build.
-- All 15 existing public API and frontend-serving tests pass.
-- `e2e/08-homepage-redesign.mjs`: dependency-free Chrome DevTools checks against the running frontend and an isolated in-memory demo API.
-- Original content/functionality checks, responsive overflow at 320/390/760/980/1024/1280px, mobile navigation, Hindi and persistence, image loading, SEO, consent gating, successful real API enquiry submission, success contact actions, and service/contact pages.
-- Desktop, 1024px, 390px, and Hindi screenshots in `e2e-output/homepage-redesign/` (git-ignored).
+## Decisions worth knowing
 
-To run the browser checks, start the frontend and demo API as described in `e2e/README.md`, launch a separate headless Chrome with `--remote-debugging-port=9227` and a dedicated workspace profile, then run `node e2e/08-homepage-redesign.mjs`.
+- **Marketing stats.** The reference's "7,000+ Government Departments" and "100% Compliance Focus" are shown as in the reference (they are Shan-Deep's own marketing claims, repeatedly requested). "81 Services", "36 States & UTs" and "8 groups" are facts from the catalogue. Confirm the two marketing figures are ones Shan-Deep is comfortable standing behind.
+- **No "Resources" menu.** The reference nav/footer had Resources, Guides, Careers, etc.; there is no such content, so those links are not created. The footer's Services column links the eight real service groups, and Company / Get Started link only to real pages.
+- **Public search gating.** Department and State filters need the master lists (sign-in only), so the hero exposes keyword + Tender Type + Value and sends everything into the portal search after sign-in; "More filters" opens the full search there.
+- **Fonts.** Headlines use Source Serif 4 (Noto Serif Devanagari for Hindi), from Google Fonts; the production CSP already allows it.
+- **Legal pages** describe what the system does (forms, consent record, no trackers, hashed passwords). Have Shan-Deep's adviser review them, and bump `NOTICE_VERSION` in `legal.js` when the privacy text changes.
+- **Hindi** is a first draft, like the rest of the Hindi text.
+
+## Background image
+
+The hero reuses the generated photograph already in the project: curved sandstone colonnade and flag on the right, clear sky on the left for the headline. It is softened and faded into the page in CSS. To replace it, drop a new file at the same path (landscape, about 1536 x 1024, subject on the right 45%, empty sky on the left). A prompt that matches the reference:
+
+> Photorealistic wide website hero, landscape 1536x1024. India's Parliament House: warm cream sandstone colonnade and dome on the right half, a tall Indian tricolour flag against a soft blue sky with light clouds, a few green trees at the base. Left 50% is calm pale sky fading to near white, empty for a headline. Soft natural daylight, slightly desaturated, calm and trustworthy. No text, logos, people, watermark or borders.
+
+## Checks
+
+- `e2e/08-homepage-redesign.mjs` (Chrome DevTools, no dependencies): section content, links, the nine-step chart, no overflow from 1280 down to 320px, mobile menu, Hindi, form consent, a real submission, and the request appearing in the staff Access requests queue. Start the frontend and demo API as in `e2e/README.md`, launch headless Chrome with `--remote-debugging-port=9227` and a dedicated profile, then `node e2e/08-homepage-redesign.mjs`.
+- `e2e/06-website.mjs` covers the home page, group and service pages, search, Hindi, the sitemap (97 URLs) and the mobile menu.
