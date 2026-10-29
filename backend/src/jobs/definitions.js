@@ -13,6 +13,9 @@ import { button, emailShell } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
 import { runIngestion } from '../services/ingestion/runner.js';
 import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
+import { createCpppClient } from '../services/ingestion/sources/cppp/cppp.js';
+import { createCpppBrowserClient } from '../services/ingestion/sources/cppp/browser.js';
+import { normalizeCpppTender } from '../services/ingestion/sources/cppp/normalize.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
@@ -30,6 +33,8 @@ export function createJobs(db, deps = {}) {
     makeMailClient = () => (settings.dryRun ? null : createGraphClient()),
     makeTenderbookClient = createTenderbookClient,
     tenderbook = config.tenderbook,
+    crawler = config.crawler,
+    makeCpppClient = () => (crawler.engine === 'browser' ? createCpppBrowserClient() : createCpppClient()),
   } = deps;
 
   return {
@@ -43,6 +48,19 @@ export function createJobs(db, deps = {}) {
         const tenders = await runIngestion(db, { kind: 'tenders', trigger: 'schedule', client });
         const results = await runIngestion(db, { kind: 'results', trigger: 'schedule', client });
         return { tenders: { status: tenders.status, inserted: tenders.inserted, updated: tenders.updated }, results: { status: results.status, inserted: results.inserted } };
+      },
+    },
+
+    'crawl-cppp': {
+      label: 'CPPP tender crawl',
+      description: 'Scrapes new and changed tenders from the CPPP ePublishing portal (eprocure.gov.in).',
+      enabled: crawler.enabled,
+      cron: crawler.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(crawler.intervalMinutes / 60))} * * *` : `*/${crawler.intervalMinutes} * * * *`,
+      timezone: 'Asia/Kolkata',
+      async run() {
+        const client = makeCpppClient();
+        const r = await runIngestion(db, { providerId: 'cppp', kind: 'tenders', trigger: 'schedule', client, normalize: normalizeCpppTender });
+        return { status: r.status, inserted: r.inserted, updated: r.updated, skipped: r.skipped, errors: r.errors, activity: r.inserted + r.updated };
       },
     },
 

@@ -1,0 +1,81 @@
+1. Visitor (not signed in)
+Opens the public website (English or Hindi, switchable).
+Browses Services (8 groups, 81 service pages), About, the tender flow chart, and the Privacy, Terms and Disclaimer pages.
+Sends an enquiry from a service page, or uses the WhatsApp or Call button. The enquiry needs consent and a valid email.
+Asks for a portal login on the Request Access page.
+Waits for staff to create an account. Visitors can't sign themselves up.
+
+2. Subscriber (client user)
+Gets an invite email and opens the link, which is valid for 72 hours.
+Sets a password of at least 10 characters with a letter and a digit.
+Signs in at /login. Five wrong passwords lock the account for 15 minutes.
+Lands on the Dashboard: open tenders by department, state and value, plus a closing-soon list.
+Search tenders by keyword with filters, then open a tender to see its full details.
+They can save a search, add the tender to the Watchlist, or export to Excel.
+Watchlist: keep private notes and get deadline reminders by email.
+Alerts: create alert profiles (categories, keywords, states, value band, frequency).
+They can preview a digest, send themselves a test email, pause a profile, and see tenders that were held back.
+Results: look up past tender results and winners, and use the rate analysis and bid-band guidance.
+Desk: click "New request" on a tender and track the case.
+They can see the stage, checklists, pre-bid queries, submission, result and shared documents, and upload documents in client slots.
+They never see internal strategy or notes.
+Reports: download the weekly report as PDF or Excel, but only after staff have released it.
+Profile / Help: view their own details, FAQs and contact options. Then sign out.
+
+3. Account Admin (client administrator, tenant_admin)
+Can do everything a Subscriber can, plus:
+Open Profile and click Invite to add a person as Subscriber or Account Admin.
+Each organization has at most 3 active logins by default.
+Promote or demote members, or deactivate them.
+
+4. Analyst (staff)
+Signs in and sees the same portal as clients, plus the admin menu Access Requests and Enquiries.
+Reads website enquiries and access requests, and moves them through New → Contacted → Qualified → Closed.
+Opens Desk, which is the staff view. It shows open cases by stage, deadline risk, unassigned cases and follow-ups due.
+Opens a case and works through it:
+Moves it through the 9 stages, from request received to follow-up.
+Writes the summary shared with the client.
+Ticks eligibility and technical checklists.
+Raises pre-bid queries and records the department's responses.
+Records the submission (online with a portal reference, or offline with courier details).
+Records the result, the EMD and the follow-ups.
+Uploads documents, marked internal or shared.
+Writes internal strategy and notes, attaches a rate analysis, and can mark a case cancelled or withdrawn.
+
+5. Case Manager (staff)
+Can do everything an Analyst can, plus:
+Assign a case to a staff owner.
+Reopen a closed case.
+Open Weekly Reports, preview each client's bundle, and release it to one client or to a whole plan. Releases are logged and can't be edited later.
+Gets an email whenever a client raises a new request, and reminders about unowned cases.
+
+6. Platform Admin (staff, full control)
+Can do everything a Case Manager can, plus:
+Organizations: create a client with a plan and first admin, edit it, suspend it, and invite, deactivate or reset passwords for its members.
+Plans: edit alert limits, profile limits and login limits.
+Masters: edit states, cities, departments and categories, and resolve unmapped names from the feed.
+Ingestion: run or back-fill the tender data feed, and upload tenders from Excel.
+Mail queue: check email status, and send, retry or cancel messages.
+Jobs: see schedules and results, and run a job on demand.
+Weekly Reports: generate the bundles.
+Audit Log: read the record of sign-ins, admin changes, releases and case changes.
+Quick access map
+Area	Visitor	Subscriber	Account Admin	Analyst	Case Manager	Platform Admin
+Public site	✅	✅	✅	✅	✅	✅
+Search, alerts, results, own reports	❌	✅	✅	✅	✅	✅
+Invite members	❌	❌	✅	❌	❌	✅ (via Organizations)
+Work cases	❌	request only	request only	✅	✅	✅
+Assign and reopen cases	❌	❌	❌	❌	✅	✅
+Release reports	❌	❌	❌	❌	✅	✅
+Enquiries inbox	❌	❌	❌	✅	✅	✅
+Orgs, plans, masters, ingestion, mail, jobs, audit	❌	❌	❌	❌	❌	✅
+For local testing, the dev seed creates one demo login per portal role:
+
+admin@demo.test
+analyst@demo.test
+manager@demo.test
+owner@demo.test (Account Admin)
+subscriber@demo.test
+All use a shared demo password defined in the seed. Demo accounts are refused in production.
+
+I can turn this into a flowchart or a doc if you want one.

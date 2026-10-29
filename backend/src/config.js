@@ -85,6 +85,24 @@ const schema = z.object({
   TENDERBOOK_KEY_VALID_TILL: optionalString,
   INGEST_INTERVAL_MINUTES: z.coerce.number().int().min(5).default(120),
 
+  // Web crawler (scrapes government portals). OFF unless switched on.
+  CRAWLER_ENABLED: bool,
+  // How pages are fetched: 'http' (cheerio only, for plain-HTML portals) or
+  // 'browser' (a real headless browser, for session/JavaScript portals like CPPP).
+  CRAWLER_ENGINE: z.enum(['http', 'browser']).default('browser'),
+  CRAWLER_CPPP_URL: z.string().url().default('https://eprocure.gov.in'),
+  // The captcha-free "Tenders by Closing Date" listing (works across GePNIC portals).
+  CRAWLER_CPPP_LIST_PATH: z.string().default('/eprocure/app?page=FrontEndListTendersbyDate&service=page'),
+  CRAWLER_CPPP_START_PATH: z.string().default('/eprocure/app'),
+  CRAWLER_CPPP_LIST_LINK: z.string().default('Tenders by Closing Date'),
+  CRAWLER_CPPP_TABLE_SELECTOR: z.string().default('#table'),
+  CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(50).default(3),
+  CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(360),
+  CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
+  CRAWLER_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1500),
+  CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
+  CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
+
   // Microsoft 365 / Graph. MAIL_MODE=live is required to actually send.
   MAIL_MODE: z.enum(['dry_run', 'live']).default('dry_run'),
   AZURE_TENANT_ID: optionalString,
@@ -180,6 +198,23 @@ function load(env) {
       apiKey: c.TENDERBOOK_API_KEY,
       validTill: c.TENDERBOOK_KEY_VALID_TILL,
       intervalMinutes: c.INGEST_INTERVAL_MINUTES,
+    }),
+    crawler: Object.freeze({
+      enabled: c.CRAWLER_ENABLED,
+      engine: c.CRAWLER_ENGINE,
+      intervalMinutes: c.CRAWL_INTERVAL_MINUTES,
+      userAgent: c.CRAWLER_USER_AGENT,
+      requestDelayMs: c.CRAWLER_REQUEST_DELAY_MS,
+      maxDetails: c.CRAWLER_MAX_DETAILS,
+      maxPages: c.CRAWLER_MAX_PAGES,
+      timeoutMs: c.CRAWLER_TIMEOUT_MS,
+      cppp: Object.freeze({
+        baseUrl: c.CRAWLER_CPPP_URL.replace(/\/$/, ''),
+        listPath: c.CRAWLER_CPPP_LIST_PATH,
+        startPath: c.CRAWLER_CPPP_START_PATH,
+        listLinkText: c.CRAWLER_CPPP_LIST_LINK,
+        tableSelector: c.CRAWLER_CPPP_TABLE_SELECTOR,
+      }),
     }),
     mail: Object.freeze({
       mode: c.MAIL_MODE,

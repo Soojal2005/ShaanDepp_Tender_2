@@ -40,6 +40,11 @@ export async function runIngestion(db, opts = {}) {
   } = opts;
   const def = KINDS[kind];
   if (!def) throw new Error(`Unknown ingestion kind: ${kind}`);
+  // A source may supply its own normalizer/store (e.g. a web crawler) while
+  // reusing all of the paging, locking, health and alerting below. Defaults
+  // keep the vendor-API path unchanged.
+  const normalize = opts.normalize ?? def.normalize;
+  const store = opts.store ?? def.store;
 
   const lockKey = `${providerId}:${kind}`;
   if (running.has(lockKey)) throw conflict('A sync for this feed is already running');
@@ -78,7 +83,7 @@ export async function runIngestion(db, opts = {}) {
       await db.withContext(SYSTEM, async (q) => {
         const index = await loadMasterIndex(q);
         for (const dto of batch.content) {
-          const { record, problems } = def.normalize(dto);
+          const { record, problems } = normalize(dto);
           if (problems.length) {
             totals.errors++;
             if (samples.length < MAX_ERROR_SAMPLES) samples.push(`record rejected: ${problems.join(', ')}`);
@@ -87,7 +92,7 @@ export async function runIngestion(db, opts = {}) {
           const when = record.publishDate ?? record.awardDate ?? null;
           if ((from && when && when < from) || (to && when && when > to)) { outOfWindow++; continue; }
           try {
-            const outcome = await q.savepoint((tx) => def.store(tx, providerId, record, index, dto));
+            const outcome = await q.savepoint((tx) => store(tx, providerId, record, index, dto));
             totals[outcome]++;
           } catch (err) {
             totals.errors++;

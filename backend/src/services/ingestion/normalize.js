@@ -86,7 +86,7 @@ const SOURCE_STATUS = {
   EVALUATION: 'Under Evaluation', 'UNDER EVALUATION': 'Under Evaluation',
 };
 
-function statusFrom(raw, deadline) {
+export function statusFrom(raw, deadline) {
   const mapped = SOURCE_STATUS[String(raw ?? '').trim().toUpperCase()];
   if (mapped) return mapped;
   return deadline && deadline.getTime() < Date.now() ? 'Closed' : 'Open';
