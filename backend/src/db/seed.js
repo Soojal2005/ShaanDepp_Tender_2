@@ -13,6 +13,7 @@ import { addPrebid, assignCase, createCase, moveStage, saveInternal, saveResult,
 import { generateBundle, releaseBundle } from '../services/bundle/index.js';
 import { addDays, previousWeekStart } from '../services/bundle/period.js';
 import { loadMasterIndex } from '../services/ingestion/masters.js';
+import { GEPNIC_PORTALS } from '../services/ingestion/sources/cppp/portals.js';
 import { normalizeTenderbookResult, normalizeTenderbookTender } from '../services/ingestion/normalize.js';
 import { upsertAward, upsertTender } from '../services/ingestion/store.js';
 import { hashPassword } from '../auth/password.js';
@@ -52,6 +53,22 @@ export async function seedMasters(q) {
   }
 }
 
+/**
+ * Register every government portal in the crawler registry as an ingestion
+ * provider. Additive and idempotent: an existing provider's name/URL is refreshed
+ * but its tuning (sync frequency, min expected) is left alone.
+ */
+export async function seedCrawlerProviders(q) {
+  for (const p of GEPNIC_PORTALS) {
+    await q.query(
+      `INSERT INTO providers (id, name, type, base_url, sync_frequency_minutes, min_expected_records)
+       VALUES ($1, $2, $3, $4, 360, 1)
+       ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, type = EXCLUDED.type, base_url = EXCLUDED.base_url`,
+      [p.id, p.name, p.type, p.baseUrl]
+    );
+  }
+}
+
 /** Returns the id of the staff organization, creating it on first run. */
 export async function ensureStaffOrganization(q) {
   const existing = await q.maybeOne('SELECT id FROM organizations WHERE is_staff_org');
@@ -87,6 +104,7 @@ export async function seedBaseline(db) {
   return db.withContext(SYSTEM, async (q) => {
     const orgId = await ensureStaffOrganization(q);
     await seedMasters(q);
+    await seedCrawlerProviders(q);
     const adminId = await ensureBootstrapAdmin(q, orgId);
     if (adminId) log.info('bootstrap platform admin created', { email: config.bootstrapAdmin.email });
     return { staffOrgId: orgId, adminCreated: Boolean(adminId) };

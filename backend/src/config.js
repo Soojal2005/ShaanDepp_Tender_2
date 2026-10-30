@@ -96,9 +96,15 @@ const schema = z.object({
   CRAWLER_CPPP_START_PATH: z.string().default('/eprocure/app'),
   CRAWLER_CPPP_LIST_LINK: z.string().default('Tenders by Closing Date'),
   CRAWLER_CPPP_TABLE_SELECTOR: z.string().default('#table'),
-  CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(50).default(3),
+  // How many listing pages to walk per portal (each ~10 tenders). The crawler
+  // stops early when a page adds nothing new, so small portals finish quickly;
+  // a high value means "effectively everything" for large portals like CPPP.
+  CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(2000).default(40),
   CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(360),
   CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
+  // Path to a system Chromium for the browser engine (set in the Docker image).
+  // Empty = use Playwright's own downloaded browser (local development).
+  CRAWLER_CHROMIUM_PATH: optionalString,
   CRAWLER_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1500),
   CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
   CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
@@ -204,6 +210,7 @@ function load(env) {
       engine: c.CRAWLER_ENGINE,
       intervalMinutes: c.CRAWL_INTERVAL_MINUTES,
       userAgent: c.CRAWLER_USER_AGENT,
+      chromiumPath: c.CRAWLER_CHROMIUM_PATH,
       requestDelayMs: c.CRAWLER_REQUEST_DELAY_MS,
       maxDetails: c.CRAWLER_MAX_DETAILS,
       maxPages: c.CRAWLER_MAX_PAGES,

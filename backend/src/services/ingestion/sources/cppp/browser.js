@@ -40,6 +40,7 @@ export function createCpppBrowserClient(opts = {}) {
     listLinkText = c.listLinkText ?? 'Tenders by Closing Date',
     listPath = c.listPath ?? '/eprocure/app?page=FrontEndListTendersbyDate&service=page',
     tableSelector = c.tableSelector ?? '#table',
+    state = null, // the portal's state, stamped onto every row for master mapping
     timeoutMs = config.crawler?.timeoutMs ?? 45_000,
     requestDelayMs = config.crawler?.requestDelayMs ?? 1_500,
     maxPages = config.crawler?.maxPages ?? 3,
@@ -55,7 +56,14 @@ export function createCpppBrowserClient(opts = {}) {
     } catch {
       throw new SourceError('Playwright is not installed. Run `npm i playwright && npx playwright install chromium`.');
     }
-    return chromium.launch({ headless });
+    // In the container we use the system Chromium (CRAWLER_CHROMIUM_PATH) and must
+    // disable the sandbox (no setuid helper as a non-root user). Locally the path
+    // is empty, so Playwright's own browser is used with the same safe flags.
+    return chromium.launch({
+      headless,
+      executablePath: config.crawler?.chromiumPath || undefined,
+      args: ['--no-sandbox', '--disable-dev-shm-usage'],
+    });
   }
 
   async function tenders({ page = 0 } = {}) {
@@ -92,6 +100,7 @@ export function createCpppBrowserClient(opts = {}) {
       const byId = new Map();
       const absorb = (html) => {
         for (const row of parseListPage(html, baseUrl, { tableSelector })) {
+          if (state && !row.state) row.state = state;
           if (row.tenderId && !byId.has(row.tenderId)) byId.set(row.tenderId, row);
         }
       };
@@ -100,7 +109,11 @@ export function createCpppBrowserClient(opts = {}) {
         throw new SourceError('GePNIC listing rendered no tender rows. The portal flow or layout may have changed.');
       }
 
-      // Walk the pager (?...&sp=N) within the same session, up to maxPages.
+      // Walk the pager within the same session. GePNIC shows a sliding window of
+      // page numbers, so on each page we look for the NEXT page number's link;
+      // this lets us go far deeper than the handful of numbers on page 1. We stop
+      // at the page cap, when there is no next link, or when a page adds nothing
+      // new (end of list / loop guard).
       for (let p = 2; p <= maxPages; p++) {
         const href = await pg.$$eval('a', (as, n) => {
           const a = as.find((x) => new RegExp(`[?&]sp=${n}(?:&|$)`).test(x.href) && /sp=A/i.test(x.href));
@@ -110,11 +123,13 @@ export function createCpppBrowserClient(opts = {}) {
         if (requestDelayMs) await sleep(requestDelayMs);
         await pg.goto(href, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).catch(() => {});
         await pg.waitForSelector(tableSelector, { timeout: timeoutMs }).catch(() => {});
+        const before = byId.size;
         absorb(await pg.content());
+        if (byId.size === before) break; // no new tenders on this page → end of list
       }
 
       const content = [...byId.values()];
-      log.info('gepnic crawl page fetched', { baseUrl, rows: content.length });
+      log.info('gepnic crawl complete', { baseUrl, rows: content.length });
       return { content, totalElements: content.length, totalPages: 1, page: 0 };
     } finally {
       await browser.close().catch(() => {});

@@ -39,6 +39,10 @@ COPY backend/src ./src
 COPY --from=web /web/dist /app/dist
 RUN mkdir -p /data/storage /data/outbox && chown -R node:node /data
 ENV STORAGE_DIR=/data/storage OUTBOX_DIR=/data/outbox
+# Chromium for the tender crawler's browser engine. Playwright uses this system
+# binary (its own download is skipped), so the image stays lean.
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 CRAWLER_CHROMIUM_PATH=/usr/bin/chromium-browser
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \

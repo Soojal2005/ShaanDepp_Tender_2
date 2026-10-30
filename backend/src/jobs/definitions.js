@@ -16,11 +16,14 @@ import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
 import { createCpppClient } from '../services/ingestion/sources/cppp/cppp.js';
 import { createCpppBrowserClient } from '../services/ingestion/sources/cppp/browser.js';
 import { normalizeCpppTender } from '../services/ingestion/sources/cppp/normalize.js';
+import { enabledPortals, portalClientOptions } from '../services/ingestion/sources/cppp/portals.js';
+import { createNprocureClient } from '../services/ingestion/sources/nprocure/nprocure.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
 
 const SYSTEM = { scope: 'system' };
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * @param db database
@@ -34,7 +37,14 @@ export function createJobs(db, deps = {}) {
     makeTenderbookClient = createTenderbookClient,
     tenderbook = config.tenderbook,
     crawler = config.crawler,
-    makeCpppClient = () => (crawler.engine === 'browser' ? createCpppBrowserClient() : createCpppClient()),
+    // Build a crawler client for one portal. Most portals are GePNIC; some run
+    // their own software and get a dedicated adapter (selected by portal.adapter).
+    makeCrawlerClient = (portal) => {
+      if (portal.adapter === 'nprocure') return createNprocureClient({ baseUrl: portal.baseUrl, state: portal.state });
+      const opts = portalClientOptions(portal);
+      return crawler.engine === 'http' ? createCpppClient(opts) : createCpppBrowserClient(opts);
+    },
+    portals = enabledPortals(),
   } = deps;
 
   return {
@@ -51,16 +61,39 @@ export function createJobs(db, deps = {}) {
       },
     },
 
-    'crawl-cppp': {
-      label: 'CPPP tender crawl',
-      description: 'Scrapes new and changed tenders from the CPPP ePublishing portal (eprocure.gov.in).',
+    'crawl-gepnic': {
+      label: 'Government portal crawl (GePNIC)',
+      description: 'Scrapes the captcha-free "Tenders by Closing Date" listing from every enabled government portal (CPPP + state portals on NIC GePNIC).',
       enabled: crawler.enabled,
       cron: crawler.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(crawler.intervalMinutes / 60))} * * *` : `*/${crawler.intervalMinutes} * * * *`,
       timezone: 'Asia/Kolkata',
-      async run() {
-        const client = makeCpppClient();
-        const r = await runIngestion(db, { providerId: 'cppp', kind: 'tenders', trigger: 'schedule', client, normalize: normalizeCpppTender });
-        return { status: r.status, inserted: r.inserted, updated: r.updated, skipped: r.skipped, errors: r.errors, activity: r.inserted + r.updated };
+      async run({ only } = {}) {
+        const targets = only ? portals.filter((p) => p.id === only) : portals;
+        const results = [];
+        let inserted = 0;
+        let updated = 0;
+        const gap = crawler.requestDelayMs ?? 1500;
+        // These portals are slow and occasionally time out, so retry a portal once
+        // before giving up, and pace between portals to stay polite.
+        const crawlOnce = async (portal) => {
+          const client = makeCrawlerClient(portal);
+          const normalize = (dto) => normalizeCpppTender(portal.state ? { state: portal.state, ...dto } : dto);
+          return runIngestion(db, { providerId: portal.id, kind: 'tenders', trigger: 'schedule', client, normalize });
+        };
+        for (const portal of targets) {
+          let r = null;
+          let error = null;
+          for (let attempt = 0; attempt < 2 && (r === null || r.status === 'failed'); attempt++) {
+            if (attempt) await sleep(gap * 2);
+            try { r = await crawlOnce(portal); error = null; }
+            catch (err) { error = err.message; r = null; log.warn('portal crawl error', { portal: portal.id, attempt, error: err.message }); }
+          }
+          if (r) { inserted += r.inserted; updated += r.updated; results.push({ portal: portal.id, status: r.status, inserted: r.inserted, updated: r.updated, errors: r.errors }); }
+          else results.push({ portal: portal.id, status: 'failed', error });
+          await sleep(gap);
+        }
+        const failed = results.filter((r) => r.status === 'failed').length;
+        return { portals: targets.length, failed, inserted, updated, activity: inserted + updated, results };
       },
     },
 

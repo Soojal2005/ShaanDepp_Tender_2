@@ -4,6 +4,9 @@ import { parseDetailPage, parseListPage, createCpppClient } from '../src/service
 import { normalizeCpppTender, toCpppDate } from '../src/services/ingestion/sources/cppp/normalize.js';
 import { runIngestion } from '../src/services/ingestion/runner.js';
 import { SourceError } from '../src/services/ingestion/tenderbook.js';
+import { GEPNIC_PORTALS, enabledPortals, portalClientOptions } from '../src/services/ingestion/sources/cppp/portals.js';
+import { seedCrawlerProviders } from '../src/db/seed.js';
+import { createJobs } from '../src/jobs/definitions.js';
 import { SYSTEM, makeContext } from './helpers.js';
 
 // --- Fixtures: representative CPPP ePublishing HTML -------------------------
@@ -298,5 +301,80 @@ describe('CPPP end-to-end through the ingestion pipeline', () => {
     assert.deepEqual([run.inserted, run.updated], [0, 1]);
     const title = await ctx.db.withContext(SYSTEM, async (q) => (await q.one(`SELECT title FROM tenders WHERE source_id = '2026_UPD_1'`)).title);
     assert.equal(title, 'Revised title');
+  });
+});
+
+describe('GePNIC portal registry', () => {
+  it('has well-formed, uniquely-identified entries', () => {
+    const ids = GEPNIC_PORTALS.map((p) => p.id);
+    assert.equal(new Set(ids).size, ids.length, 'portal ids are unique');
+    for (const p of GEPNIC_PORTALS) {
+      assert.ok(p.id && p.name && p.baseUrl && p.appPath, `${p.id} has required fields`);
+      assert.match(p.baseUrl, /^https:\/\//, `${p.id} baseUrl is https`);
+      assert.ok(['central_portal', 'state_portal', 'psu_direct'].includes(p.type), `${p.id} has a valid provider type`);
+    }
+    assert.ok(enabledPortals().some((p) => p.id === 'cppp'), 'CPPP is enabled');
+    assert.ok(enabledPortals().some((p) => p.id === 'mp'), 'Madhya Pradesh is enabled');
+  });
+
+  it('builds per-portal client options with the right path and state', () => {
+    const mp = GEPNIC_PORTALS.find((p) => p.id === 'mp');
+    const o = portalClientOptions(mp);
+    assert.equal(o.baseUrl, 'https://mptenders.gov.in');
+    assert.match(o.listPath, /\/nicgep\/app\?page=FrontEndListTendersbyDate/);
+    assert.equal(o.tableSelector, '#table');
+    assert.equal(o.state, 'Madhya Pradesh');
+  });
+});
+
+describe('crawl-gepnic job across portals', () => {
+  let ctx;
+  before(async () => {
+    ctx = await makeContext();
+    await ctx.db.withContext(SYSTEM, seedCrawlerProviders); // register provider rows
+  });
+  after(() => ctx.close());
+
+  const gepnicDto = (over = {}) => ({
+    tenderId: `2026_X_${Math.random().toString(36).slice(2, 8)}`,
+    refNo: 'REF/1', title: 'Road works', organisationChain: 'Public Works Department',
+    closingDate: '15-Nov-2026 03:00 PM', ...over,
+  });
+
+  it('crawls every portal, isolates failures, and attributes state', async () => {
+    const portals = [
+      { id: 'cppp', name: 'CPPP', state: null, type: 'central_portal', baseUrl: 'https://eprocure.gov.in', appPath: '/eprocure/app', enabled: true },
+      { id: 'mp', name: 'MP', state: 'Madhya Pradesh', type: 'state_portal', baseUrl: 'https://mptenders.gov.in', appPath: '/nicgep/app', enabled: true },
+      { id: 'odisha', name: 'Odisha', state: 'Odisha', type: 'state_portal', baseUrl: 'https://tendersodisha.gov.in', appPath: '/nicgep/app', enabled: true },
+    ];
+    // Fake client: MP/CPPP serve rows; Odisha throws (simulating a bad URL).
+    const makeCrawlerClient = (o) => ({
+      tenders: async ({ page = 0 } = {}) => {
+        if (o.baseUrl.includes('tendersodisha')) throw new Error('site unreachable');
+        const rows = page > 0 ? [] : [gepnicDto(), gepnicDto()];
+        return { content: rows, totalElements: rows.length, totalPages: 1, page: 0 };
+      },
+    });
+    const jobs = createJobs(ctx.db, { crawler: { enabled: true, engine: 'http', intervalMinutes: 360, requestDelayMs: 0 }, portals, makeCrawlerClient });
+    const detail = await jobs['crawl-gepnic'].run();
+
+    assert.equal(detail.portals, 3);
+    assert.equal(detail.failed, 1, 'odisha failed but did not stop the others');
+    assert.equal(detail.inserted, 4, 'cppp + mp each stored 2');
+    const mpState = await ctx.db.withContext(SYSTEM, async (q) =>
+      (await q.one(`SELECT state FROM tenders WHERE provider_id = 'mp' LIMIT 1`)).state);
+    assert.equal(mpState, 'Madhya Pradesh', 'MP tenders are attributed to the MP state');
+  });
+
+  it('can target a single portal with { only }', async () => {
+    const portals = [
+      { id: 'cppp', name: 'CPPP', state: null, type: 'central_portal', baseUrl: 'https://eprocure.gov.in', appPath: '/eprocure/app', enabled: true },
+      { id: 'mp', name: 'MP', state: 'Madhya Pradesh', type: 'state_portal', baseUrl: 'https://mptenders.gov.in', appPath: '/nicgep/app', enabled: true },
+    ];
+    const makeCrawlerClient = () => ({ tenders: async ({ page = 0 } = {}) => ({ content: page > 0 ? [] : [gepnicDto()], totalElements: 1, totalPages: 1, page: 0 }) });
+    const jobs = createJobs(ctx.db, { crawler: { enabled: true, engine: 'http', intervalMinutes: 360, requestDelayMs: 0 }, portals, makeCrawlerClient });
+    const detail = await jobs['crawl-gepnic'].run({ only: 'mp' });
+    assert.equal(detail.portals, 1);
+    assert.deepEqual(detail.results.map((r) => r.portal), ['mp']);
   });
 });
