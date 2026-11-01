@@ -73,14 +73,19 @@ export async function upsertTender(q, providerId, rec, index, raw = null) {
   );
   if (!row) return 'skipped';
 
-  await q.query('DELETE FROM tender_documents WHERE tender_id = $1', [row.id]);
+  // A row that was just inserted cannot have child rows yet, so the clear-out is
+  // only needed when replacing an existing tender's children. Crawled tenders
+  // carry neither documents nor BOQ lines, and over thousands of records these
+  // two statements were the bulk of the write cost.
+  const replacing = !row.inserted;
+  if (replacing) await q.query('DELETE FROM tender_documents WHERE tender_id = $1', [row.id]);
   for (const d of rec.documents) {
     await q.query(
       'INSERT INTO tender_documents (tender_id, name, doc_type, url, external_id) VALUES ($1,$2,$3,$4,$5)',
       [row.id, d.name, d.type, d.url, d.externalId]
     );
   }
-  await q.query('DELETE FROM tender_boq_items WHERE tender_id = $1', [row.id]);
+  if (replacing) await q.query('DELETE FROM tender_boq_items WHERE tender_id = $1', [row.id]);
   for (const i of rec.boqItems) {
     await q.query(
       `INSERT INTO tender_boq_items (tender_id, item_code, item_name, quantity, unit, estimated_rate, total_amount)

@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parseVupadhiTender, parseVupadhiCorrigendum } from '../src/services/ingestion/sources/vupadhi/vupadhi.js';
+import { parseVupadhiTender, parseVupadhiCorrigendum, parseVupadhiRow } from '../src/services/ingestion/sources/vupadhi/vupadhi.js';
 import { normalizeCpppTender } from '../src/services/ingestion/sources/cppp/normalize.js';
+
+// Headers as the two full-listing DataTables actually publish them. Telangana
+// has a "Published" column and Andhra Pradesh does not, so the closing date sits
+// at a different index on each -- the parser must go by header, not position.
+const TS_HEADERS = ['S.No', 'Department', 'Tender ID', 'Notice No', 'Category', 'Name of Work',
+  'Estimated Contract Value', 'Published Date', 'Bid Start Date', 'Closing Date'];
+const AP_HEADERS = ['S.No', 'Department', 'Tender ID', 'Notice No', 'Category', 'Name of Work',
+  'Estimated Contract Value', 'Bid Start Date', 'Closing Date'];
 
 // Simulated HTML block from the AP Vupadhi portal (class "samer").
 const AP_BLOCK = `
@@ -87,5 +95,42 @@ describe('Vupadhi (AP/Telangana) tender parsing', () => {
   it('returns null tenderId for empty block', () => {
     const dto = parseVupadhiTender('<div>nothing here</div>', 'Test');
     assert.equal(dto.tenderId, null);
+  });
+});
+
+describe('Vupadhi full-listing row parsing', () => {
+  const TS_ROW = ['1', 'Panchayat Raj', '1234567', 'PR/TS/2026-27/88', 'Works',
+    'Construction of CC road at Siddipet', '₹ 5,97,74,68,240', '20/10/2026 11:00 AM',
+    '21/10/2026 10:00 AM', '07/11/2026 03:00 PM'];
+  const AP_ROW = ['1', 'Water Resources', '1005553', 'IFB/WR/2026-27/045', 'Works',
+    'Construction of check dam at Kurnool', '₹ 2,50,00,000',
+    '21/10/2026 10:00 AM', '06/11/2026 10:30 AM'];
+
+  it('maps the Telangana columns and its Indian-grouped value', () => {
+    const dto = parseVupadhiRow(TS_HEADERS, TS_ROW, 'Telangana');
+    assert.equal(dto.tenderId, '1234567');
+    assert.equal(dto.refNo, 'PR/TS/2026-27/88');
+    assert.equal(dto.title, 'Construction of CC road at Siddipet');
+    assert.equal(dto.organisationChain, 'Panchayat Raj');
+    assert.equal(dto.closingDate, '07/11/2026 03:00 PM');
+    const { record, problems } = normalizeCpppTender(dto);
+    assert.deepEqual(problems, []);
+    assert.equal(record.estimatedValue, 5_977_468_240);
+    // 07/11/2026 15:00 IST = 09:30 UTC
+    assert.equal(record.submissionDeadline.toISOString(), '2026-11-07T09:30:00.000Z');
+  });
+
+  it('reads the closing date from the right column when Published is absent', () => {
+    const dto = parseVupadhiRow(AP_HEADERS, AP_ROW, 'Andhra Pradesh');
+    assert.equal(dto.tenderId, '1005553');
+    assert.equal(dto.closingDate, '06/11/2026 10:30 AM');
+    assert.equal(dto.publishedDate, null);
+    const { record } = normalizeCpppTender(dto);
+    assert.equal(record.estimatedValue, 25_000_000);
+    assert.equal(record.submissionDeadline.toISOString(), '2026-11-06T05:00:00.000Z');
+  });
+
+  it('ignores a row with no tender id', () => {
+    assert.equal(parseVupadhiRow(AP_HEADERS, ['', '', '', ''], 'Andhra Pradesh').tenderId, null);
   });
 });

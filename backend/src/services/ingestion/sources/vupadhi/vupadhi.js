@@ -75,6 +75,33 @@ export function parseVupadhiTender(html, state) {
 }
 
 /**
+ * Parse one row of the full tender listing.
+ *
+ * Columns are matched by their header text, not by position: Telangana publishes
+ * ten columns and Andhra Pradesh nine (it has no "Published" column), so fixed
+ * indexes would silently read the wrong field on one of the two.
+ */
+export function parseVupadhiRow(headers, cells, state) {
+  const at = (re) => {
+    const i = headers.findIndex((h) => re.test(h));
+    return i >= 0 ? cleanText(cells[i]) : null;
+  };
+  const tenderId = at(/tender\s*id/i);
+  return {
+    tenderId: tenderId || null,
+    refNo: at(/notice\s*no|tender\s*no|ifb/i),
+    title: at(/name\s*of\s*work|description|work/i),
+    organisationChain: at(/department|circle|division|organisation/i),
+    category: at(/category/i),
+    publishedDate: at(/publish/i),
+    closingDate: at(/clos/i),
+    // "₹ 5,97,74,68,240" — toMoney understands the Indian grouping.
+    tenderValue: at(/value|amount|cost/i),
+    state,
+  };
+}
+
+/**
  * Parse a Telangana corrigendum JSON entry into the same dto shape.
  */
 export function parseVupadhiCorrigendum(obj, state) {
@@ -109,6 +136,7 @@ export function createVupadhiClient(opts = {}) {
     state,
     timeoutMs = config.crawler?.timeoutMs ?? 45_000,
     requestDelayMs = config.crawler?.requestDelayMs ?? 1_500,
+    maxPages = config.crawler?.maxPages ?? 40,
     headless = true,
     launchImpl = null,
   } = opts;
@@ -122,6 +150,8 @@ export function createVupadhiClient(opts = {}) {
       const ctx = await browser.newContext({ locale: 'en-IN', ignoreHTTPSErrors: true });
       const pg = await ctx.newPage();
       pg.setDefaultTimeout(timeoutMs * 2);
+      // The listing handler calls alert(); an unanswered dialog blocks the page.
+      pg.on('dialog', (d) => d.accept().catch(() => {}));
 
       // Step 1: load the homepage (which may auto-redirect via JS POST to login.html).
       await pg.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => {});
@@ -171,123 +201,79 @@ export function createVupadhiClient(opts = {}) {
       }
       log.info('vupadhi homepage tenders scraped', { baseUrl, count: byId.size });
 
-      // Step 3: navigate to the full tender listing page.
-      // Vupadhi portals use jCryption to encrypt form POSTs, so we must use
-      // Playwright's real click (not JS .click()) to trigger the page's own
-      // encryption handler. We try multiple strategies.
-      let navigated = null;
+      // Step 3: open the full listing. The page's own "More" handler performs the
+      // jCryption-encrypted POST to TenderDetailsHome.html, so we only have to get
+      // that handler to run -- there is nothing to reimplement.
+      await pg.evaluate(() => {
+        // Telangana lays a modal over the page which swallows the click.
+        for (const sel of ['#tgep-overlay', '#tgep-scope']) document.querySelector(sel)?.remove();
+      }).catch(() => {});
 
-      // Strategy A: Playwright real-click on ".viewCurrentall" / "More..." link
-      for (const sel of ['.viewCurrentall', '.viewCurrentalltabs', 'a:has-text("More")', 'span:has-text("More")']) {
-        const el = await pg.$(sel).catch(() => null);
-        if (el) {
-          try {
-            await Promise.all([
-              pg.waitForNavigation({ waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => {}),
-              el.click(),
-            ]);
-            navigated = 'click-' + sel;
-            break;
-          } catch { /* try next */ }
+      const link = await pg.$('#viewCurrentall').catch(() => null);
+      if (link) {
+        // Andhra Pradesh renders the control zero-sized, which makes a real click
+        // time out; dispatching the event runs the same handler.
+        const realClick = await link.click({ timeout: 10_000 }).then(() => true).catch(() => false);
+        if (!realClick) {
+          await pg.evaluate(() => document.querySelector('#viewCurrentall')
+            ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))).catch(() => {});
         }
-      }
-
-      // Strategy B: find the TenderDetailsHome form and submit with jCryption
-      if (!navigated) {
-        navigated = await pg.evaluate(() => {
-          const forms = [...document.querySelectorAll('form')];
-          for (const form of forms) {
-            const action = form.getAttribute('action') || '';
-            if (/TenderDetailsHome/i.test(action)) {
-              let typeField = form.querySelector('[name="hdnType"]');
-              if (!typeField) {
-                typeField = document.createElement('input');
-                typeField.type = 'hidden';
-                typeField.name = 'hdnType';
-                form.appendChild(typeField);
-              }
-              typeField.value = 'current';
-              form.submit();
-              return 'form-submit';
-            }
-          }
-          return null;
-        }).catch(() => null);
-        if (navigated) {
-          await pg.waitForLoadState('networkidle', { timeout: timeoutMs }).catch(() => {});
-        }
-      }
-
-      if (navigated) {
-        // Wait for page navigation or AJAX load
         await pg.waitForLoadState('networkidle', { timeout: timeoutMs }).catch(() => {});
-        await pg.waitForTimeout(3000);
-
-        // Scrape the full listing page — look for table rows and tender blocks
-        const expandedBlocks = await pg.evaluate(() => {
-          const blocks = [];
-          // Check for tender blocks (same structure as homepage)
-          document.querySelectorAll('.samer, .tender-item, .tender-block').forEach((el) => {
-            blocks.push(el.outerHTML);
-          });
-          // Also check table rows
-          if (!blocks.length) {
-            document.querySelectorAll('table tbody tr').forEach((tr) => {
-              if (tr.innerHTML.length > 50 && tr.querySelectorAll('td').length >= 2) {
-                blocks.push(tr.outerHTML);
-              }
-            });
-          }
-          // Check for viewtender elements
-          if (!blocks.length) {
-            document.querySelectorAll('[onclick*="viewtender"]').forEach((el) => {
-              const parent = el.closest('div, tr') || el.parentElement;
-              if (parent) blocks.push(parent.outerHTML);
-            });
-          }
-          return blocks;
-        }).catch(() => []);
-
-        for (const html of expandedBlocks) {
-          const dto = parseVupadhiTender(html, state);
-          if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
-        }
-        log.info('vupadhi full listing scraped', { baseUrl, method: navigated, total: byId.size });
-
-        // Try pagination: look for "Next" links
-        for (let pageNum = 2; pageNum <= 20; pageNum++) {
-          const hasNext = await pg.evaluate(() => {
-            const nextLink = [...document.querySelectorAll('a')].find(
-              (a) => /next|»|›/i.test(a.textContent?.trim() || '')
-            );
-            if (nextLink) { nextLink.click(); return true; }
-            return false;
-          }).catch(() => false);
-          if (!hasNext) break;
-
-          await pg.waitForLoadState('networkidle', { timeout: timeoutMs }).catch(() => {});
-          await pg.waitForTimeout(2000);
-
-          const pageBlocks = await pg.evaluate(() => {
-            const blocks = [];
-            document.querySelectorAll('.samer, .tender-item, table tbody tr, [onclick*="viewtender"]').forEach((el) => {
-              const target = el.tagName === 'TR' || el.classList.contains('samer') ? el : (el.closest('div, tr') || el.parentElement);
-              if (target && target.innerHTML.length > 50) blocks.push(target.outerHTML);
-            });
-            return blocks;
-          }).catch(() => []);
-
-          let newCount = 0;
-          for (const html of pageBlocks) {
-            const dto = parseVupadhiTender(html, state);
-            if (dto.tenderId && !byId.has(dto.tenderId)) { byId.set(dto.tenderId, dto); newCount++; }
-          }
-          if (newCount === 0) break; // No new tenders = reached the end
-          if (requestDelayMs > 0) await new Promise((r) => setTimeout(r, requestDelayMs));
-        }
-        log.info('vupadhi after pagination', { baseUrl, total: byId.size });
+        await pg.waitForTimeout(2500);
       } else {
-        log.warn('vupadhi could not navigate to full listing', { baseUrl });
+        log.warn('vupadhi "view all" control not found', { baseUrl });
+      }
+
+      // The listing is a DataTable whose id differs between the two portals, so
+      // take the richest table on the page rather than hard-coding one.
+      const tableId = await pg.evaluate(() => {
+        let best = null; let bestRows = 0;
+        for (const t of document.querySelectorAll('table[id]')) {
+          const n = t.querySelectorAll('tbody tr').length;
+          if (n > bestRows) { best = t.id; bestRows = n; }
+        }
+        return bestRows > 1 ? best : null;
+      }).catch(() => null);
+
+      if (tableId) {
+        // Ask the table for bigger pages through its own API, so one pass covers
+        // far more rows. Ignored on portals that pin the page length.
+        await pg.evaluate((id) => {
+          const jq = window.jQuery ?? window.$;
+          jq?.(`#${id}`)?.DataTable?.().page.len(100).draw(false);
+        }, tableId).catch(() => {});
+        await pg.waitForTimeout(1500);
+
+        const readPage = () => pg.evaluate((id) => {
+          const t = document.getElementById(id);
+          if (!t) return { headers: [], rows: [] };
+          const txt = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
+          return {
+            headers: [...t.querySelectorAll('thead th')].map(txt),
+            rows: [...t.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('td')].map(txt)),
+          };
+        }, tableId).catch(() => ({ headers: [], rows: [] }));
+
+        for (let p = 0; p < maxPages; p++) {
+          const { headers, rows } = await readPage();
+          const before = byId.size;
+          for (const cells of rows) {
+            const dto = parseVupadhiRow(headers, cells, state);
+            if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
+          }
+          const advanced = await pg.evaluate((id) => {
+            const next = document.getElementById(`${id}_next`);
+            if (!next || /disabled/i.test(next.className)) return false;
+            next.click();
+            return true;
+          }, tableId).catch(() => false);
+          if (!advanced) break;
+          if (byId.size === before && p > 0) break; // nothing new: end of the table
+          await pg.waitForTimeout(Math.max(600, requestDelayMs / 2));
+        }
+        log.info('vupadhi full listing scraped', { baseUrl, table: tableId, total: byId.size });
+      } else {
+        log.warn('vupadhi full listing table not found; keeping homepage preview', { baseUrl });
       }
 
       // Step 4: for Telangana, try the corrigendum JSON endpoint (bonus data).
