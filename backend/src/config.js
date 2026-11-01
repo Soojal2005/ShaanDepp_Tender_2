@@ -99,8 +99,8 @@ const schema = z.object({
   // How many listing pages to walk per portal (each ~10 tenders). The crawler
   // stops early when a page adds nothing new, so small portals finish quickly;
   // a high value means "effectively everything" for large portals like CPPP.
-  CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(2000).default(40),
-  CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(360),
+  CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(2000).default(100),
+  CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(120),
   CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
   // Path to a system Chromium for the browser engine (set in the Docker image).
   // Empty = use Playwright's own downloaded browser (local development).

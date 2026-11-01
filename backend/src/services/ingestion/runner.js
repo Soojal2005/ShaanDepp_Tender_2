@@ -18,6 +18,10 @@ const SYSTEM = { scope: 'system' };
 const STALE_RUN_MS = 30 * 60 * 1000;
 const DRIFT_RATIO = 0.2;
 const MAX_ERROR_SAMPLES = 5;
+// Records stored per transaction. A crawler hands back its whole listing in one
+// fetch (thousands of rows), and storing all of them in a single transaction
+// overruns the transaction timeout and rolls the lot back, so writes are chunked.
+const STORE_CHUNK = 50;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const KINDS = {
@@ -80,26 +84,29 @@ export async function runIngestion(db, opts = {}) {
       available = batch.totalElements || available;
       totals.fetched += batch.content.length;
 
-      await db.withContext(SYSTEM, async (q) => {
-        const index = await loadMasterIndex(q);
-        for (const dto of batch.content) {
-          const { record, problems } = normalize(dto);
-          if (problems.length) {
-            totals.errors++;
-            if (samples.length < MAX_ERROR_SAMPLES) samples.push(`record rejected: ${problems.join(', ')}`);
-            continue;
+      for (let i = 0; i < batch.content.length; i += STORE_CHUNK) {
+        const chunk = batch.content.slice(i, i + STORE_CHUNK);
+        await db.withContext(SYSTEM, async (q) => {
+          const index = await loadMasterIndex(q);
+          for (const dto of chunk) {
+            const { record, problems } = normalize(dto);
+            if (problems.length) {
+              totals.errors++;
+              if (samples.length < MAX_ERROR_SAMPLES) samples.push(`record rejected: ${problems.join(', ')}`);
+              continue;
+            }
+            const when = record.publishDate ?? record.awardDate ?? null;
+            if ((from && when && when < from) || (to && when && when > to)) { outOfWindow++; continue; }
+            try {
+              const outcome = await q.savepoint((tx) => store(tx, providerId, record, index, dto));
+              totals[outcome]++;
+            } catch (err) {
+              totals.errors++;
+              if (samples.length < MAX_ERROR_SAMPLES) samples.push(`could not store ${record.sourceId}: ${err.message}`);
+            }
           }
-          const when = record.publishDate ?? record.awardDate ?? null;
-          if ((from && when && when < from) || (to && when && when > to)) { outOfWindow++; continue; }
-          try {
-            const outcome = await q.savepoint((tx) => store(tx, providerId, record, index, dto));
-            totals[outcome]++;
-          } catch (err) {
-            totals.errors++;
-            if (samples.length < MAX_ERROR_SAMPLES) samples.push(`could not store ${record.sourceId}: ${err.message}`);
-          }
-        }
-      });
+        });
+      }
 
       const lastPage = batch.content.length < pageSize || (batch.totalPages && page + 1 >= batch.totalPages);
       if (lastPage) break;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parseBiharTender } from '../src/services/ingestion/sources/bihar/bihar.js';
+import { parseBiharTender, toBiharDateStr } from '../src/services/ingestion/sources/bihar/bihar.js';
 import { normalizeCpppTender } from '../src/services/ingestion/sources/cppp/normalize.js';
 
 // Simulated API response object (shape from AngularJS template bindings).
@@ -80,5 +80,33 @@ describe('Bihar tender parsing', () => {
   it('returns null tenderId for missing id', () => {
     const dto = parseBiharTender({ currentdescription: 'No ID tender' });
     assert.equal(dto.tenderId, null);
+  });
+
+  it('converts epoch millisecond dates from the API', () => {
+    const epochMs = Date.UTC(2026, 10, 15, 11, 30, 0); // 2026-11-15T11:30:00Z = 17:00 IST
+    const dto = parseBiharTender({ ...RAW_TENDER, currentbidEndDate: epochMs, currentTenderPublishDate: epochMs });
+    assert.equal(dto.closingDate, '15-11-2026 17:00:00');
+    assert.equal(dto.publishedDate, '15-11-2026 17:00:00');
+  });
+
+  it('epoch dates survive the normaliser round-trip', () => {
+    const epochMs = Date.UTC(2026, 10, 15, 11, 30, 0);
+    const dto = parseBiharTender({ ...RAW_TENDER, currentbidEndDate: epochMs });
+    const { record } = normalizeCpppTender(dto);
+    assert.equal(record.submissionDeadline.toISOString(), '2026-11-15T11:30:00.000Z');
+    assert.equal(record.status, 'Open');
+  });
+
+  it('converts ISO date strings (YYYY-MM-DD HH:mm)', () => {
+    assert.equal(toBiharDateStr('2026-11-15 17:00'), '15-11-2026 17:00');
+    assert.equal(toBiharDateStr('2026-11-15T17:00:00'), '15-11-2026 17:00:00');
+    assert.equal(toBiharDateStr('2026-11-15'), '15-11-2026');
+  });
+
+  it('returns null for zero, empty, and null date values', () => {
+    assert.equal(toBiharDateStr(0), null);
+    assert.equal(toBiharDateStr(''), null);
+    assert.equal(toBiharDateStr(null), null);
+    assert.equal(toBiharDateStr(undefined), null);
   });
 });

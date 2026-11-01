@@ -21,6 +21,31 @@ import { log } from '../../../../log.js';
 import { cleanText } from '../../normalize.js';
 import { SourceError } from '../../tenderbook.js';
 
+const IST_OFFSET_MS = 5.5 * 3600_000;
+
+/**
+ * Convert a Bihar API date value to a string toCpppDate can parse.
+ * The Java/AngularJS API returns dates as epoch milliseconds (numbers).
+ * toCpppDate expects "DD-MM-YYYY HH:MM:SS" (interpreted as IST).
+ */
+export function toBiharDateStr(val) {
+  if (val == null || val === '' || val === 0) return null;
+  // Epoch milliseconds (number or numeric string)
+  if (typeof val === 'number' || /^\d{10,13}$/.test(String(val))) {
+    const ms = Number(val);
+    if (ms > 946684800000 && ms < 4102444800000) {
+      const d = new Date(ms + IST_OFFSET_MS);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+    }
+  }
+  // "YYYY-MM-DD HH:mm" or "YYYY-MM-DD" → flip to "DD-MM-YYYY HH:mm"
+  const iso = String(val);
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}${m[4] ? ' ' + m[4] : ''}`;
+  return cleanText(iso) || null;
+}
+
 /**
  * Turn one tender object from the Bihar REST API into a dto for normalizeCpppTender.
  *
@@ -33,12 +58,11 @@ export function parseBiharTender(obj, state = 'Bihar') {
   const tenderId = cleanText(String(obj.currenttenderid ?? obj.currentTenderId ?? '')) || null;
   const refNo = cleanText(obj.currenttenderrefno ?? obj.currentTenderRefNo) || null;
   const title = cleanText(obj.currentdescription ?? obj.currentDescription) || null;
-  // Department/org info — use org name if available, fall back to dept name, then IDs.
   const department = cleanText(obj.orgName ?? obj.deptName)
     || cleanText(obj.currentorgid ?? obj.currentOrgId)
     || null;
-  const publishedDate = cleanText(obj.currentTenderPublishDate) || null;
-  const closingDate = cleanText(obj.currentbidEndDate ?? obj.currentBidEndDate) || null;
+  const publishedDate = toBiharDateStr(obj.currentTenderPublishDate) || null;
+  const closingDate = toBiharDateStr(obj.currentbidEndDate ?? obj.currentBidEndDate) || null;
   // pacamt is the estimated value (PAC = Probable Amount of Contract)
   const tenderValue = obj.pacamt != null && obj.pacamt !== '' && obj.pacamt !== 0
     ? String(obj.pacamt) : null;
