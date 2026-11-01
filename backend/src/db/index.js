@@ -14,6 +14,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { config } from '../config.js';
+import { log } from '../log.js';
 
 const OID_INT8 = 20;
 const OID_NUMERIC = 1700;
@@ -125,11 +126,21 @@ async function createPg(options) {
       ssl: { ca: fs.readFileSync(options.sslCaFile, 'utf8'), rejectUnauthorized: true },
     };
   };
-  const runtime = new pg.Pool({ ...poolOptions, ...connectionOptions(options.url), max: options.poolMax ?? 10 });
+  // A pool whose idle client loses its connection emits 'error' on the pool, and
+  // an 'error' event with no listener takes the whole process down. The pool has
+  // already discarded the client by then, so logging is the correct response: the
+  // next query opens a fresh connection.
+  const survivePoolErrors = (pool, role) => {
+    pool.on('error', (err) => log.warn('postgres pool error', { role, error: err.message }));
+    return pool;
+  };
+  const runtime = survivePoolErrors(
+    new pg.Pool({ ...poolOptions, ...connectionOptions(options.url), max: options.poolMax ?? 10 }), 'runtime');
   const prisma = new PrismaClient({ adapter: new PrismaPg(runtime) });
   const migration = options.migrationUrl === options.url
     ? runtime
-    : new pg.Pool({ ...poolOptions, ...connectionOptions(options.migrationUrl || options.url), max: 2 });
+    : survivePoolErrors(
+      new pg.Pool({ ...poolOptions, ...connectionOptions(options.migrationUrl || options.url), max: 2 }), 'migration');
   return {
     kind: 'pg',
     prisma,
