@@ -54,20 +54,27 @@ export function toBiharDateStr(val) {
  *   currentdeptid, currentorgid, currentTenderPublishDate,
  *   currentbidStartDate, currentbidEndDate, pacamt
  */
-export function parseBiharTender(obj, state = 'Bihar') {
+export function parseBiharTender(obj, state = 'Bihar', deptNames = null) {
   const tenderId = cleanText(String(obj.currenttenderid ?? obj.currentTenderId ?? '')) || null;
   const refNo = cleanText(obj.currenttenderrefno ?? obj.currentTenderRefNo) || null;
   const title = cleanText(obj.currentdescription ?? obj.currentDescription) || null;
+  // The feed carries only numeric ids; currentorgid is the same state-wide value
+  // for every tender, so the owning department is currentdeptid resolved through
+  // the portal's own organisation master (see loadDeptNames).
+  const deptId = obj.currentdeptid ?? obj.currentDeptId;
   const department = cleanText(obj.orgName ?? obj.deptName)
+    || cleanText(deptNames?.get(Number(deptId)))
     || cleanText(obj.currentorgid ?? obj.currentOrgId)
     || null;
   const publishedDate = toBiharDateStr(obj.currentTenderPublishDate) || null;
   const closingDate = toBiharDateStr(obj.currentbidEndDate ?? obj.currentBidEndDate) || null;
-  // pacamt is the estimated value (PAC = Probable Amount of Contract)
-  const tenderValue = obj.pacamt != null && obj.pacamt !== '' && obj.pacamt !== 0
-    ? String(obj.pacamt) : null;
+  const openingDate = toBiharDateStr(obj.currentbidOpenDate ?? obj.currentBidOpenDate) || null;
+  // PAC = Probable Amount of Contract. Bihar's public feed does not publish it,
+  // so this stays null rather than being defaulted to 0.
+  const pac = obj.currentpacamt ?? obj.pacamt;
+  const tenderValue = pac != null && pac !== '' && pac !== 0 ? String(pac) : null;
 
-  return { tenderId, refNo, title, organisationChain: department, publishedDate, closingDate, tenderValue, state };
+  return { tenderId, refNo, title, organisationChain: department, publishedDate, closingDate, openingDate, tenderValue, state };
 }
 
 async function launchChromium({ headless = true, launchImpl = null } = {}) {
@@ -101,15 +108,27 @@ export function createBiharClient(opts = {}) {
       const pg = await ctx.newPage();
       pg.setDefaultTimeout(timeoutMs * 2);
 
-      // Intercept XHR responses to capture the raw JSON tender data.
+      // Intercept XHR responses to capture the raw JSON tender data, and the
+      // organisation master the page loads alongside it, which is the only place
+      // a department id can be turned into a department name.
       const captured = [];
+      const deptNames = new Map();
       pg.on('response', async (response) => {
         const url = response.url();
+        if (!url.includes('/rest/')) return;
+        let json;
+        try { json = await response.json(); } catch { return; /* not JSON */ }
         if (url.includes('/rest/openarea/') && url.includes('Tender')) {
-          try {
-            const json = await response.json();
-            captured.push({ url, data: json });
-          } catch { /* not JSON, ignore */ }
+          captured.push({ url, data: json });
+          return;
+        }
+        const lists = Array.isArray(json) ? [json] : Object.values(json ?? {}).filter((v) => Array.isArray(v));
+        for (const list of lists) {
+          for (const row of list) {
+            if (row?.organizationId != null && row?.organizationName) {
+              deptNames.set(Number(row.organizationId), String(row.organizationName));
+            }
+          }
         }
       });
 
@@ -145,7 +164,7 @@ export function createBiharClient(opts = {}) {
           : Array.isArray(data?.data) ? data.data
           : [];
         for (const raw of list) {
-          const dto = parseBiharTender(raw, state);
+          const dto = parseBiharTender(raw, state, deptNames);
           if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
         }
       }
@@ -170,7 +189,7 @@ export function createBiharClient(opts = {}) {
         }).catch(() => []);
 
         for (const raw of scopeData) {
-          const dto = parseBiharTender(raw, state);
+          const dto = parseBiharTender(raw, state, deptNames);
           if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
         }
         log.info('bihar scope extraction', { tenders: byId.size });
@@ -197,7 +216,7 @@ export function createBiharClient(opts = {}) {
         }).catch(() => []);
 
         for (const raw of rows) {
-          const dto = parseBiharTender(raw, state);
+          const dto = parseBiharTender(raw, state, deptNames);
           if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
         }
         log.info('bihar DOM scrape', { tenders: byId.size });
@@ -225,7 +244,7 @@ export function createBiharClient(opts = {}) {
                 : Array.isArray(data?.data) ? data.data
                 : [];
               for (const raw of list) {
-                const dto = parseBiharTender(raw, state);
+                const dto = parseBiharTender(raw, state, deptNames);
                 if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
               }
             }

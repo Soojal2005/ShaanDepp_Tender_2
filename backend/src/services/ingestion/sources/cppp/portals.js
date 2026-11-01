@@ -24,6 +24,17 @@ export const GEPNIC_PORTALS = [
   { id: 'defence', name: 'Defence (defproc)', state: null, type: 'central_portal', baseUrl: 'https://defproc.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'coalindia', name: 'Coal India', state: null, type: 'psu_direct', baseUrl: 'https://coalindiatenders.nic.in', appPath: '/nicgep/app', enabled: true },
   { id: 'ntpc', name: 'NTPC', state: null, type: 'psu_direct', baseUrl: 'https://eprocurentpc.nic.in', appPath: '/nicgep/app', enabled: true },
+  // The rest of GePNIC's public-sector-enterprise deployments. Each was probed
+  // on 2026-11-01 and serves the same captcha-free listing as the others.
+  { id: 'iocl', name: 'IndianOil (IOCL)', state: null, type: 'psu_direct', baseUrl: 'https://iocletenders.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'bhel', name: 'BHEL', state: null, type: 'psu_direct', baseUrl: 'https://eprocurebhel.co.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'bel', name: 'Bharat Electronics (BEL)', state: null, type: 'psu_direct', baseUrl: 'https://eprocurebel.co.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'mazagondock', name: 'Mazagon Dock Shipbuilders', state: null, type: 'psu_direct', baseUrl: 'https://eprocuremdl.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'grse', name: 'Garden Reach Shipbuilders (GRSE)', state: null, type: 'psu_direct', baseUrl: 'https://eprocuregrse.co.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'hsl', name: 'Hindustan Shipyard', state: null, type: 'psu_direct', baseUrl: 'https://eprocurehsl.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'goashipyard', name: 'Goa Shipyard', state: null, type: 'psu_direct', baseUrl: 'https://eprocuregsl.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'cpcl', name: 'Chennai Petroleum (CPCL)', state: null, type: 'psu_direct', baseUrl: 'https://cpcletenders.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'midhani', name: 'Midhani', state: null, type: 'psu_direct', baseUrl: 'https://eprocuremidhani.nic.in', appPath: '/nicgep/app', enabled: true },
 
   // --- State / UT portals (GePNIC) -----------------------------------------
   { id: 'mp', name: 'Madhya Pradesh', state: 'Madhya Pradesh', type: 'state_portal', baseUrl: 'https://mptenders.gov.in', appPath: '/nicgep/app', enabled: true },

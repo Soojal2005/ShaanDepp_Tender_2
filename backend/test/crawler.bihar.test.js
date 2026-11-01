@@ -103,6 +103,48 @@ describe('Bihar tender parsing', () => {
     assert.equal(toBiharDateStr('2026-11-15'), '15-11-2026');
   });
 
+  it('resolves the department id through the organisation master', () => {
+    // The real feed carries no orgName/deptName, only numeric ids, and
+    // currentorgid is the same state-wide value on every tender.
+    const deptNames = new Map([[1529, 'Department Of Social Welfare']]);
+    const dto = parseBiharTender(
+      { ...RAW_TENDER, orgName: null, deptName: null, currentdeptid: 1529, currentorgid: 538 },
+      'Bihar',
+      deptNames,
+    );
+    assert.equal(dto.organisationChain, 'Department Of Social Welfare');
+  });
+
+  it('falls back to the org id when the department id is not in the master', () => {
+    const dto = parseBiharTender(
+      { ...RAW_TENDER, orgName: null, deptName: null, currentdeptid: 9999, currentorgid: 538 },
+      'Bihar',
+      new Map([[1529, 'Department Of Social Welfare']]),
+    );
+    assert.equal(dto.organisationChain, '538');
+  });
+
+  it('keeps the published org name ahead of the master lookup', () => {
+    const dto = parseBiharTender(
+      { ...RAW_TENDER, currentdeptid: 1529 },
+      'Bihar',
+      new Map([[1529, 'Department Of Social Welfare']]),
+    );
+    assert.equal(dto.organisationChain, 'Road Construction Department');
+  });
+
+  it('carries the bid opening date through to the record', () => {
+    const dto = parseBiharTender({ ...RAW_TENDER, currentbidOpenDate: Date.UTC(2026, 10, 16, 5, 30, 0) });
+    assert.equal(dto.openingDate, '16-11-2026 11:00:00');
+    const { record } = normalizeCpppTender(dto);
+    assert.equal(record.openingDate.toISOString(), '2026-11-16T05:30:00.000Z');
+  });
+
+  it('reads the estimated value from currentpacamt, and leaves it null when unpublished', () => {
+    assert.equal(parseBiharTender({ ...RAW_TENDER, pacamt: undefined, currentpacamt: 4200000 }).tenderValue, '4200000');
+    assert.equal(parseBiharTender({ ...RAW_TENDER, pacamt: undefined, currentpacamt: null }).tenderValue, null);
+  });
+
   it('returns null for zero, empty, and null date values', () => {
     assert.equal(toBiharDateStr(0), null);
     assert.equal(toBiharDateStr(''), null);

@@ -122,7 +122,16 @@ export function createCpppBrowserClient(opts = {}) {
       };
       absorb(await pg.content());
       if (!byId.size) {
-        throw new SourceError('GePNIC listing rendered no tender rows. The portal flow or layout may have changed.');
+        // Tell a changed portal apart from a window that genuinely holds nothing.
+        // A table that rendered but carries only its header row means no tender is
+        // closing in the period, which is normal for a smaller portal; a missing
+        // table means the flow or layout moved and someone should look.
+        const headerOnly = await pg.$eval(tableSelector, (t) => t.querySelectorAll('tr').length > 0).catch(() => false);
+        if (!headerOnly) {
+          throw new SourceError('GePNIC listing rendered no tender rows. The portal flow or layout may have changed.');
+        }
+        log.info('gepnic listing empty for this closing window', { baseUrl });
+        return { content: [], totalElements: 0, totalPages: 1, page: 0 };
       }
 
       // Walk the pager within the same session. GePNIC shows a sliding window of
