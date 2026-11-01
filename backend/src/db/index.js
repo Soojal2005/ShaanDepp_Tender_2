@@ -115,6 +115,9 @@ async function createPg(options) {
   const poolOptions = {
     connectionTimeoutMillis: options.connectTimeoutMs ?? 10000,
     idleTimeoutMillis: options.idleTimeoutMs ?? 30000,
+    // Managed Postgres behind a NAT drops connections that look idle. Keepalives
+    // hold them open through the quiet gaps between a crawl's write batches.
+    keepAlive: true,
   };
   const connectionOptions = (url) => {
     if (!options.sslCaFile) return { connectionString: url };
@@ -126,12 +129,17 @@ async function createPg(options) {
       ssl: { ca: fs.readFileSync(options.sslCaFile, 'utf8'), rejectUnauthorized: true },
     };
   };
-  // A pool whose idle client loses its connection emits 'error' on the pool, and
-  // an 'error' event with no listener takes the whole process down. The pool has
-  // already discarded the client by then, so logging is the correct response: the
-  // next query opens a fresh connection.
+  // A lost connection surfaces as an 'error' event, and an 'error' event with no
+  // listener takes the whole process down. The pool reports one for a client that
+  // was idle, but a client that was checked out at the time emits on itself and
+  // the pool never sees it, so both need a listener. By the time either fires the
+  // connection is gone and the pool has discarded the client, so logging is the
+  // correct response: the next query opens a fresh one.
   const survivePoolErrors = (pool, role) => {
     pool.on('error', (err) => log.warn('postgres pool error', { role, error: err.message }));
+    pool.on('connect', (client) => {
+      client.on('error', (err) => log.warn('postgres client error', { role, error: err.message }));
+    });
     return pool;
   };
   const runtime = survivePoolErrors(
