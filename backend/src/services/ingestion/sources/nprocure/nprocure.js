@@ -63,12 +63,17 @@ export function createNprocureClient(opts = {}) {
     launchImpl = null,
   } = opts;
 
+  // Timeout for a single DataTable draw (AJAX round-trip + render). Long enough
+  // for slow portal responses; short enough to fail fast on broken draws.
+  const drawTimeoutMs = Math.max(30_000, timeoutMs);
+
   async function tenders({ page = 0 } = {}) {
     if (page > 0) return { content: [], totalElements: 0, totalPages: 1, page };
     const browser = await launchChromium({ headless, launchImpl });
     try {
       const ctx = await browser.newContext({ locale: 'en-IN' });
       const pg = await ctx.newPage();
+      pg.setDefaultTimeout(timeoutMs * 2);
       await pg.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).catch(() => {});
       const ready = await pg.waitForFunction(
         () => window.jQuery && window.jQuery.fn.DataTable && window.jQuery('#DataTables_Table_0').length && window.jQuery.fn.dataTable.isDataTable('#DataTables_Table_0'),
@@ -76,29 +81,54 @@ export function createNprocureClient(opts = {}) {
       ).then(() => true).catch(() => false);
       if (!ready) throw new SourceError('nProcure tender table did not initialise. The portal layout may have changed.');
 
-      // Drive the DataTable through its pages; the page encrypts each request.
-      const rawRows = await pg.evaluate(async ({ pageLen, maxPages, delay }) => {
-        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-        const $ = window.jQuery;
-        const dt = $('#DataTables_Table_0').DataTable();
-        const drawOnce = (fn) => new Promise((res) => { dt.one('draw', () => res()); fn(); });
-        const out = [];
-        await drawOnce(() => dt.page.len(pageLen).draw(false));
-        for (let p = 0; p < maxPages; p++) {
-          dt.rows().data().each((r) => out.push(r));
-          const info = dt.page.info();
-          if (info.page + 1 >= info.pages) break;
-          await drawOnce(() => dt.page('next').draw(false));
-          await sleep(delay);
-        }
-        return out;
-      }, { pageLen, maxPages, delay: requestDelayMs }).catch((e) => { throw new SourceError(`nProcure pagination failed: ${e.message}`); });
+      // Step 1: set page length and wait for redraw.
+      await pg.evaluate(({ pageLen, drawTimeout }) => new Promise((res, rej) => {
+        const dt = window.jQuery('#DataTables_Table_0').DataTable();
+        const timer = setTimeout(() => rej(new Error('page-len draw timeout')), drawTimeout);
+        dt.one('draw', () => { clearTimeout(timer); res(); });
+        dt.page.len(pageLen).draw(false);
+      }), { pageLen, drawTimeout: drawTimeoutMs }).catch((e) => {
+        throw new SourceError(`nProcure page-len init failed: ${e.message}`);
+      });
 
+      // Step 2: collect rows page-by-page from Node so each step has its own
+      //         timeout and partial results survive a late-page failure.
       const byId = new Map();
-      for (const row of rawRows || []) {
-        const dto = parseNprocureRow(row, state);
-        if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
+      for (let p = 0; p < maxPages; p++) {
+        // Read the current page's rows.
+        const { rows, hasNext } = await pg.evaluate(() => {
+          const dt = window.jQuery('#DataTables_Table_0').DataTable();
+          const rows = [];
+          dt.rows().data().each((r) => rows.push(r));
+          const info = dt.page.info();
+          return { rows, hasNext: info.page + 1 < info.pages };
+        }).catch((e) => {
+          log.warn('nprocure row read failed', { page: p, error: e.message });
+          return { rows: [], hasNext: false };
+        });
+
+        for (const row of rows) {
+          const dto = parseNprocureRow(row, state);
+          if (dto.tenderId && !byId.has(dto.tenderId)) byId.set(dto.tenderId, dto);
+        }
+        if (!hasNext) break;
+
+        // Advance to next DataTable page (with a timeout on the draw event).
+        const advanced = await pg.evaluate(({ drawTimeout }) => new Promise((res, rej) => {
+          const dt = window.jQuery('#DataTables_Table_0').DataTable();
+          const timer = setTimeout(() => rej(new Error('next-page draw timeout')), drawTimeout);
+          dt.one('draw', () => { clearTimeout(timer); res(true); });
+          dt.page('next').draw(false);
+        }), { drawTimeout: drawTimeoutMs }).catch((e) => {
+          log.warn('nprocure page advance failed', { page: p, error: e.message });
+          return false;
+        });
+        if (!advanced) break; // stop cleanly with whatever we collected
+
+        // Politeness delay between pages (Node-side, reliable).
+        if (requestDelayMs > 0) await new Promise((r) => setTimeout(r, requestDelayMs));
       }
+
       const content = [...byId.values()];
       if (!content.length) throw new SourceError('nProcure returned no parseable tenders.');
       log.info('nprocure crawl complete', { baseUrl, rows: content.length });

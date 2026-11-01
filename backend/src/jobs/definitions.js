@@ -18,6 +18,8 @@ import { createCpppBrowserClient } from '../services/ingestion/sources/cppp/brow
 import { normalizeCpppTender } from '../services/ingestion/sources/cppp/normalize.js';
 import { enabledPortals, portalClientOptions } from '../services/ingestion/sources/cppp/portals.js';
 import { createNprocureClient } from '../services/ingestion/sources/nprocure/nprocure.js';
+import { createBiharClient } from '../services/ingestion/sources/bihar/bihar.js';
+import { createVupadhiClient } from '../services/ingestion/sources/vupadhi/vupadhi.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
@@ -41,6 +43,8 @@ export function createJobs(db, deps = {}) {
     // their own software and get a dedicated adapter (selected by portal.adapter).
     makeCrawlerClient = (portal) => {
       if (portal.adapter === 'nprocure') return createNprocureClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'bihar') return createBiharClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'vupadhi') return createVupadhiClient({ baseUrl: portal.baseUrl, state: portal.state });
       const opts = portalClientOptions(portal);
       return crawler.engine === 'http' ? createCpppClient(opts) : createCpppBrowserClient(opts);
     },

@@ -60,10 +60,11 @@ export const GEPNIC_PORTALS = [
   { id: 'maharashtra', name: 'Maharashtra (mahatenders)', state: 'Maharashtra', type: 'state_portal', baseUrl: 'https://mahatenders.gov.in', appPath: '/nicgep/app', enabled: false, note: 'robots.txt: Disallow / (verified 2026-10-30)' },
   { id: 'karnataka', name: 'Karnataka (KPPP)', state: 'Karnataka', type: 'state_portal', baseUrl: 'https://kppp.karnataka.gov.in', appPath: '/', enabled: false, note: 'tender listing behind a Keycloak login' },
   { id: 'gujarat', name: 'Gujarat (nProcure)', state: 'Gujarat', type: 'state_portal', baseUrl: 'https://tender.nprocure.com', appPath: '/', adapter: 'nprocure', enabled: true },
-  { id: 'bihar', name: 'Bihar', state: 'Bihar', type: 'state_portal', baseUrl: 'https://eproc2.bihar.gov.in', appPath: '/', enabled: false, note: 'Angular app, needs a dedicated adapter' },
-  { id: 'andhra', name: 'Andhra Pradesh', state: 'Andhra Pradesh', type: 'state_portal', baseUrl: 'https://tender.apeprocurement.gov.in', appPath: '/', enabled: false, note: 'custom software, needs a dedicated adapter' },
-  { id: 'telangana', name: 'Telangana', state: 'Telangana', type: 'state_portal', baseUrl: 'https://tender.telangana.gov.in', appPath: '/', enabled: false, note: 'custom software, needs a dedicated adapter' },
-  { id: 'chhattisgarh', name: 'Chhattisgarh', state: 'Chhattisgarh', type: 'state_portal', baseUrl: 'https://eproc.cgstate.gov.in', appPath: '/', enabled: false, note: 'custom software, needs a dedicated adapter' },
+  { id: 'bihar', name: 'Bihar', state: 'Bihar', type: 'state_portal', baseUrl: 'https://eproc2.bihar.gov.in', appPath: '/', adapter: 'bihar', enabled: true },
+  { id: 'andhra', name: 'Andhra Pradesh', state: 'Andhra Pradesh', type: 'state_portal', baseUrl: 'https://tender.apeprocurement.gov.in', appPath: '/', adapter: 'vupadhi', enabled: true },
+  { id: 'telangana', name: 'Telangana', state: 'Telangana', type: 'state_portal', baseUrl: 'https://tender.telangana.gov.in', appPath: '/', adapter: 'vupadhi', enabled: true },
+  { id: 'chhattisgarh', name: 'Chhattisgarh', state: 'Chhattisgarh', type: 'state_portal', baseUrl: 'https://eproc.cgstate.gov.in', appPath: '/', enabled: false, note: 'text captcha required — cannot automate without circumvention' },
+  { id: 'ireps', name: 'IREPS (Indian Railways)', state: null, type: 'psu_direct', baseUrl: 'https://www.ireps.gov.in', appPath: '/', enabled: false, note: 'robots.txt: Disallow / (verified 2026-11-01)' },
 ];
 
 /** Build the per-portal options the browser client / runner need. */
