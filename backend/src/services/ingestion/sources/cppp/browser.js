@@ -126,22 +126,31 @@ export function createCpppBrowserClient(opts = {}) {
       }
 
       // Walk the pager within the same session. GePNIC shows a sliding window of
-      // page numbers, so on each page we look for the NEXT page number's link;
-      // this lets us go far deeper than the handful of numbers on page 1. We stop
-      // at the page cap, when there is no next link, or when a page adds nothing
-      // new (end of list / loop guard).
+      // page numbers, so prefer the next page number's link and fall back to the
+      // pager's forward arrow, which is present for as long as pages remain --
+      // hunting only for the number ends the walk early once the window shifts.
       for (let p = 2; p <= maxPages; p++) {
         const href = await pg.$$eval('a', (as, n) => {
-          const a = as.find((x) => new RegExp(`[?&]sp=${n}(?:&|$)`).test(x.href) && /sp=A/i.test(x.href));
-          return a ? a.href : null;
+          const numbered = as.find((x) => new RegExp(`[?&]sp=${n}(?:&|$)`).test(x.href) && /sp=A/i.test(x.href));
+          if (numbered) return numbered.href;
+          const forward = as.find((x) => /TablePages\.linkFwd/i.test(x.href));
+          return forward ? forward.href : null;
         }, p).catch(() => null);
         if (!href) break;
-        if (requestDelayMs) await sleep(requestDelayMs);
-        await pg.goto(href, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).catch(() => {});
-        await pg.waitForSelector(tableSelector, { timeout: timeoutMs }).catch(() => {});
+
+        // A navigation that fails leaves the previous page in place, which would
+        // otherwise look exactly like "this page added nothing new", so retry
+        // before treating an unchanged tally as the end of the listing.
         const before = byId.size;
+        let loaded = false;
+        for (let attempt = 0; attempt < 2 && !loaded; attempt++) {
+          if (requestDelayMs) await sleep(requestDelayMs);
+          loaded = await pg.goto(href, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).then(() => true).catch(() => false);
+        }
+        if (!loaded) break;
+        await pg.waitForSelector(`${tableSelector} tr`, { timeout: timeoutMs }).catch(() => {});
         absorb(await pg.content());
-        if (byId.size === before) break; // no new tenders on this page → end of list
+        if (byId.size === before) break; // end of list
       }
 
       const content = [...byId.values()];
