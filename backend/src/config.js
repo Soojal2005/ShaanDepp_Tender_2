@@ -95,6 +95,9 @@ const schema = z.object({
   CRAWLER_CPPP_LIST_PATH: z.string().default('/eprocure/app?page=FrontEndListTendersbyDate&service=page'),
   CRAWLER_CPPP_START_PATH: z.string().default('/eprocure/app'),
   CRAWLER_CPPP_LIST_LINK: z.string().default('Tenders by Closing Date'),
+  // The listing opens on "Closing Today", which is empty on Sundays and holidays.
+  // This wider window is what actually yields tenders still open when read.
+  CRAWLER_CPPP_CLOSING_WINDOW: z.string().default('Closing within 14 days'),
   CRAWLER_CPPP_TABLE_SELECTOR: z.string().default('#table'),
   // How many listing pages to walk per portal (each ~10 tenders). The crawler
   // stops early when a page adds nothing new, so small portals finish quickly;
@@ -220,6 +223,7 @@ function load(env) {
         listPath: c.CRAWLER_CPPP_LIST_PATH,
         startPath: c.CRAWLER_CPPP_START_PATH,
         listLinkText: c.CRAWLER_CPPP_LIST_LINK,
+        closingWindowLink: c.CRAWLER_CPPP_CLOSING_WINDOW,
         tableSelector: c.CRAWLER_CPPP_TABLE_SELECTOR,
       }),
     }),

@@ -39,6 +39,7 @@ export function createCpppBrowserClient(opts = {}) {
     startPath = c.startPath ?? '/eprocure/app',
     listLinkText = c.listLinkText ?? 'Tenders by Closing Date',
     listPath = c.listPath ?? '/eprocure/app?page=FrontEndListTendersbyDate&service=page',
+    closingWindowLink = c.closingWindowLink ?? 'Closing within 14 days',
     tableSelector = c.tableSelector ?? '#table',
     state = null, // the portal's state, stamped onto every row for master mapping
     timeoutMs = config.crawler?.timeoutMs ?? 45_000,
@@ -78,23 +79,38 @@ export function createCpppBrowserClient(opts = {}) {
       // 'commit', let it settle, then wait for the data table. Retry a couple of
       // times, and fall back to following the menu link from the app home.
       const listUrl = new URL(listPath, baseUrl).toString();
-      const settleAndFind = async () => {
+      const windowLink = () => pg.getByRole('link', { name: new RegExp(closingWindowLink, 'i') }).first();
+      const settle = async () => {
         await pg.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
         await pg.waitForTimeout(2500);
-        return pg.waitForSelector(`${tableSelector} tr`, { timeout: timeoutMs }).then(() => true).catch(() => false);
+        return windowLink().count().then((n) => n > 0).catch(() => false);
       };
-      let haveTable = false;
-      for (let attempt = 0; attempt < 2 && !haveTable; attempt++) {
+      let onListing = false;
+      for (let attempt = 0; attempt < 2 && !onListing; attempt++) {
         if (attempt) await sleep(requestDelayMs);
         await pg.goto(listUrl, { waitUntil: 'commit', timeout: timeoutMs }).catch(() => {});
-        haveTable = await settleAndFind();
+        onListing = await settle();
       }
-      if (!haveTable) {
+      if (!onListing) {
         await pg.goto(new URL(startPath, baseUrl).toString(), { waitUntil: 'commit', timeout: timeoutMs }).catch(() => {});
         await pg.waitForTimeout(2000);
         const link = pg.getByRole('link', { name: new RegExp(listLinkText, 'i') }).first();
         if (await link.count().catch(() => 0)) await link.click({ timeout: timeoutMs }).catch(() => {});
-        haveTable = await settleAndFind();
+        onListing = await settle();
+      }
+
+      // The listing opens on "Closing Today", which renders an empty table on
+      // Sundays and holidays and otherwise only covers the next few hours. The
+      // wider window is what carries tenders still open when someone reads them.
+      if (onListing) {
+        await windowLink().click({ timeout: timeoutMs }).catch(() => {});
+        await pg.waitForFunction(
+          (sel) => (document.querySelector(sel)?.querySelectorAll('tr').length ?? 0) > 1,
+          tableSelector,
+          { timeout: timeoutMs },
+        ).catch(() => {});
+      } else {
+        await pg.waitForSelector(`${tableSelector} tr`, { timeout: timeoutMs }).catch(() => {});
       }
 
       const byId = new Map();
