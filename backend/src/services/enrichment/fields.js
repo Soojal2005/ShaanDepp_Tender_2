@@ -44,17 +44,25 @@ const LABELS = {
 /** Find the money value attached to one label within the given text. */
 function findField(text, patterns) {
   for (const label of patterns) {
-    const m = label.exec(text);
-    if (!m) continue;
-    const start = m.index + m[0].length;
-    const window = text.slice(start, start + WINDOW).replace(/[\r\n]+/g, ' ');
-    // A value immediately introduced by ':' / '=' / '-' is the strongest signal.
-    const trimmed = window.replace(/^\s*[:=.\-]*\s*/, '');
-    // Prefer an unambiguously-marked amount anywhere in the window...
-    const marked = trimmed.match(MARKED);
-    const parsed = (marked && parseIndianMoney(marked[0])) || parseIndianMoney(trimmed);
-    if (parsed) {
-      return { rupees: parsed.rupees, unit: parsed.unit, label: m[0].trim(), snippet: `${m[0]}${window}`.trim().slice(0, 140) };
+    // A label phrase can appear more than once before its actual tabulated
+    // value — e.g. a preamble sentence ("Tender fee may be paid along with...")
+    // ahead of the real line item ("4 Tender Fees ... Rs. 3,540/-"). Try every
+    // occurrence of this pattern, in order, and take the first one whose window
+    // actually parses, rather than giving up after the first occurrence.
+    const global = new RegExp(label.source, label.flags.includes('g') ? label.flags : `${label.flags}g`);
+    let m;
+    while ((m = global.exec(text))) {
+      const start = m.index + m[0].length;
+      const window = text.slice(start, start + WINDOW).replace(/[\r\n]+/g, ' ');
+      // A value immediately introduced by ':' / '=' / '-' is the strongest signal.
+      const trimmed = window.replace(/^\s*[:=.\-]*\s*/, '');
+      // Prefer an unambiguously-marked amount anywhere in the window...
+      const marked = trimmed.match(MARKED);
+      const parsed = (marked && parseIndianMoney(marked[0])) || parseIndianMoney(trimmed);
+      if (parsed) {
+        return { rupees: parsed.rupees, unit: parsed.unit, label: m[0].trim(), snippet: `${m[0]}${window}`.trim().slice(0, 140) };
+      }
+      if (m.index === global.lastIndex) global.lastIndex++; // guard against a zero-width match
     }
   }
   return null;
