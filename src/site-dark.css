@@ -1,0 +1,184 @@
+/* ==========================================================================
+   Dark theme for the public company website.
+
+   Loaded LAST, scoped entirely under .site, so it recolours the website
+   (landing + service/info/legal pages, header, footer, forms) without ever
+   touching the signed-in portal. The look is an original modern-SaaS dark
+   treatment — near-black canvas, a bright indigo accent with a soft glow,
+   and glassy cards with hairline light borders.
+   ========================================================================== */
+
+.site {
+  /* Core tokens (redefined from site.css for dark). */
+  --navy: #05070D; --blue: #779BFF; --ink: #F4F7FC; --text: #BEC7D6; --muted: #86909F;
+  --line: rgba(255, 255, 255, .09); --soft: #0E121C; --page: #080B12;
+  --accent: #6E8BFF; --accent-ink: #8AA0FF;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 18px 40px -22px rgba(0, 0, 0, .8);
+
+  /* Dark-theme surface helpers used throughout this file. */
+  --surface: #0F1420; --surface-2: #141A28;
+  --border: rgba(255, 255, 255, .09); --border-hover: rgba(255, 255, 255, .2);
+  --tint: rgba(110, 139, 255, .14); --tint-ink: #9DB0FF;
+  --card-line: rgba(255, 255, 255, .09); --card-hover-line: rgba(255, 255, 255, .2);
+  --card-hover: 0 14px 40px -12px rgba(0, 0, 0, .8);
+  color: var(--text); background: var(--page);
+  color-scheme: dark;
+}
+.site :where(a:not(.btn)) { color: var(--accent); }
+.site :where(a:not(.btn)):hover { color: var(--accent-ink); }
+
+/* ---- Header ---- */
+.site-header { background: rgba(8, 11, 18, .72); border-bottom: 1px solid var(--border); backdrop-filter: saturate(140%) blur(14px); }
+.site-logo { background: linear-gradient(135deg, #6E8BFF, #8E6CFF); color: #fff; box-shadow: 0 8px 22px -8px rgba(110, 139, 255, .8); }
+.site-nav-links a { color: var(--text); }
+.site-nav-links a:hover { color: var(--ink); }
+.site-nav-links a.active { color: var(--accent); border-bottom-color: var(--accent); }
+.site .lang-btn, .site .lang-btn.active { color: var(--text); }
+.site .lang-btn + .lang-btn { border-left-color: rgba(255, 255, 255, .18); }
+.site .lang-btn.active { color: var(--accent); }
+
+/* ---- Buttons ---- */
+.site .btn-primary, .site .btn-dark { background: linear-gradient(135deg, var(--accent), #8E6CFF); border: 0; color: #fff !important; box-shadow: 0 10px 28px -10px rgba(110, 139, 255, .75); }
+.site .btn-primary:hover:not(:disabled), .site .btn-dark:hover { filter: brightness(1.08); background: linear-gradient(135deg, var(--accent), #8E6CFF); border: 0; }
+.site .btn-blue { background: linear-gradient(135deg, var(--accent), #8E6CFF); border: 0; color: #fff !important; box-shadow: 0 10px 28px -10px rgba(110, 139, 255, .75); }
+.site .btn-blue:hover { filter: brightness(1.08); }
+.site .btn-outline, .site .btn-light { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .16); color: var(--ink) !important; }
+.site .btn-outline:hover, .site .btn-light:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .3); color: #fff !important; }
+.site .btn-ghost { color: var(--ink); }
+
+/* ---- Form fields ---- */
+.site .input, .site .select, .site .textarea { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .14); color: var(--ink); }
+.site .input::placeholder, .site .textarea::placeholder { color: #70798A; }
+.site .input:focus, .site .select:focus, .site .textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110, 139, 255, .25); }
+.site .req { color: #FF8080; }
+.field-control.has-icon > svg { color: #7E889A; }
+
+/* ==========================================================================
+   Landing page (.lp)
+   ========================================================================== */
+
+/* Backdrop: a dark canvas with a soft indigo aurora at the top instead of the
+   light parliament wash. */
+.lp-bg { background: #080B12; }
+.lp-bg::before {
+  background:
+    radial-gradient(1100px 620px at 78% -8%, rgba(142, 108, 255, .28), transparent 60%),
+    radial-gradient(980px 560px at 12% -4%, rgba(110, 139, 255, .26), transparent 58%);
+  opacity: 1; -webkit-mask-image: none; mask-image: none;
+}
+.lp-bg::after { background: linear-gradient(180deg, rgba(8, 11, 18, .1) 0%, rgba(8, 11, 18, .55) 46%, #080B12 100%); }
+
+.lp { --card-line: rgba(255, 255, 255, .09); --card-hover-line: rgba(255, 255, 255, .22); }
+.lp-kicker, .lp-eyebrow { color: var(--accent); }
+.lp-lead { color: var(--text); }
+
+/* Hero search */
+.lp-search-row { background: rgba(18, 23, 35, .9); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, .9); }
+.lp-search-field { color: #7E889A; }
+.lp-search-field input { color: var(--ink); }
+.lp-search-field input::placeholder { color: #747E90; }
+.lp-pill { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .14); color: var(--ink); }
+.lp-pill:hover { border-color: var(--accent); }
+select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239DB0FF' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+.lp-popular > span { color: var(--ink); }
+.lp-popular button { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .14); color: var(--text); }
+.lp-popular button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Stat strips */
+.lp-stat-strip, .lp-about-stats { background: rgba(18, 23, 35, .7); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.lp-stat-strip li, .lp-about-stats li { border-left-color: var(--border); }
+.lp-stat-ico { background: var(--tint); color: var(--tint-ink); }
+.lp-stat-strip b, .lp-about-stats b { color: var(--ink); }
+
+/* Shared cards */
+.lp-panel, .lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-location { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.lp-steps li, .lp-dept-grid li { background: rgba(255, 255, 255, .03); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.lp-side { background: rgba(255, 255, 255, .03); border: 1px solid var(--border); }
+.lp-dept-wall li { background: rgba(255, 255, 255, .03); border: 1px solid var(--border); color: var(--text); }
+
+/* Latest tenders */
+.lp-tender-foot { border-top-color: rgba(255, 255, 255, .08); }
+.lp-tone-0 { background: rgba(110, 139, 255, .16); color: #AFBEFF; }
+.lp-tone-1 { background: rgba(160, 120, 255, .16); color: #C7B0FF; }
+.lp-tone-2 { background: rgba(52, 199, 123, .16); color: #7FE0A8; }
+.lp-tender-meta svg { color: #8893A3; }
+.lp-skeleton i { background: linear-gradient(90deg, #121726, #1A2133, #121726); background-size: 200% 100%; }
+
+/* Services */
+.lp-service-arrow { background: rgba(110, 139, 255, .14); color: var(--tint-ink); }
+
+/* Portal band + app preview */
+.lp-portal { background: rgba(255, 255, 255, .02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.lp-portal-body { color: var(--text); }
+.lp-checks li { color: var(--text); }
+.lp-checks li > span { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .14); color: var(--accent); }
+.lp-app { background: var(--surface); border: 1px solid var(--border); box-shadow: 0 40px 80px -36px rgba(0, 0, 0, .95), 0 0 0 1px rgba(110, 139, 255, .08); }
+.lp-app-bar { background: #0C1018; border-bottom: 1px solid var(--border); }
+.lp-app-title { color: var(--ink); }
+.lp-app-dots i { background: #343B4A; }
+.lp-app-search { color: #8893A3; border: 1px solid rgba(255, 255, 255, .12); }
+.lp-app-head h4 { color: var(--ink); }
+.lp-app-row { border-bottom-color: rgba(255, 255, 255, .07); color: var(--text); }
+.lp-app-row-head { color: #7E889A; }
+.lp-app-c-date { color: #8893A3; }
+.lp-app-status-open { background: rgba(52, 199, 123, .18); color: #7FE0A8; }
+.lp-app-status-soon { background: rgba(230, 170, 60, .2); color: #F0C878; }
+.lp-app-status-new { background: rgba(110, 139, 255, .18); color: #AFBEFF; }
+
+/* Process steps */
+.lp-step-num { box-shadow: 0 8px 22px -10px rgba(110, 139, 255, .8); }
+
+/* About + departments */
+.lp-about-lead { color: var(--text); }
+.lp-dept-grid svg { color: var(--accent); }
+
+/* Contact + location */
+.lp-location-head { background: rgba(110, 139, 255, .1); border: 1px solid rgba(110, 139, 255, .2); color: var(--accent); }
+.lp-location-head b, .lp-location-org b, .lp-location-facts b { color: var(--ink); }
+.lp-location-org { border-bottom-color: rgba(255, 255, 255, .08); }
+.lp-dot { color: var(--muted); }
+
+/* Request-access form panel */
+.lp-form-head h3 { color: var(--ink); }
+.lp-form-panel .field > label { color: var(--ink); }
+.site-form-count, .site-form-privacy { color: #7E889A; }
+.site-form-section { color: var(--accent); }
+.lp-form-panel .site-form-feedback { color: var(--text); }
+.lp-side-card b { color: var(--ink); }
+.lp-side-card + .lp-side-card { border-top-color: rgba(255, 255, 255, .08); }
+
+/* ==========================================================================
+   Content pages (.site-* : services index/detail, info, legal, request)
+   ========================================================================== */
+.site-hero { background: radial-gradient(900px 480px at 20% -20%, rgba(110, 139, 255, .22), transparent 60%), #080B12; }
+.site-kicker { color: var(--accent); }
+.site-trust, .site-group-card, .site-portal-list li, .site-side-card, .site-band-form,
+.flow-step, .site-chip-list a, .site-item-grid a, .site-result-list a, .site-dept-wall li {
+  background: var(--surface); border-color: var(--border); color: var(--text);
+}
+.site-group-card:hover, .site-group-card:focus-visible { border-color: var(--border-hover); box-shadow: var(--card-hover); }
+.site-group-icon { background: var(--tint); color: var(--tint-ink); }
+.site-chip-list a:hover, .site-item-grid a:hover { border-color: var(--accent); color: var(--accent); }
+.site-body, .site-points li, .legal-list { color: var(--text); }
+.site-index-group h2 a { color: var(--ink); }
+.site-section.alt { background: var(--soft); }
+.site-dept-wall li { border-style: dashed; border-color: rgba(255, 255, 255, .16); }
+.flow-num { background: rgba(255, 255, 255, .08); color: var(--text); }
+.flow-step.past .flow-num { background: rgba(110, 139, 255, .3); color: #DCE4FF; }
+.flow-step.active { border-color: var(--accent); color: var(--ink); box-shadow: 0 8px 24px -12px rgba(110, 139, 255, .7); }
+.flow-detail { background: var(--soft); }
+.flow-detail p, .site-points li { color: var(--text); }
+.site-access-steps b { background: linear-gradient(135deg, var(--accent), #8E6CFF); color: #fff; }
+.site-band { background: linear-gradient(135deg, #10152400, #141A28), rgba(255, 255, 255, .02); border: 1px solid var(--border); }
+.site-form-done { color: #6FE0A6; }
+.site-form-done p { color: var(--ink); }
+
+/* Mobile nav sheet */
+@media (max-width: 1080px) {
+  .site-nav { background: #0C1018; border-bottom: 1px solid var(--border); box-shadow: 0 16px 40px rgba(0, 0, 0, .7); }
+  .site-nav-links a { border-bottom: 1px solid rgba(255, 255, 255, .07); }
+  .site-nav-links a.active { border-bottom-color: rgba(255, 255, 255, .07); }
+}
+
+/* ---- Footer: already dark; tune the surface to match the new palette. ---- */
+.site-footer { background: #05070D; }

@@ -127,6 +127,38 @@ export const GROUPS = [
     items: [
       ['Licence advisory', 'लाइसेंस सलाह'], ['Trademark support', 'ट्रेडमार्क सहायता'], ['Copyright support', 'कॉपीराइट सहायता'], ['Patent support', 'पेटेंट सहायता'],
       ['Tender Roadmap', 'टेंडर रोडमैप'], ['NCB Key Points', 'NCB प्रमुख बिंदु'],
+      ['GST registration', 'जीएसटी पंजीकरण'], ['Udyam / MSME registration', 'उद्यम / एमएसएमई पंजीकरण'], ['FSSAI licence', 'FSSAI लाइसेंस'], ['Import Export Code (IEC)', 'आयात-निर्यात कोड (IEC)'],
+      ['Shops & Establishment', 'दुकान और स्थापना'], ['Factory & labour licence', 'फैक्ट्री और श्रम लाइसेंस'], ['PF & ESI registration', 'PF और ESI पंजीकरण'], ['Digital Signature Certificate (DSC)', 'डिजिटल हस्ताक्षर प्रमाणपत्र (DSC)'],
+      ['OEM / dealer authorisation', 'OEM / डीलर प्राधिकरण'],
+    ],
+  },
+  {
+    slug: 'management-advisory',
+    icon: 'TrendingUp',
+    title: { en: 'Management Advisory', hi: 'प्रबंधन सलाह' },
+    summary: { en: 'A clear read on where your business stands and a practical plan to grow it — strategy, financial and operational review, and market insight.', hi: 'आपका व्यवसाय कहाँ खड़ा है इसकी स्पष्ट समझ और उसे बढ़ाने की व्यावहारिक योजना — रणनीति, वित्तीय व परिचालन समीक्षा, और बाज़ार जानकारी।' },
+    how: {
+      en: ['We review your numbers and operations to find what is holding growth back.', 'Market, competitor and buyer research shows where the real opportunities are.', 'You get a short, prioritised plan — not a long report that sits on a shelf.'],
+      hi: ['हम आपके आँकड़े और कार्यप्रणाली की समीक्षा कर पता लगाते हैं कि वृद्धि को क्या रोक रहा है।', 'बाज़ार, प्रतिस्पर्धी और खरीदार शोध दिखाता है कि असली अवसर कहाँ हैं।', 'आपको एक छोटी, प्राथमिकता तय की हुई योजना मिलती है — कोई लंबी रिपोर्ट नहीं जो अलमारी में पड़ी रहे।'],
+    },
+    items: [
+      ['Business health check', 'व्यवसाय स्वास्थ्य जाँच'], ['Growth strategy', 'वृद्धि रणनीति'], ['Financial & operational review', 'वित्तीय और परिचालन समीक्षा'], ['Market research', 'बाज़ार अनुसंधान'],
+      ['Competitor analysis', 'प्रतिस्पर्धी विश्लेषण'], ['Buyer mapping', 'खरीदार मैपिंग'], ['Procurement planning', 'खरीद योजना'], ['Digital systems & AI advisory', 'डिजिटल सिस्टम और AI सलाह'],
+    ],
+  },
+  {
+    slug: 'tender-credentials',
+    icon: 'Award',
+    title: { en: 'Tender-specific Credentials', hi: 'टेंडर-विशिष्ट प्रमाण-पत्र' },
+    summary: { en: 'The financial and technical credentials a tender asks for, prepared and arranged so your bid is not rejected on documents.', hi: 'टेंडर जिन वित्तीय और तकनीकी प्रमाणों की माँग करता है, उन्हें तैयार और व्यवस्थित करना ताकि आपकी बोली दस्तावेज़ों पर अस्वीकार न हो।' },
+    how: {
+      en: ['We read the tender and list exactly which credentials and annexures it needs.', 'Bank, turnover and past-work documents are arranged to the format the tender expects.', 'Registrations like NSIC, Local Content and DSC are set up before the deadline.'],
+      hi: ['हम टेंडर पढ़कर सूची बनाते हैं कि उसे किन प्रमाणों और अनुलग्नकों की ज़रूरत है।', 'बैंक, टर्नओवर और पिछले काम के दस्तावेज़ टेंडर के अपेक्षित प्रारूप में व्यवस्थित किए जाते हैं।', 'NSIC, लोकल कंटेंट और DSC जैसे पंजीकरण समय-सीमा से पहले तैयार हो जाते हैं।'],
+    },
+    items: [
+      ['Bank solvency certificate', 'बैंक सॉल्वेंसी प्रमाणपत्र'], ['Financial statements', 'वित्तीय विवरण'], ['Turnover & net worth certificate', 'टर्नओवर और नेट वर्थ प्रमाणपत्र'], ['Past work completion', 'पिछला कार्य पूर्णता'],
+      ['NSIC registration', 'NSIC पंजीकरण'], ['Make in India / Local Content', 'मेक इन इंडिया / लोकल कंटेंट'], ['Digital Signature Certificate (DSC)', 'डिजिटल हस्ताक्षर प्रमाणपत्र (DSC)'], ['Product test & quality report', 'उत्पाद परीक्षण और गुणवत्ता रिपोर्ट'],
+      ['Tender-specific annexures', 'टेंडर-विशिष्ट अनुलग्नक'],
     ],
   },
 ];

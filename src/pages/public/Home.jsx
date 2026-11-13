@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, BadgeCheck, Bell, Building, Building2, CalendarDays, Clock, ClipboardCheck, ClipboardList, Cog, Factory, FileSearch, FileText, Files,
+  ArrowRight, Award, BadgeCheck, Bell, Building, Building2, CalendarDays, Clock, ClipboardCheck, ClipboardList, Cog, Factory, FileSearch, FileText, Files,
   Flag, Gavel, IndianRupee, Landmark, Lightbulb, Mail, MapPin, MessageCircle, Navigation, Phone, ScrollText, Search, ShieldCheck,
-  ShoppingBag, ShoppingCart, SlidersHorizontal, Trophy, Wallet,
+  ShoppingBag, ShoppingCart, SlidersHorizontal, TrendingUp, Trophy, Wallet,
 } from 'lucide-react';
 import { DEPARTMENTS, GROUPS, SERVICE_COUNT } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
@@ -14,10 +14,10 @@ import PortalPreview from '../../site/PortalPreview.jsx';
 import { telHref, useSeo, useSiteConfig, whatsappHref } from '../../site/hooks.js';
 
 // The services index looks these up by each group's `icon` key, so the names must match content/services.js.
-export const GROUP_ICONS = { FileSearch, ShoppingBag, Building2, ClipboardList, BadgeCheck, Landmark, ScrollText, Lightbulb };
+export const GROUP_ICONS = { FileSearch, ShoppingBag, Building2, ClipboardList, BadgeCheck, Landmark, ScrollText, Lightbulb, TrendingUp, Award };
 
 const STAT_ICONS = [FileText, MapPin, Landmark, ShieldCheck];
-const SERVICE_ICONS = [FileSearch, ShoppingCart, Building2, ClipboardCheck, ShieldCheck, Wallet, Gavel, Lightbulb];
+const SERVICE_ICONS = [FileSearch, ShoppingCart, Building2, ClipboardCheck, ShieldCheck, Wallet, Gavel, Lightbulb, TrendingUp, Award];
 const PORTAL_ICONS = [Bell, Search, Trophy, ClipboardCheck];
 const DEPT_ICONS = [Landmark, Flag, Factory, Building2, Building, Cog, Files];
 const ABOUT_ICONS = [FileSearch, ShieldCheck, ClipboardCheck, MapPin];
@@ -164,9 +164,14 @@ export default function Home() {
             sub={t('site.lp.servicesSub', { n: SERVICE_COUNT, g: GROUPS.length })}
             action={<Link className="lp-link" to="/services">{t('site.lp.servicesAll')} <ArrowRight size={16} /></Link>} />
           <div className="lp-service-grid">
-            {GROUPS.map((g, i) => { const Icon = SERVICE_ICONS[i]; const card = t('site.lp.serviceCards')[i]; return (
+            {GROUPS.map((g, i) => {
+              const Icon = SERVICE_ICONS[i] ?? GROUP_ICONS[g.icon];
+              const L = lang === 'HI' ? 'hi' : 'en';
+              // Hand-written card copy exists for the original groups; newer groups fall back to their own title/summary.
+              const card = t('site.lp.serviceCards')[i] ?? { title: g.title[L], body: g.summary[L] };
+              return (
               <Link key={g.slug} to={`/services/${g.slug}`} className="lp-service">
-                <span className={`lp-ico lp-ico-${i}`}><Icon size={24} strokeWidth={1.8} /></span>
+                <span className={`lp-ico lp-ico-${i % 8}`}><Icon size={24} strokeWidth={1.8} /></span>
                 <h3>{card.title}</h3>
                 <p>{card.body}</p>
                 <span className="lp-service-arrow"><ArrowRight size={18} /></span>
