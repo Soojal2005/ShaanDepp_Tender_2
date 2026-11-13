@@ -49,8 +49,14 @@ export async function upsertTender(q, providerId, rec, index, raw = null) {
        category = EXCLUDED.category, category_id = EXCLUDED.category_id, state = EXCLUDED.state,
        state_id = EXCLUDED.state_id, city = EXCLUDED.city, city_id = EXCLUDED.city_id,
        org_type = EXCLUDED.org_type, tender_type = EXCLUDED.tender_type,
-       estimated_value = EXCLUDED.estimated_value, emd_amount = EXCLUDED.emd_amount,
-       emd_status = EXCLUDED.emd_status, tender_fee = EXCLUDED.tender_fee,
+       -- Money fields can be back-filled from the tender PDF (see services/enrichment).
+       -- A later crawl that doesn't carry the amount must not erase what we found,
+       -- so keep the existing value when the incoming one is NULL.
+       estimated_value = COALESCE(EXCLUDED.estimated_value, tenders.estimated_value),
+       emd_amount = COALESCE(EXCLUDED.emd_amount, tenders.emd_amount),
+       emd_status = CASE WHEN EXCLUDED.emd_amount IS NULL AND tenders.emd_amount IS NOT NULL
+                         THEN tenders.emd_status ELSE EXCLUDED.emd_status END,
+       tender_fee = COALESCE(EXCLUDED.tender_fee, tenders.tender_fee),
        publish_date = EXCLUDED.publish_date, prebid_date = EXCLUDED.prebid_date,
        submission_deadline = EXCLUDED.submission_deadline, opening_date = EXCLUDED.opening_date,
        status = EXCLUDED.status, has_boq = EXCLUDED.has_boq, has_documents = EXCLUDED.has_documents,

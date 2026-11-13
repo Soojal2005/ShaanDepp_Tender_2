@@ -20,6 +20,7 @@ import { enabledPortals, portalClientOptions } from '../services/ingestion/sourc
 import { createNprocureClient } from '../services/ingestion/sources/nprocure/nprocure.js';
 import { createBiharClient } from '../services/ingestion/sources/bihar/bihar.js';
 import { createVupadhiClient } from '../services/ingestion/sources/vupadhi/vupadhi.js';
+import { runEnrichment } from '../services/enrichment/runner.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
@@ -39,6 +40,7 @@ export function createJobs(db, deps = {}) {
     makeTenderbookClient = createTenderbookClient,
     tenderbook = config.tenderbook,
     crawler = config.crawler,
+    enrichment = config.enrichment,
     // Build a crawler client for one portal. Most portals are GePNIC; some run
     // their own software and get a dedicated adapter (selected by portal.adapter).
     makeCrawlerClient = (portal) => {
@@ -104,6 +106,20 @@ export function createJobs(db, deps = {}) {
         }
         const failed = results.filter((r) => r.status === 'failed').length;
         return { portals: targets.length, failed, inserted, updated, activity: inserted + updated, results };
+      },
+    },
+
+    'enrich-tenders': {
+      label: 'Tender PDF enrichment',
+      description: 'Reads estimated value, EMD and tender fee from tender notice PDFs to fill the money fields the listings omit, then discards the file.',
+      enabled: enrichment.enabled,
+      catchUp: true,
+      intervalMinutes: enrichment.intervalMinutes,
+      cron: enrichment.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(enrichment.intervalMinutes / 60))} * * *` : `*/${enrichment.intervalMinutes} * * * *`,
+      timezone: 'Asia/Kolkata',
+      async run({ providerId, maxDocs } = {}) {
+        const result = await runEnrichment(db, { providerId, maxDocs });
+        return { ...result, activity: result.filled + result.review };
       },
     },
 

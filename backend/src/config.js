@@ -112,6 +112,18 @@ const schema = z.object({
   CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
   CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
 
+  // PDF metadata enrichment (reads amounts from tender PDFs the listing omits).
+  // OFF unless switched on. Optionally pin to one provider id while piloting.
+  ENRICH_ENABLED: bool,
+  ENRICH_PROVIDER_ID: optionalString,
+  ENRICH_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(180),
+  ENRICH_MAX_DOCS: z.coerce.number().int().min(1).max(5000).default(60),
+  ENRICH_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1200),
+  ENRICH_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
+  ENRICH_MAX_BYTES: z.coerce.number().int().min(100000).default(15728640),
+  ENRICH_MAX_PAGES: z.coerce.number().int().min(1).max(100).default(15),
+  ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
+
   // Microsoft 365 / Graph. MAIL_MODE=live is required to actually send.
   MAIL_MODE: z.enum(['dry_run', 'live']).default('dry_run'),
   AZURE_TENANT_ID: optionalString,
@@ -226,6 +238,17 @@ function load(env) {
         closingWindowLink: c.CRAWLER_CPPP_CLOSING_WINDOW,
         tableSelector: c.CRAWLER_CPPP_TABLE_SELECTOR,
       }),
+    }),
+    enrichment: Object.freeze({
+      enabled: c.ENRICH_ENABLED,
+      providerId: c.ENRICH_PROVIDER_ID,
+      intervalMinutes: c.ENRICH_INTERVAL_MINUTES,
+      maxDocs: c.ENRICH_MAX_DOCS,
+      requestDelayMs: c.ENRICH_REQUEST_DELAY_MS,
+      timeoutMs: c.ENRICH_TIMEOUT_MS,
+      maxBytes: c.ENRICH_MAX_BYTES,
+      maxPages: c.ENRICH_MAX_PAGES,
+      userAgent: c.ENRICH_USER_AGENT,
     }),
     mail: Object.freeze({
       mode: c.MAIL_MODE,
