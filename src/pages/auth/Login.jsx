@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Key, Loader2, Lock } from 'lucide-react';
+import { ArrowRight, Key, Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { ErrorNote, Field } from '../../components/ui.jsx';
 import { useI18n } from '../../i18n/index.jsx';
@@ -36,7 +36,6 @@ export default function Login() {
 
   return (
     <div className="gate-card">
-      <div className="gate-badge"><Lock size={12} />{t('auth.gateBadge')}</div>
       <h2>{t('auth.signInTitle')}</h2>
       <p className="gate-sub">{t('auth.signInSubtitle')}</p>
 
@@ -64,12 +63,13 @@ export default function Login() {
         </button>
       </form>
 
-      <div className="gate-row">
+      <div className="gate-row gate-row-forgot">
         <Link to="/forgot-password">{t('auth.forgot')}</Link>
       </div>
-      <div className="gate-row">
-        <span>{t('auth.noAccount')} <Link to="/request-access">{t('auth.requestAccess')}</Link></span>
-      </div>
+      <div className="gate-divider"><span>{t('auth.or')}</span></div>
+      <Link className="btn btn-outline gate-alt-btn" to="/get-started">
+        {t('auth.newHere')} <b>{t('site.nav.getStarted')}</b> <ArrowRight size={15} />
+      </Link>
     </div>
   );
 }

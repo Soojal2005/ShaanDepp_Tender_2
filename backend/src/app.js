@@ -49,7 +49,7 @@ function buildLimiters(enabled) {
 }
 
 // Paths the single-page app answers. Anything else gets a real 404 status (with the same page).
-const SPA_ROUTES = /^\/(?:$|services(?:\/|$)|about\/?$|contact\/?$|login\/?$|forgot-password\/?$|reset-password\/?$|app(?:\/|$))/;
+const SPA_ROUTES = /^\/(?:$|services(?:\/|$)|about\/?$|contact\/?$|get-started\/?$|request-access\/?$|privacy\/?$|terms\/?$|disclaimer\/?$|login\/?$|forgot-password\/?$|reset-password\/?$|app(?:\/|$))/;
 
 /** Serve the built website and let the browser router handle its own addresses. */
 export function serveFrontend(app, dir) {

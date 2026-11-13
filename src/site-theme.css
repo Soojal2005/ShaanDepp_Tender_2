@@ -1,0 +1,273 @@
+/* ==========================================================================
+   Warm minimal theme for the public company website.
+
+   Loaded LAST, scoped entirely under .site, so it restyles the website
+   (landing + service/info/legal pages, header, footer, forms) without touching
+   the signed-in portal. An original warm-minimal treatment in the spirit of
+   current SaaS landing pages: a cream canvas with near-black ink, a floating
+   dark "capsule" nav, bold two-tone headlines, fully-rounded black pill CTAs,
+   serif stat callouts, and dark product-preview panels for contrast.
+   ========================================================================== */
+
+.site {
+  --ink: #1C1B18; --text: #46443E; --muted: #86827A; --navy: #1C1B18;
+  --blue: #1C1B18; --line: #E4E0D6; --soft: #EEEBE2; --page: #F4F2EC;
+  --accent: #1C1B18; --accent-ink: #000;
+  --surface: #FBFAF6; --surface-2: #FFFFFF; --tile: #ECE8DE;
+  --shadow: 0 1px 2px rgba(28, 27, 24, .03), 0 10px 24px -18px rgba(28, 27, 24, .13);
+  color: var(--text); background: var(--page);
+}
+.site :where(a:not(.btn)) { color: var(--ink); text-underline-offset: 2px; }
+.site h1, .site h2, .site h3 { color: var(--ink); }
+
+/* ---- Buttons: pills; primary = solid ink, secondary = warm white ---- */
+.site .btn { border-radius: 999px; }
+.site .btn-primary, .site .btn-dark, .site .btn-blue {
+  background: var(--ink); border: 1px solid var(--ink); color: #fff !important;
+  box-shadow: 0 12px 26px -14px rgba(28, 27, 24, .55);
+}
+.site .btn-primary:hover:not(:disabled), .site .btn-dark:hover, .site .btn-blue:hover { background: #33302A; border-color: #33302A; }
+.site .btn-outline, .site .btn-light { background: #fff; border: 1px solid var(--line); color: var(--ink) !important; box-shadow: none; }
+.site .btn-outline:hover, .site .btn-light:hover { border-color: #CFC9BB; background: #FBFAF6; color: var(--ink) !important; }
+.site :focus-visible { outline: 2px solid var(--ink); }
+
+/* ==========================================================================
+   Header — a floating near-black capsule
+   ========================================================================== */
+.site-header { position: sticky; top: 0; z-index: 40; background: transparent; border-bottom: 0; backdrop-filter: none; padding: 14px 0; }
+.site-header-row { max-width: 940px; margin: 0 auto; min-height: 50px; gap: 16px; background: var(--ink); border-radius: 15px; padding: 5px 6px 5px 10px; box-shadow: 0 14px 34px -16px rgba(28, 27, 24, .55); }
+/* Logo mark set off from the links by a faint divider (reference-style). */
+.site-header .site-brand { gap: 9px; padding: 2px 18px 2px 8px; margin-right: 2px; border-right: 1px solid rgba(255, 255, 255, .13); }
+.site-header .site-brand, .site-header .site-brand b { color: #fff !important; }
+.site-header .site-brand b { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+.site-header .site-brand small { display: none; }
+.site-header .site-logo { width: 32px; height: 32px; border-radius: 9px; background: rgba(255, 255, 255, .14); color: #fff; }
+.site-header .btn-sm { height: 36px; padding: 0 16px; }
+.site-nav-links { gap: 30px; }
+.site-nav-links a { color: rgba(255, 255, 255, .7); font-size: 14px; font-weight: 450; padding: 8px 0; border-bottom: 0; }
+.site-nav-links a.active { color: #fff; border-bottom: 0; }
+.site-nav-actions { gap: 10px; }
+.site-nav-links a:hover { color: #fff; }
+.site-nav-links a.active { color: #fff; border-bottom-color: transparent; }
+.site-header .lang-btn, .site-header .lang-btn.active { color: rgba(255, 255, 255, .72); }
+.site-header .lang-btn.active { color: #fff; }
+.site-header .lang-btn + .lang-btn { border-left-color: rgba(255, 255, 255, .25); }
+.site-menu-btn { color: #fff; }
+/* Inside the dark capsule the primary CTA inverts to a light pill. */
+.site-header .btn-dark { background: #fff; border-color: #fff; color: var(--ink) !important; box-shadow: none; }
+.site-header .btn-dark:hover { background: #ECE8DE; border-color: #ECE8DE; }
+.site-header .btn-light { background: transparent; border: 1px solid rgba(255, 255, 255, .28); color: #fff !important; }
+.site-header .btn-light:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .5); color: #fff !important; }
+
+/* ---- Form fields ---- */
+.site .input, .site .select, .site .textarea { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.site .input:focus, .site .select:focus, .site .textarea:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(28, 27, 24, .1); }
+.site .req { color: #B42318; }
+
+/* ==========================================================================
+   Landing page (.lp)
+   ========================================================================== */
+.lp { --card-line: #E4E0D6; --card-hover-line: #CFC9BB;
+  --shadow: 0 1px 2px rgba(28, 27, 24, .03), 0 10px 24px -18px rgba(28, 27, 24, .12);
+  --card-hover: 0 16px 36px -20px rgba(28, 27, 24, .18); }
+
+/* Clean cream backdrop (no imagery, reference-style). */
+.lp-bg { background: var(--page); }
+.lp-bg::before { background: radial-gradient(1000px 560px at 82% -12%, rgba(28, 27, 24, .05), transparent 62%); opacity: 1; -webkit-mask-image: none; mask-image: none; }
+.lp-bg::after { background: linear-gradient(180deg, transparent 0%, transparent 70%, var(--page) 100%); }
+
+/* Eyebrows + two-tone headline */
+.lp-kicker, .lp-eyebrow, .site-kicker { color: var(--muted); }
+.lp h1 { color: var(--ink); }
+.lp h1 span { color: #9A8E76; }
+.lp-lead { color: var(--text); }
+
+/* Hero search → pill */
+.lp-search-row { background: #fff; border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 18px 40px -24px rgba(28, 27, 24, .35); }
+.lp-search-btn { border-radius: 999px; }
+.lp-pill { background: #fff; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); }
+.lp-pill:hover { border-color: #CFC9BB; }
+select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%231C1B18' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+.lp-popular > span { color: var(--ink); }
+.lp-popular button { background: #fff; border: 1px solid var(--line); color: var(--text); }
+.lp-popular button:hover { border-color: #CFC9BB; color: var(--ink); }
+
+/* Stat callouts → big serif numbers */
+.lp-stat-strip, .lp-about-stats { background: var(--surface); border: 1px solid var(--line); }
+.lp-stat-strip li, .lp-about-stats li { border-left-color: var(--line); }
+.lp-stat-strip b, .lp-about-stats b { font-family: var(--serif); font-size: 34px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+.lp-stat-ico { background: var(--tile); color: var(--ink); }
+
+/* Monochrome icon tiles */
+.lp-ico, .lp-ico-soft, .lp-ico-0, .lp-ico-1, .lp-ico-2, .lp-ico-3, .lp-ico-4, .lp-ico-5, .lp-ico-6, .lp-ico-7,
+.site-group-icon { background: var(--tile); color: var(--ink); }
+.lp-ico-green { background: #E7EDE4; color: #3A6B41; }
+
+/* Cards */
+.lp-panel, .lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-location { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.lp-steps li, .lp-dept-grid li { background: var(--surface); border: 1px solid var(--line); }
+.lp-side { background: var(--surface); border: 1px solid var(--line); }
+.lp-dept-wall li { background: #fff; border: 1px solid var(--line); color: var(--text); }
+.lp-tone-0 { background: #EAE6DB; color: #4A463D; } .lp-tone-1 { background: #E8E4F0; color: #4F3F77; } .lp-tone-2 { background: #E2EDE4; color: #35613D; }
+.lp-tender-foot { border-top-color: #EEEAE0; }
+.lp-service-arrow { background: var(--tile); color: var(--ink); }
+.lp-service:hover .lp-service-arrow { background: var(--ink); color: #fff; }
+.lp-step-num { background: var(--ink); box-shadow: 0 10px 22px -12px rgba(28, 27, 24, .5); }
+
+/* Portal band + dark product preview (the dark panel on cream, reference-style) */
+.lp-portal { background: var(--soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.lp-portal-body, .lp-checks li { color: var(--text); }
+.lp-checks li > span { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.lp-app { background: #1C1B18; border: 1px solid #2B2924; box-shadow: 0 46px 90px -42px rgba(28, 27, 24, .7); color: #E7E4DC; }
+.lp-app-bar { background: #211F1B; border-bottom-color: #302D28; }
+.lp-app-title { color: #F3F0E9; }
+.lp-app-dots i { background: #3B3832; }
+.lp-app-search { color: #AFA99D; border: 1px solid #35322C; }
+.lp-app-head h4 { color: #F3F0E9; }
+.lp-app-nav { background: #151310; }
+.lp-app-row { border-bottom-color: #2B2924; color: #C9C5BB; }
+.lp-app-row-head { color: #8C877B; }
+.lp-app-c-date { color: #9B9589; }
+.lp-app-status-open { background: rgba(120, 180, 120, .18); color: #9AD19F; }
+.lp-app-status-soon { background: rgba(220, 170, 90, .2); color: #E6C081; }
+.lp-app-status-new { background: rgba(190, 185, 170, .18); color: #DBD6CB; }
+
+/* About / departments / contact / location */
+.lp-about-lead { color: var(--text); }
+.lp-dept-grid svg { color: var(--ink); opacity: .75; }
+.lp-location-head { background: var(--tile); border: 1px solid var(--line); color: var(--ink); }
+.lp-location-org { border-bottom-color: #EEEAE0; }
+.lp-dot { color: var(--muted); }
+.lp-dot-blue::before { background: var(--ink); }
+
+/* Request-access panel */
+.lp-form-head h3, .lp-form-panel .field > label, .lp-side-card b { color: var(--ink); }
+.site-form-section { color: var(--muted); }
+.lp-side-card + .lp-side-card { border-top-color: #EEEAE0; }
+
+/* ==========================================================================
+   Content pages (.site-* : services, info, legal, request)
+   ========================================================================== */
+.site-hero { background: radial-gradient(900px 460px at 20% -20%, rgba(28, 27, 24, .05), transparent 60%), var(--page); }
+.site-section.alt { background: var(--soft); }
+.site-trust, .site-group-card, .site-portal-list li, .site-side-card, .site-band-form,
+.flow-step, .site-chip-list a, .site-item-grid a, .site-result-list a { background: var(--surface); border-color: var(--line); }
+.site-group-card:hover, .site-group-card:focus-visible { border-color: #CFC9BB; box-shadow: var(--card-hover, var(--shadow)); }
+.site-group-icon { background: var(--tile); color: var(--ink); }
+.site-chip-list a, .site-item-grid a, .site-result-list a, .site-body, .site-points li, .legal-list { color: var(--text); }
+.site-chip-list a:hover, .site-item-grid a:hover { border-color: var(--ink); color: var(--ink); }
+.site-index-group h2 a { color: var(--ink); }
+.site-dept-wall li { background: #fff; border-color: var(--line); color: var(--text); }
+.site-points li:not(:has(svg))::before { background: var(--ink); }
+.flow-num { background: var(--tile); color: var(--text); }
+.flow-step.past .flow-num { background: #D8D2C4; color: var(--ink); }
+.flow-step.active { border-color: var(--ink); color: var(--ink); box-shadow: 0 10px 26px -14px rgba(28, 27, 24, .4); }
+.flow-step.active .flow-num { background: var(--ink); color: #fff; }
+.flow-detail { background: var(--soft); }
+.flow-detail p, .site-points li { color: var(--text); }
+.site-access-steps b { background: var(--ink); color: #fff; }
+.site-band { background: var(--ink); }
+.site-band h2, .site-band .site-sub { color: #fff; }
+
+/* ---- Mobile nav: the dropdown is a light warm panel below the capsule ---- */
+@media (max-width: 1080px) {
+  .site-nav { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; top: calc(100% + 8px); padding: 10px 16px 18px; box-shadow: 0 18px 44px -18px rgba(28, 27, 24, .4); }
+  .site-nav-links a { color: var(--text); border-bottom: 1px solid #EEEAE0; }
+  .site-nav-links a:hover, .site-nav-links a.active { color: var(--ink); border-bottom-color: #EEEAE0; }
+  .site-header .lang-btn, .site-header .lang-btn.active { color: var(--text); }
+  .site-header .lang-btn.active { color: var(--ink); }
+  .site-header .lang-btn + .lang-btn { border-left-color: var(--line); }
+  /* In the light dropdown the CTAs go back to the on-light styling. */
+  .site-header .btn-dark { background: var(--ink); border-color: var(--ink); color: #fff !important; }
+  .site-header .btn-light { background: #fff; border: 1px solid var(--line); color: var(--ink) !important; }
+}
+
+/* ==========================================================================
+   Scroll-reveal + alternating service feature rows
+   ========================================================================== */
+/* Section anchors clear the sticky nav capsule. */
+#services, #about, #contact { scroll-margin-top: 96px; }
+
+/* --- Card reveals: time-based, triggered on scroll into view (JS adds the class) ---
+   Time-based (not scroll-linked) so each card plays over a fixed ~1s and stays
+   easy to watch no matter how fast the user scrolls. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Feature rows slide in from alternating sides (the .reveal wrapper gets .is-in). */
+  .lp-feature-wrap { opacity: 0; transform: translateY(16px) scale(.98); transition: opacity .9s cubic-bezier(.16, .84, .3, 1), transform 1.05s cubic-bezier(.16, .84, .3, 1); will-change: opacity, transform; }
+  .lp-feature-wrap:not(.alt) { transform: translateX(-60px) translateY(14px) scale(.97); }
+  .lp-feature-wrap.alt { transform: translateX(60px) translateY(14px) scale(.97); }
+  .lp-feature-wrap.is-in { opacity: 1; transform: none; }
+
+  /* Other cards rise + un-blur as they enter view. */
+  .lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-steps li, .lp-dept-grid li {
+    opacity: 0; transform: translateY(50px) scale(.92); filter: blur(6px);
+    transition: opacity .9s cubic-bezier(.16, .84, .3, 1), transform 1.05s cubic-bezier(.16, .84, .3, 1), filter .8s ease;
+    will-change: opacity, transform;
+  }
+  .lp-tender.in-view, .lp-service.in-view, .lp-about-card.in-view, .lp-contact-card.in-view, .lp-steps li.in-view, .lp-dept-grid li.in-view {
+    opacity: 1; transform: none; filter: blur(0);
+  }
+}
+
+/* Hero: content pops in as a quick staggered sequence on load. */
+@keyframes lp-pop-in { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+.lp-hero .site-wrap > * { animation: lp-pop-in .6s cubic-bezier(.34, 1.45, .5, 1) both; }
+.lp-hero .site-wrap > :nth-child(1) { animation-delay: .04s; }
+.lp-hero .site-wrap > :nth-child(2) { animation-delay: .12s; }
+.lp-hero .site-wrap > :nth-child(3) { animation-delay: .20s; }
+.lp-hero .site-wrap > :nth-child(4) { animation-delay: .28s; }
+.lp-hero .site-wrap > :nth-child(5) { animation-delay: .36s; }
+.lp-hero .site-wrap > :nth-child(6) { animation-delay: .44s; }
+.lp-stat-strip li { animation: lp-pop-in .5s cubic-bezier(.34, 1.45, .5, 1) both; }
+.lp-stat-strip li:nth-child(1) { animation-delay: .5s; } .lp-stat-strip li:nth-child(2) { animation-delay: .58s; }
+.lp-stat-strip li:nth-child(3) { animation-delay: .66s; } .lp-stat-strip li:nth-child(4) { animation-delay: .74s; }
+
+/* Hover "pop" on interactive cards and pills. */
+.site .btn { transition: background .15s, border-color .15s, box-shadow .15s, transform .18s cubic-bezier(.34, 1.45, .5, 1); }
+.site .btn:hover:not(:disabled) { transform: translateY(-2px); }
+.site .btn:active { transform: translateY(0) scale(.98); }
+.lp-feature:hover { transform: translateY(-3px); }
+.lp-service:hover, .lp-tender:hover, .lp-about-card:hover, .lp-contact-card:hover { transform: translateY(-3px); }
+.lp-feature:hover .lp-feature-ico { transform: scale(1.06); transition: transform .25s cubic-bezier(.34, 1.5, .5, 1); }
+
+.lp-features { display: grid; gap: 22px; }
+.lp-feature { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; align-items: center; padding: 36px 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); color: inherit !important; text-decoration: none; transition: border-color .18s, box-shadow .2s, transform .2s; }
+.lp-feature:hover { border-color: #CFC9BB; box-shadow: 0 26px 52px -22px rgba(28, 27, 24, .28); transform: translateY(-3px); }
+.lp-feature-wrap.alt .lp-feature-text { order: 2; }
+.lp-feature-num { display: inline-block; font-family: var(--serif); font-size: 14px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+.lp-feature-text h3 { margin: 12px 0 12px; font-family: var(--serif); font-size: clamp(23px, 2.5vw, 31px); line-height: 1.12; letter-spacing: -.015em; color: var(--ink); }
+.lp-feature-text p { margin: 0 0 20px; max-width: 44ch; font-size: 15.5px; line-height: 1.62; color: var(--muted); }
+.lp-feature-link { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.lp-feature-link svg { transition: transform .15s; }
+.lp-feature:hover .lp-feature-link svg { transform: translateX(4px); }
+.lp-feature-box { display: flex; flex-direction: column; gap: 18px; min-height: 212px; padding: 28px; background: var(--ink); border-radius: 16px; }
+.lp-feature-ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 13px; background: rgba(255, 255, 255, .1); color: #fff; }
+.lp-feature-chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.lp-feature-chips li { padding: 7px 13px; border-radius: 999px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .13); color: #D8D4CB; font-size: 12.5px; line-height: 1.2; }
+
+@media (max-width: 860px) {
+  .lp-feature { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 26px 22px; }
+  .lp-feature-wrap.alt .lp-feature-text { order: 0; }
+  .lp-feature-box { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .lp-hero .site-wrap > *, .lp-stat-strip li { animation: none !important; }
+  .site .btn:hover, .lp-feature:hover, .lp-service:hover, .lp-tender:hover, .lp-about-card:hover, .lp-contact-card:hover, .lp-feature:hover .lp-feature-ico { transform: none !important; }
+}
+
+/* ---- Get-started: the "already a user?" choice bar ---- */
+.gs-login { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 0 0 32px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.gs-login h2 { margin: 0 0 2px; font-size: 19px; }
+.gs-login .cell-sub { margin: 0; }
+
+/* ---- Typography polish: tighter display headings, consistent rhythm ---- */
+.site h1, .site h2 { letter-spacing: -.022em; }
+.lp-head h2, .lp h1 { text-wrap: balance; }
+.lp-lead, .lp-head-sub { text-wrap: pretty; }
+.lp-kicker, .lp-eyebrow, .site-kicker { letter-spacing: .14em; }
+
+/* ---- Footer: warm near-black ---- */
+.site-footer { background: #1C1B18; }
+.site-footer-tagline span { color: #D9B583; }
+.site-footer-badges svg, .lp-app-brand svg { color: #D9B583; }

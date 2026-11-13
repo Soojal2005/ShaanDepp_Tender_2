@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Award, BadgeCheck, Bell, Building, Building2, CalendarDays, Clock, ClipboardCheck, ClipboardList, Cog, Factory, FileSearch, FileText, Files,
   Flag, Gavel, IndianRupee, Landmark, Lightbulb, Mail, MapPin, MessageCircle, Navigation, Phone, ScrollText, Search, ShieldCheck,
   ShoppingBag, ShoppingCart, SlidersHorizontal, TrendingUp, Trophy, Wallet,
 } from 'lucide-react';
-import { DEPARTMENTS, GROUPS, SERVICE_COUNT } from '../../content/services.js';
+import { DEPARTMENTS, GROUPS, SERVICE_COUNT, itemsOf } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
 import { formatDate, formatInr } from '../../lib/format.js';
 import EnquiryForm, { ACCESS_SERVICE } from '../../site/EnquiryForm.jsx';
@@ -26,6 +26,22 @@ const SIDE_ICONS = [Clock, BadgeCheck, MessageCircle, Landmark];
 // Value bands map to the portal's rupee filters, so the hero search is real, not decorative.
 const VALUE_BANDS = [{ valueMax: '1000000' }, { valueMin: '1000000', valueMax: '10000000' }, { valueMin: '10000000' }];
 const TYPE_VALUES = ['Works', 'Goods', 'Services'];
+
+/** Wraps content and fades/slides it in the first time it scrolls into view. */
+function Reveal({ className = '', style, children }) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setShown(true); io.disconnect(); }
+    }, { threshold: 0.05, rootMargin: '0px 0px -6% 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} style={style} className={`reveal ${shown ? 'is-in' : ''} ${className}`}>{children}</div>;
+}
 
 /** The hero search: keyword + a couple of real filters, then sign-in that lands the visitor on the results. */
 function HeroSearch() {
@@ -130,6 +146,17 @@ export default function Home() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [wantsLive]);
+  // Reveal the non-feature cards when they scroll into view (feature rows use <Reveal/>).
+  // Re-runs when live samples arrive so their freshly-rendered cards get observed too.
+  useEffect(() => {
+    const els = document.querySelectorAll('.lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-steps li, .lp-dept-grid li');
+    if (!els.length) return undefined;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [samples]);
   const tenders = (samples.length ? samples : t('site.lp.samples')).slice(0, 3);
   const waHref = useMemo(() => whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') })), [site.whatsappNumber, t]);
   useSeo({ title: t('site.seo.homeTitle'), description: t('site.seo.homeDesc'), path: '/' });
@@ -158,24 +185,35 @@ export default function Home() {
       </section>
 
       {/* ---- Our Services ---- */}
-      <section className="lp-section" aria-labelledby="services-title">
+      <section id="services" className="lp-section" aria-labelledby="services-title">
         <div className="site-wrap">
           <Heading id="services-title" kicker={t('site.lp.servicesKicker')} a={t('site.lp.servicesTitle1')} b={t('site.lp.servicesTitle2')}
             sub={t('site.lp.servicesSub', { n: SERVICE_COUNT, g: GROUPS.length })}
             action={<Link className="lp-link" to="/services">{t('site.lp.servicesAll')} <ArrowRight size={16} /></Link>} />
-          <div className="lp-service-grid">
+          <div className="lp-features">
             {GROUPS.map((g, i) => {
               const Icon = SERVICE_ICONS[i] ?? GROUP_ICONS[g.icon];
               const L = lang === 'HI' ? 'hi' : 'en';
               // Hand-written card copy exists for the original groups; newer groups fall back to their own title/summary.
               const card = t('site.lp.serviceCards')[i] ?? { title: g.title[L], body: g.summary[L] };
+              const chips = itemsOf(g).slice(0, 6);
               return (
-              <Link key={g.slug} to={`/services/${g.slug}`} className="lp-service">
-                <span className={`lp-ico lp-ico-${i % 8}`}><Icon size={24} strokeWidth={1.8} /></span>
-                <h3>{card.title}</h3>
-                <p>{card.body}</p>
-                <span className="lp-service-arrow"><ArrowRight size={18} /></span>
-              </Link>
+              <Reveal key={g.slug} className={`lp-feature-wrap ${i % 2 ? 'alt' : ''}`}>
+                <Link to={`/services/${g.slug}`} className="lp-feature">
+                  <div className="lp-feature-text">
+                    <span className="lp-feature-num">{String(i + 1).padStart(2, '0')}</span>
+                    <h3>{card.title}</h3>
+                    <p>{card.body}</p>
+                    <span className="lp-feature-link">{t('site.lp.servicesAll')} <ArrowRight size={16} /></span>
+                  </div>
+                  <div className="lp-feature-box">
+                    <span className="lp-feature-ico"><Icon size={26} strokeWidth={1.7} /></span>
+                    <ul className="lp-feature-chips">
+                      {chips.map((it) => <li key={it.slug}>{it[L]}</li>)}
+                    </ul>
+                  </div>
+                </Link>
+              </Reveal>
             ); })}
           </div>
         </div>
@@ -231,7 +269,7 @@ export default function Home() {
 
 
       {/* ---- About ---- */}
-      <section className="lp-section" aria-labelledby="about-title">
+      <section id="about" className="lp-section" aria-labelledby="about-title">
         <div className="site-wrap">
           <div className="lp-about-intro">
             <p className="lp-eyebrow">{t('site.lp.aboutKicker')}</p>
@@ -267,7 +305,7 @@ export default function Home() {
       </section>
 
       {/* ---- Contact ---- */}
-      <section className="lp-section" aria-labelledby="contact-title">
+      <section id="contact" className="lp-section" aria-labelledby="contact-title">
         <div className="site-wrap">
           <div className="lp-about-intro">
             <p className="lp-eyebrow">{t('site.lp.contactKicker')}</p>

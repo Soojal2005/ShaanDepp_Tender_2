@@ -38,6 +38,7 @@ const ServicePage = lazy(() => import('./pages/public/Services.jsx').then((m) =>
 const About = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.About })));
 const Contact = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.Contact })));
 const RequestAccess = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.RequestAccess })));
+const GetStarted = lazy(() => import('./pages/public/Info.jsx').then((m) => ({ default: m.GetStarted })));
 const Privacy = lazy(() => import('./pages/public/Legal.jsx').then((m) => ({ default: m.Privacy })));
 const Terms = lazy(() => import('./pages/public/Legal.jsx').then((m) => ({ default: m.Terms })));
 const Disclaimer = lazy(() => import('./pages/public/Legal.jsx').then((m) => ({ default: m.Disclaimer })));
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/request-access" element={<RequestAccess />} />
+          <Route path="/get-started" element={<GetStarted />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/disclaimer" element={<Disclaimer />} />

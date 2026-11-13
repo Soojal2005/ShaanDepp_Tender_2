@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ArrowRight, BarChart3, Globe, Landmark, Mail, MapPin, Menu, MessageCircle, Phone, ShieldCheck, Users, X } from 'lucide-react';
 import LangPill from '../components/LangPill.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { GROUPS } from '../content/services.js';
 import { useI18n } from '../i18n/index.jsx';
 import { telHref, useSiteConfig, whatsappHref } from '../site/hooks.js';
@@ -10,13 +11,32 @@ const BADGE_ICONS = [ShieldCheck, Users, BarChart3];
 
 export default function PublicLayout() {
   const { t, lang } = useI18n();
+  const { status } = useAuth();
+  const authed = status === 'authenticated';
   const site = useSiteConfig();
   const L = lang === 'HI' ? 'hi' : 'en';
   const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
-  useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  // On a hash link (e.g. /#services) scroll to that home section — retrying a
+  // few times because the home page is lazy-loaded and may not be mounted yet.
+  useEffect(() => {
+    setOpen(false);
+    if (hash) {
+      const id = hash.slice(1);
+      let tries = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else if (tries++ < 12) setTimeout(tryScroll, 60);
+      };
+      tryScroll();
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
 
-  const links = [['/', 'home', true], ['/services', 'services'], ['/about', 'about'], ['/contact', 'contact']];
+  // Services/About/Contact scroll to the matching section on the home page.
+  const links = [['/', 'home'], ['/#services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
   const waHref = whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') }));
   return (
     <div className={`site ${pathname === '/' ? 'site-landing' : ''}`}>
@@ -30,12 +50,16 @@ export default function PublicLayout() {
           <button type="button" className="site-menu-btn" aria-label={t('site.nav.menu')} aria-expanded={open} aria-controls="public-navigation" onClick={() => setOpen(!open)}>{open ? <X size={22} /> : <Menu size={22} />}</button>
           <nav id="public-navigation" className={`site-nav ${open ? 'open' : ''}`} aria-label="Main" onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}>
             <div className="site-nav-links">
-              {links.map(([to, key, end]) => <NavLink key={to} to={to} end={end}>{t(`site.nav.${key}`)}</NavLink>)}
+              {links.map(([to, key]) => {
+                const active = pathname === '/' && (to === '/' ? !hash : hash === to.slice(1));
+                return <Link key={to} to={to} className={active ? 'active' : undefined}>{t(`site.nav.${key}`)}</Link>;
+              })}
             </div>
             <div className="site-nav-actions">
               <LangPill />
-              <Link className="btn btn-light btn-sm" to="/request-access">{t('site.nav.requestAccess')}</Link>
-              <Link className="btn btn-dark btn-sm" to="/login">{t('site.nav.portal')} <ArrowRight size={15} /></Link>
+              {authed
+                ? <Link className="btn btn-dark btn-sm" to="/app/dashboard">{t('site.nav.dashboard')} <ArrowRight size={15} /></Link>
+                : <Link className="btn btn-dark btn-sm" to="/get-started">{t('site.nav.getStarted')} <ArrowRight size={15} /></Link>}
             </div>
           </nav>
         </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, CheckCircle2, LogIn, Mail, MapPin, Phone } from 'lucide-react';
 import { useI18n } from '../../i18n/index.jsx';
 import EnquiryForm, { ACCESS_SERVICE, ContactButtons } from '../../site/EnquiryForm.jsx';
 import { telHref, useSeo, useSiteConfig } from '../../site/hooks.js';
@@ -74,6 +74,40 @@ export function RequestAccess() {
           <h2>{t('site.access.formTitle')}</h2>
           <p className="cell-sub">{t('site.access.formHint')}</p>
           <EnquiryForm idPrefix="access" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.access.send')} />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/** The "Get started" landing: sign in if you already have an account, or register your company (full details). */
+export function GetStarted() {
+  const { t } = useI18n();
+  useSeo({ title: t('site.getStarted.seoTitle'), description: t('site.getStarted.seoDesc'), path: '/get-started' });
+  return (
+    <div className="site-wrap site-page">
+      <h1>{t('site.getStarted.title')}</h1>
+      <p className="site-sub">{t('site.getStarted.sub')}</p>
+
+      <div className="gs-login">
+        <div>
+          <h2>{t('site.getStarted.haveAccount')}</h2>
+          <p className="cell-sub">{t('site.getStarted.loginHint')}</p>
+        </div>
+        <Link className="btn btn-outline" to="/login"><LogIn size={16} />{t('site.getStarted.login')}</Link>
+      </div>
+
+      <div className="site-two-col">
+        <div>
+          <h2>{t('site.access.stepsTitle')}</h2>
+          <ol className="site-portal-list site-access-steps">
+            {t('site.access.steps').map((step, i) => <li key={step.title}><b>{i + 1}</b><span><strong>{step.title}</strong>{step.body}</span></li>)}
+          </ol>
+        </div>
+        <aside className="site-side-card">
+          <h2>{t('site.getStarted.registerTitle')}</h2>
+          <p className="cell-sub">{t('site.getStarted.registerHint')}</p>
+          <EnquiryForm idPrefix="gs" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.getStarted.register')} rich />
         </aside>
       </div>
     </div>
