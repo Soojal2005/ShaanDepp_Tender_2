@@ -69,6 +69,15 @@ function EnquiryCard({ enquiry, kind, canConvert, onConvert, onChanged }) {
         {digits && <a className="btn btn-sm btn-outline" href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={13} />WhatsApp</a>}
       </div>
 
+      {kind === 'access_request' && (enquiry.gstin || enquiry.city || enquiry.state || enquiry.industry || enquiry.address) && (
+        <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', margin: '0 0 12px', fontSize: 13 }}>
+          {enquiry.industry && (<><dt className="cell-sub">Industry</dt><dd style={{ margin: 0 }}>{enquiry.industry}</dd></>)}
+          {(enquiry.city || enquiry.state) && (<><dt className="cell-sub">Location</dt><dd style={{ margin: 0 }}>{[enquiry.city, enquiry.state].filter(Boolean).join(', ')}</dd></>)}
+          {enquiry.address && (<><dt className="cell-sub">Address</dt><dd style={{ margin: 0 }}>{enquiry.address}</dd></>)}
+          {enquiry.gstin && (<><dt className="cell-sub">GSTIN</dt><dd style={{ margin: 0 }}>{enquiry.gstin}</dd></>)}
+        </dl>
+      )}
+
       {kind === 'access_request' && (
         <div className="note note-info" style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 12 }}>
           {converted ? (

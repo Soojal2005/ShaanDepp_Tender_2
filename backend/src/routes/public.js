@@ -12,20 +12,40 @@ import { button, emailShell, esc } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
 import { email, parse, z } from '../validate.js';
 
-const enquirySchema = z.object({
-  name: z.string().trim().min(2).max(150),
-  company: z.string().trim().min(2).max(200),
-  email,
-  phone: z.string().trim().max(50).optional(),
-  service: z.string().trim().max(200).optional(),
-  // 'access_request' comes from the website's Request access page and lands in the admin Access requests queue.
-  kind: z.enum(['general', 'access_request']).default('general'),
-  message: z.string().trim().max(4000).optional(),
-  language: z.enum(['EN', 'HI']).default('EN'),
-  consent: z.literal(true, { error: 'must be accepted' }),
-  // Honeypot: real visitors never see or fill this field.
-  website: z.string().max(200).optional(),
-});
+// A 15-character GSTIN, e.g. 22AAAAA0000A1Z5.
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+const enquirySchema = z
+  .object({
+    name: z.string().trim().min(2).max(150),
+    company: z.string().trim().min(2).max(200),
+    email,
+    phone: z.string().trim().max(50).optional(),
+    service: z.string().trim().max(200).optional(),
+    // 'access_request' comes from the website's Request access page and lands in the admin Access requests queue.
+    kind: z.enum(['general', 'access_request']).default('general'),
+    message: z.string().trim().max(4000).optional(),
+    language: z.enum(['EN', 'HI']).default('EN'),
+    // Company identity, collected when registering "as a company" (access_request).
+    gstin: z.string().trim().toUpperCase().regex(GSTIN_RE, 'is not a valid GSTIN').optional(),
+    address: z.string().trim().max(300).optional(),
+    city: z.string().trim().max(100).optional(),
+    state: z.string().trim().max(100).optional(),
+    industry: z.string().trim().max(120).optional(),
+    consent: z.literal(true, { error: 'must be accepted' }),
+    // Honeypot: real visitors never see or fill this field.
+    website: z.string().max(200).optional(),
+  })
+  // A registration must identify the company and the person, so these are required
+  // for an access request (GSTIN and a full street address stay optional).
+  .superRefine((v, ctx) => {
+    if (v.kind !== 'access_request') return;
+    for (const field of ['phone', 'city', 'state', 'industry']) {
+      if (!v[field] || !String(v[field]).trim()) {
+        ctx.addIssue({ code: 'custom', path: [field], message: 'is required to register as a company' });
+      }
+    }
+  });
 
 /** Tell the team a new access request is waiting. Queued in the same transaction, so a failed save sends nothing. */
 async function notifyStaff(q, enquiryId, input) {
@@ -69,10 +89,11 @@ export function publicRoutes({ limiters }) {
       const ip = clientIp(req);
       await withSystemDb(req, async (q) => {
         const row = await q.one(
-          `INSERT INTO enquiries (name, company, phone, email, service, message, language, ip_address, kind)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+          `INSERT INTO enquiries (name, company, phone, email, service, message, language, ip_address, kind, gstin, address, city, state, industry)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
           [input.name, input.company, input.phone ?? null, input.email, input.service ?? null,
-           input.message ?? null, input.language, ip, input.kind]
+           input.message ?? null, input.language, ip, input.kind,
+           input.gstin ?? null, input.address ?? null, input.city ?? null, input.state ?? null, input.industry ?? null]
         );
         await audit(q, { user: null, ip }, 'enquiry.create', 'enquiry', row.id, { service: input.service ?? null, kind: input.kind });
         if (input.kind === 'access_request') await notifyStaff(q, row.id, input);
