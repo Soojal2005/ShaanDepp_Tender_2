@@ -37,7 +37,8 @@ COPY backend/migrations ./migrations
 COPY backend/seed ./seed
 COPY backend/src ./src
 COPY --from=web /web/dist /app/dist
-RUN mkdir -p /data/storage /data/outbox && chown -R node:node /data
+COPY backend/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN mkdir -p /data/storage /data/outbox && chown -R node:node /data && chmod +x docker-entrypoint.sh
 ENV STORAGE_DIR=/data/storage OUTBOX_DIR=/data/outbox
 # Chromium for the tender crawler's browser engine. Playwright uses this system
 # binary (its own download is skipped), so the image stays lean.
@@ -47,4 +48,6 @@ USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD wget -qO- http://127.0.0.1:4000/api/v1/health || exit 1
-CMD ["node", "src/server.js"]
+# Applies pending migrations (release step, see docs/PRISMA_DEPLOYMENT.md), then
+# starts the API — so the running code and the database schema never diverge.
+ENTRYPOINT ["./docker-entrypoint.sh"]

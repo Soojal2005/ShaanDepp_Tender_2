@@ -87,6 +87,12 @@ Only after those tasks succeed, roll out API containers with `DB_MIGRATE_ON_STAR
 and the runtime URL. Store credentials in your deployment's secret store. Supply owner
 credentials to the release task only.
 
+(The image's own entrypoint also applies any pending migration, with the owner URL,
+before the API inside the container starts — see `docs/DEPLOYMENT.md`. So an API
+container never boots against a schema the code doesn't match, even if a separate
+release task is skipped; running one explicitly beforehand, as above, still lets you
+gate a multi-step rollout and keeps `APP_DB_PASSWORD` out of the long-running task.)
+
 This is a long-running Node/Express service with an in-process scheduler and filesystem
 storage. ECS/EC2 are suitable without changing that architecture. Multiple replicas need
 shared persistent storage and exactly one scheduler (`JOBS_ENABLED=on` on one process,

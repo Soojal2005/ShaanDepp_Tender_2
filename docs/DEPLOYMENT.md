@@ -63,7 +63,9 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Migrations run automatically at start and are forward-only. A migration that was already applied is checksummed: the application refuses to start if one has been edited, rather than risk a mismatched database.
 
-**Release note, access requests (migration 010).** It adds `kind`, `organization_id` and `converted_at` to `enquiries` and a `Converted` status. The new API reads and writes those columns, so apply the migration **before** starting the new API (with `DB_MIGRATE_ON_START=off`, run `npm run migrate` with the owner URL first). The migration is additive, so the previous API keeps working while it runs.
+The Docker image's entrypoint (`backend/docker-entrypoint.sh`) applies any pending migration — using `MIGRATION_DATABASE_URL`/`DIRECT_URL`, the owner connection, same as `npm run migrate` — **before** the API starts, on every container boot, regardless of `DB_MIGRATE_ON_START`. This is what keeps a managed/Supabase deployment (which runs with `DB_MIGRATE_ON_START=off`, see [the managed database guide](PRISMA_DEPLOYMENT.md)) from ever booting the API against a schema the code doesn't match yet; a migration failure fails the container start instead of silently running stale. For a manual release task outside this image (ECS/Lambda/etc.), still run `node src/db/migrate.js` yourself as described there.
+
+**Release note, access requests (migration 010).** It adds `kind`, `organization_id` and `converted_at` to `enquiries` and a `Converted` status. The new API reads and writes those columns, so apply the migration **before** starting the new API (with `DB_MIGRATE_ON_START=off`, run `npm run migrate` with the owner URL first — or, on an image built after the entrypoint change above, this happens automatically). The migration is additive, so the previous API keeps working while it runs.
 
 ## Running without Docker
 
