@@ -174,7 +174,7 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
                     {tender.documents.map((d) => (
                       <li key={d.id}>
                         <span>{d.name}{d.type && <span className="cell-sub"> · {d.type}</span>}</span>
-                        {d.downloadable && <a href={d.url} target="_blank" rel="noopener noreferrer">{t('common.download')}</a>}
+                        {d.downloadable && <a href={api.url(`/tenders/${tender.id}/documents/${d.id}/file`)} download>{t('common.download')}</a>}
                       </li>
                     ))}
                   </ul>
@@ -187,7 +187,9 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
               <ul className="doc-list">
                 {tender.corrigenda.map((c, i) => (
                   <li key={i}><span><b>{c.number}</b> · {c.subject}<span className="cell-sub"> · {formatDate(c.issueDate, lang)}</span></span>
-                    {c.url && <a href={c.url} target="_blank" rel="noopener noreferrer">{t('common.download')}</a>}</li>
+                    {(c.documents ?? []).filter((d) => d.downloadable).map((d) => (
+                      <a key={d.id} href={api.url(`/tenders/${tender.id}/corrigenda/documents/${d.id}/file`)} download>{t('common.download')}</a>
+                    ))}</li>
                 ))}
               </ul>
             ))}

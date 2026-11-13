@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { Router } from 'express';
 import { requireAuth, withUserDb } from '../auth/middleware.js';
 import { asyncHandler, conflict, notFound } from '../errors.js';
+import { proxyDocument, pdfFileName } from '../services/documentProxy.js';
 import { exportTenders, filtersSchema, getTender, pagingSchema, searchTenders, tenderFacets } from '../services/tenderSearch.js';
 import { tenderRef } from '../util.js';
 import { id as idSchema, parse, z } from '../validate.js';
@@ -9,8 +10,9 @@ import { id as idSchema, parse, z } from '../validate.js';
 const MAX_SAVED_SEARCHES = 50;
 
 const parseFilters = (query) => parse(filtersSchema, query);
+const passthrough = (req, res, next) => next();
 
-export function tendersRoutes() {
+export function tendersRoutes({ limiters } = {}) {
   const r = Router();
   r.use(requireAuth);
 
@@ -90,6 +92,39 @@ export function tendersRoutes() {
     asyncHandler(async (req, res) => {
       const { tenderId } = parse(z.object({ tenderId: idSchema }), req.params);
       res.json({ tender: await withUserDb(req, (q) => getTender(q, tenderId, { userId: req.auth.user.id, orgId: req.auth.user.orgId })) });
+    })
+  );
+
+  // ---- Document download -----------------------------------------------------
+  // Streams the tender's document from the source portal through our server, so
+  // the portal URL is never shown to the user and nothing is stored on our side.
+  r.get(
+    '/:tenderId/documents/:docId/file',
+    limiters?.documentDownload ?? passthrough,
+    asyncHandler(async (req, res) => {
+      const { tenderId, docId } = parse(z.object({ tenderId: idSchema, docId: idSchema }), req.params);
+      const doc = await withUserDb(req, (q) =>
+        q.maybeOne('SELECT name, url FROM tender_documents WHERE id = $1 AND tender_id = $2', [docId, tenderId]));
+      if (!doc?.url) throw notFound('Document not found');
+      await proxyDocument(doc.url, res, { fileName: pdfFileName(doc.name) });
+    })
+  );
+
+  // Same, for a corrigendum's attachment.
+  r.get(
+    '/:tenderId/corrigenda/documents/:docId/file',
+    limiters?.documentDownload ?? passthrough,
+    asyncHandler(async (req, res) => {
+      const { tenderId, docId } = parse(z.object({ tenderId: idSchema, docId: idSchema }), req.params);
+      const doc = await withUserDb(req, (q) =>
+        q.maybeOne(
+          `SELECT cd.name, cd.url FROM corrigendum_documents cd
+             JOIN tender_corrigenda c ON c.id = cd.corrigendum_id
+            WHERE cd.id = $1 AND c.tender_id = $2`,
+          [docId, tenderId]
+        ));
+      if (!doc?.url) throw notFound('Document not found');
+      await proxyDocument(doc.url, res, { fileName: pdfFileName(doc.name) });
     })
   );
 

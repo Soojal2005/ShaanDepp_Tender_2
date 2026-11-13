@@ -258,11 +258,27 @@ export async function getTender(q, id, { userId = null, orgId = null } = {}) {
     [id, userId, orgId]
   );
   if (!row) throw notFound('Tender not found');
-  const [documents, boq, corrigenda] = await Promise.all([
+  const [documents, boq, corrigendaRows] = await Promise.all([
     q.many('SELECT id, name, doc_type, size_label, url, external_id FROM tender_documents WHERE tender_id = $1 ORDER BY id', [id]),
     q.many('SELECT item_code, item_name, quantity, unit, estimated_rate, total_amount FROM tender_boq_items WHERE tender_id = $1 ORDER BY id LIMIT 500', [id]),
-    q.many('SELECT corrigendum_number, subject, issue_date, attachment_url FROM tender_corrigenda WHERE tender_id = $1 ORDER BY issue_date DESC', [id]),
+    // Each corrigendum may carry zero or more downloadable attachments (served through our proxy).
+    q.many(
+      `SELECT c.id, c.corrigendum_number, c.subject, c.issue_date,
+              cd.id AS doc_id, cd.name AS doc_name, (cd.url IS NOT NULL) AS downloadable
+         FROM tender_corrigenda c
+         LEFT JOIN corrigendum_documents cd ON cd.corrigendum_id = c.id
+        WHERE c.tender_id = $1
+        ORDER BY c.issue_date DESC, cd.id`,
+      [id]
+    ),
   ]);
+  const corrigendaById = new Map();
+  for (const row of corrigendaRows) {
+    if (!corrigendaById.has(row.id)) {
+      corrigendaById.set(row.id, { number: row.corrigendum_number, subject: row.subject, issueDate: row.issue_date, documents: [] });
+    }
+    if (row.doc_id) corrigendaById.get(row.id).documents.push({ id: row.doc_id, name: row.doc_name, downloadable: Boolean(row.downloadable) });
+  }
   return {
     ...listView(row),
     snippet: null,
@@ -273,8 +289,9 @@ export async function getTender(q, id, { userId = null, orgId = null } = {}) {
     penaltyTerms: row.penalty_terms,
     lastUpdated: row.last_source_update,
     watchNotes: row.watch_notes,
-    documents: documents.map((d) => ({ id: d.id, name: d.name, type: d.doc_type, sizeLabel: d.size_label, url: d.url, downloadable: Boolean(d.url) })),
+    // The source URL is deliberately not sent to the client; documents are fetched through our own download endpoint.
+    documents: documents.map((d) => ({ id: d.id, name: d.name, type: d.doc_type, sizeLabel: d.size_label, downloadable: Boolean(d.url) })),
     boqItems: boq.map((b) => ({ code: b.item_code, name: b.item_name, quantity: b.quantity, unit: b.unit, rate: b.estimated_rate, total: b.total_amount })),
-    corrigenda: corrigenda.map((c) => ({ number: c.corrigendum_number, subject: c.subject, issueDate: c.issue_date, url: c.attachment_url })),
+    corrigenda: [...corrigendaById.values()],
   };
 }
