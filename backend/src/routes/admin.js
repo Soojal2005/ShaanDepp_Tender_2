@@ -80,6 +80,10 @@ export function adminRoutes() {
           gstin: z.string().trim().toUpperCase().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/, 'is not a valid GSTIN').nullish(),
           contactName: z.string().trim().max(150).nullish(),
           contactPhone: z.string().trim().max(50).nullish(),
+          address: z.string().trim().max(300).nullish(),
+          city: z.string().trim().max(100).nullish(),
+          state: z.string().trim().max(100).nullish(),
+          industry: z.string().trim().max(120).nullish(),
           planCode: z.string().trim().min(1).max(50),
           language: z.enum(['EN', 'HI']).default('EN'),
           admin: adminUser,
@@ -91,9 +95,21 @@ export function adminRoutes() {
       const { fromEnquiryId, ...orgInput } = input;
       const created = await withSystemDb(req, async (q) => {
         if (fromEnquiryId) {
-          const enquiry = await q.maybeOne('SELECT id, organization_id FROM enquiries WHERE id = $1 FOR UPDATE', [fromEnquiryId]);
+          const enquiry = await q.maybeOne(
+            'SELECT id, organization_id, name, phone, gstin, address, city, state, industry FROM enquiries WHERE id = $1 FOR UPDATE',
+            [fromEnquiryId]
+          );
           if (!enquiry) throw notFound('Access request not found');
           if (enquiry.organization_id) throw conflict('An organization was already created from this request');
+          // Carry the company identity captured at registration onto the new
+          // organization, unless staff overrode a field in the conversion form.
+          orgInput.gstin ??= enquiry.gstin;
+          orgInput.address ??= enquiry.address;
+          orgInput.city ??= enquiry.city;
+          orgInput.state ??= enquiry.state;
+          orgInput.industry ??= enquiry.industry;
+          orgInput.contactName ??= enquiry.name;
+          orgInput.contactPhone ??= enquiry.phone;
         }
         const result = await createOrganization(q, actorOf(req), orgInput);
         if (fromEnquiryId) {
@@ -216,6 +232,7 @@ export function adminRoutes() {
       const rows = await withSystemDb(req, async (q) => {
         const enquiries = await q.many(
           `SELECT e.id, e.name, e.company, e.phone, e.email, e.service, e.message, e.language, e.status, e.kind,
+                  e.gstin, e.address, e.city, e.state, e.industry,
                   e.consent_timestamp, e.privacy_notice_version, e.created_at, e.converted_at,
                   e.organization_id, o.name AS organization_name
              FROM enquiries e LEFT JOIN organizations o ON o.id = e.organization_id

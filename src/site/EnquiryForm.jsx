@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Building2, CheckCircle2, Mail, MessageCircle, MessageSquare, Phone, User } from 'lucide-react';
+import { ArrowRight, Briefcase, Building2, CheckCircle2, Hash, Mail, MapPin, MessageCircle, MessageSquare, Phone, User } from 'lucide-react';
 import { Button, ErrorNote, Field } from '../components/ui.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { api } from '../lib/api.js';
@@ -42,19 +42,25 @@ function IconField({ label, required, optional, icon: Icon, children }) {
 export default function EnquiryForm({ service = '', kind = 'general', idPrefix = 'enq', sendLabel, rich = false }) {
   const { t, lang } = useI18n();
   const { pending, run } = useAction();
-  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '' };
+  // Registering "as a company" (access_request) also captures the company's identity.
+  const isAccess = kind === 'access_request';
+  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '', gstin: '', address: '', city: '', state: '', industry: '' };
   const [form, setForm] = useState(blank);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
   const nameValid = form.name.trim().length >= 2;
   const companyValid = form.company.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
-  const canSubmit = nameValid && companyValid && emailValid && form.consent;
+  // The company identity required at registration: phone, city, state, industry (GSTIN and street address are optional).
+  const companyValid2 = !isAccess || (form.phone.trim() && form.city.trim() && form.state.trim() && form.industry.trim());
+  const canSubmit = nameValid && companyValid && emailValid && companyValid2 && form.consent;
   const formHint = !nameValid || !companyValid ? t('site.f.needDetails')
     : !emailValid ? t('site.f.needEmail')
-      : !form.consent ? t('site.f.needConsent') : t('site.f.ready');
+      : !companyValid2 ? t('site.f.needCompany')
+        : !form.consent ? t('site.f.needConsent') : t('site.f.ready');
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const ph = (key) => (rich ? t(`site.f.${key}Ph`) : undefined);
+  const trimmed = (key) => form[key].trim() || undefined;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -62,6 +68,7 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
     const out = await run(() => api.post('/public/enquiries', {
       name: form.name.trim(), company: form.company.trim(), email: form.email.trim(), phone: form.phone.trim() || undefined,
       service: service || undefined, kind, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
+      ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry') }),
     }));
     if (out.ok) { setDone(true); setForm(blank); } else setError(out.error);
   };
@@ -81,8 +88,20 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
         <IconField label={t('site.f.name')} required icon={rich ? User : null}>{(p) => <input {...p} id={`${idPrefix}-name`} aria-label={t('site.f.name')} placeholder={ph('name')} className="input" required minLength={2} maxLength={150} autoComplete="name" value={form.name} onChange={set('name')} />}</IconField>
         <IconField label={t('site.f.company')} required icon={rich ? Building2 : null}>{(p) => <input {...p} id={`${idPrefix}-company`} aria-label={t('site.f.company')} placeholder={ph('company')} className="input" required minLength={2} maxLength={200} autoComplete="organization" value={form.company} onChange={set('company')} />}</IconField>
         <IconField label={t('site.f.email')} required icon={rich ? Mail : null}>{(p) => <input {...p} id={`${idPrefix}-email`} aria-label={t('site.f.email')} placeholder={ph('email')} className="input" type="email" required maxLength={150} autoComplete="email" value={form.email} onChange={set('email')} />}</IconField>
-        <IconField label={t('site.f.phone')} optional={t('common.optional')} icon={rich ? Phone : null}>{(p) => <input {...p} id={`${idPrefix}-phone`} aria-label={t('site.f.phone')} placeholder={ph('phone')} className="input" type="tel" maxLength={50} autoComplete="tel" value={form.phone} onChange={set('phone')} />}</IconField>
+        <IconField label={t('site.f.phone')} required={isAccess} optional={isAccess ? undefined : t('common.optional')} icon={rich ? Phone : null}>{(p) => <input {...p} id={`${idPrefix}-phone`} aria-label={t('site.f.phone')} placeholder={ph('phone')} className="input" type="tel" required={isAccess} maxLength={50} autoComplete="tel" value={form.phone} onChange={set('phone')} />}</IconField>
       </div>
+      {isAccess && (
+        <>
+          <p className="site-form-section">{t('site.f.companyHeading')}</p>
+          <div className="site-form-grid">
+            <IconField label={t('site.f.city')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-city`} aria-label={t('site.f.city')} placeholder={ph('city')} className="input" required maxLength={100} autoComplete="address-level2" value={form.city} onChange={set('city')} />}</IconField>
+            <IconField label={t('site.f.state')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-state`} aria-label={t('site.f.state')} placeholder={ph('state')} className="input" required maxLength={100} autoComplete="address-level1" value={form.state} onChange={set('state')} />}</IconField>
+            <IconField label={t('site.f.industry')} required icon={rich ? Briefcase : null}>{(p) => <input {...p} id={`${idPrefix}-industry`} aria-label={t('site.f.industry')} placeholder={ph('industry')} className="input" required maxLength={120} value={form.industry} onChange={set('industry')} />}</IconField>
+            <IconField label={t('site.f.gstin')} optional={t('common.optional')} icon={rich ? Hash : null}>{(p) => <input {...p} id={`${idPrefix}-gstin`} aria-label={t('site.f.gstin')} placeholder={ph('gstin')} className="input" maxLength={15} style={{ textTransform: 'uppercase' }} value={form.gstin} onChange={set('gstin')} />}</IconField>
+          </div>
+          <IconField label={t('site.f.address')} optional={t('common.optional')} icon={rich ? Building2 : null}>{(p) => <input {...p} id={`${idPrefix}-address`} aria-label={t('site.f.address')} placeholder={ph('address')} className="input" maxLength={300} autoComplete="street-address" value={form.address} onChange={set('address')} />}</IconField>
+        </>
+      )}
       <IconField label={t('site.f.message')} required={rich} optional={rich ? undefined : t('common.optional')} icon={rich ? MessageSquare : null}>{(p) => <textarea {...p} id={`${idPrefix}-message`} aria-label={t('site.f.message')} placeholder={ph('message')} className="input textarea" rows={4} maxLength={MESSAGE_MAX} value={form.message} onChange={set('message')} />}</IconField>
       {rich && <p className="site-form-count" aria-hidden="true">{form.message.length}/500</p>}
       {/* Honeypot: hidden from people, filled by bots. */}

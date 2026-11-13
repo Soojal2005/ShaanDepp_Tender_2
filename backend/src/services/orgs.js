@@ -15,7 +15,8 @@ import { audit } from './audit.js';
 import { queueInvite } from './accountEmails.js';
 
 const ORG_SELECT = `
-  SELECT o.id, o.name, o.domain, o.gstin, o.contact_name, o.contact_phone, o.status, o.is_staff_org,
+  SELECT o.id, o.name, o.domain, o.gstin, o.contact_name, o.contact_phone,
+         o.address, o.city, o.state, o.industry, o.status, o.is_staff_org,
          o.language, o.created_at, o.plan_id, o.alert_cap_override, o.seat_limit_override,
          p.code AS plan_code, p.name AS plan_name,
          coalesce(o.alert_cap_override, p.daily_alert_cap) AS alert_cap,
@@ -32,6 +33,10 @@ export const orgView = (r) => ({
   gstin: r.gstin,
   contactName: r.contact_name,
   contactPhone: r.contact_phone,
+  address: r.address,
+  city: r.city,
+  state: r.state,
+  industry: r.industry,
   status: r.status,
   isStaffOrg: r.is_staff_org,
   language: r.language,
@@ -182,10 +187,11 @@ export async function createOrganization(q, actor, input) {
   if (input.planCode && !plan) throw badRequest(`Unknown plan: ${input.planCode}`);
 
   const org = await q.one(
-    `INSERT INTO organizations (name, domain, gstin, contact_name, contact_phone, plan_id, language, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active') RETURNING id`,
+    `INSERT INTO organizations (name, domain, gstin, contact_name, contact_phone, address, city, state, industry, plan_id, language, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Active') RETURNING id`,
     [input.name, input.domain ?? null, input.gstin ?? null, input.contactName ?? null,
-     input.contactPhone ?? null, plan?.id ?? null, input.language ?? 'EN']
+     input.contactPhone ?? null, input.address ?? null, input.city ?? null, input.state ?? null,
+     input.industry ?? null, plan?.id ?? null, input.language ?? 'EN']
   );
   await audit(q, actor, 'org.create', 'organization', org.id, { name: input.name, plan: input.planCode ?? null });
 

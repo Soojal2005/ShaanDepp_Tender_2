@@ -10,6 +10,11 @@ const request = {
   service: 'Portal access request',
   kind: 'access_request',
   message: 'Road contractor bidding in MP and Rajasthan, 3 users.',
+  gstin: '22AAAAA0000A1Z5',
+  address: '12 MG Road, Arera Colony, 462016',
+  city: 'Bhopal',
+  state: 'Madhya Pradesh',
+  industry: 'Construction',
   consent: true,
 };
 
@@ -39,12 +44,23 @@ describe('portal access requests', () => {
     assert.equal(access[0].kind, 'access_request');
     assert.equal(access[0].status, 'New');
     requestId = access[0].id;
+    // The company identity captured at registration is stored on the request.
+    assert.equal(access[0].gstin, request.gstin);
+    assert.equal(access[0].city, 'Bhopal');
+    assert.equal(access[0].state, 'Madhya Pradesh');
+    assert.equal(access[0].industry, 'Construction');
     const general = (await platform.get('/admin/enquiries?kind=general')).body.enquiries;
     assert.deepEqual(general.map((e) => e.company), ['General Co']);
   });
 
   it('rejects an unknown kind', async () => {
     assert.equal((await anon(ctx.app).post('/public/enquiries').send({ ...request, kind: 'free_account' })).status, 400);
+  });
+
+  it('rejects a company registration missing required company details', async () => {
+    const { city, state, industry, ...incomplete } = request;
+    const res = await anon(ctx.app).post('/public/enquiries').send({ ...incomplete, email: 'incomplete@joshi.test' });
+    assert.equal(res.status, 400);
   });
 
   it('counts new items per queue for the staff navigation, and keeps clients out', async () => {
@@ -72,6 +88,12 @@ describe('portal access requests', () => {
     const res = await platform.post('/admin/organizations').send(body);
     assert.equal(res.status, 201);
     assert.ok(await latestEmailToken(ctx.db, 'meena@joshi.test'), 'the first administrator is invited');
+    // The company identity from the request carries onto the new organization.
+    assert.equal(res.body.organization.gstin, request.gstin);
+    assert.equal(res.body.organization.city, 'Bhopal');
+    assert.equal(res.body.organization.state, 'Madhya Pradesh');
+    assert.equal(res.body.organization.industry, 'Construction');
+    assert.equal(res.body.organization.contactName, 'Meena Joshi');
 
     const [row] = (await platform.get('/admin/enquiries?kind=access_request')).body.enquiries;
     assert.equal(row.status, 'Converted');
