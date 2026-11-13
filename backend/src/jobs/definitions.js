@@ -56,6 +56,9 @@ export function createJobs(db, deps = {}) {
       label: 'Tender feed sync',
       description: 'Pulls new and changed tenders, then results, from Tenderbook.',
       enabled: tenderbook.enabled,
+      // Recover a missed run after a cold start (see scheduler catch-up).
+      catchUp: true,
+      intervalMinutes: tenderbook.intervalMinutes,
       cron: tenderbook.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(tenderbook.intervalMinutes / 60))} * * *` : `*/${tenderbook.intervalMinutes} * * * *`,
       async run() {
         const client = makeTenderbookClient();
@@ -69,6 +72,9 @@ export function createJobs(db, deps = {}) {
       label: 'Government portal crawl (GePNIC)',
       description: 'Scrapes the captcha-free "Tenders by Closing Date" listing from every enabled government portal (CPPP + state portals on NIC GePNIC).',
       enabled: crawler.enabled,
+      // Recover a missed crawl after a cold start (see scheduler catch-up).
+      catchUp: true,
+      intervalMinutes: crawler.intervalMinutes,
       cron: crawler.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(crawler.intervalMinutes / 60))} * * *` : `*/${crawler.intervalMinutes} * * * *`,
       timezone: 'Asia/Kolkata',
       async run({ only } = {}) {
