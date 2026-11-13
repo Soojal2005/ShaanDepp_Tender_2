@@ -9,7 +9,7 @@ import { api } from '../../lib/api.js';
 import { formatDateTime, formatInr, formatNumber } from '../../lib/format.js';
 import { useAsync } from '../../lib/hooks.js';
 
-const PALETTE = ['#0066FF', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#94A3B8'];
+const PALETTE = ['#1C1B18', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#A49E90'];
 const monthLabel = (ym, lang) => {
   const [y, m] = ym.split('-').map(Number);
   return new Intl.DateTimeFormat(lang === 'HI' ? 'hi-IN' : 'en-IN', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1)));
@@ -116,13 +116,13 @@ export default function Dashboard() {
           <div className="chart-box" role="img" aria-label={t('dash.trendTitle')}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={trend} margin={{ top: 6, right: 8, left: -14, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E0D6" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis yAxisId="n" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <YAxis yAxisId="v" orientation="right" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar yAxisId="n" dataKey="count" name={t('dash.count')} fill="#60A5FA" radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="n" dataKey="count" name={t('dash.count')} fill="#9A8E76" radius={[3, 3, 0, 0]} />
                 <Line yAxisId="v" dataKey="crore" name={t('dash.value')} stroke="#10B981" strokeWidth={2} dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
@@ -139,7 +139,7 @@ export default function Dashboard() {
                 <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip />
                 <Bar dataKey="count" name={t('dash.count')} radius={[0, 3, 3, 0]}>
-                  {bands.map((_, i) => <Cell key={i} fill={i === 3 ? '#CBD5E1' : '#0066FF'} />)}
+                  {bands.map((_, i) => <Cell key={i} fill={i === 3 ? '#D4CDBE' : '#1C1B18'} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

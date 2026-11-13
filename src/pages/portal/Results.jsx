@@ -217,12 +217,12 @@ function Rates({ f }) {
           <div className="chart-box" role="img" aria-label={t('results.trendLine')}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend.data} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E0D6" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
                 <Tooltip formatter={(v) => (v === null ? t('results.spreadUnavailable') : `${v}%`)} />
-                <ReferenceLine y={0} stroke="#94A3B8" />
-                <Line type="monotone" dataKey="avgSpreadPct" name={t('results.trendLine')} stroke="#0066FF" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <ReferenceLine y={0} stroke="#A49E90" />
+                <Line type="monotone" dataKey="avgSpreadPct" name={t('results.trendLine')} stroke="#1C1B18" strokeWidth={2} dot={{ r: 3 }} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -245,7 +245,7 @@ function Rates({ f }) {
                 <XAxis type="number" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="label" width={170} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip formatter={(v) => `₹ ${Number(v).toLocaleString('en-IN')}`} />
-                <Bar dataKey="average" name={t('results.average')} fill="#0066FF" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="average" name={t('results.average')} fill="#1C1B18" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

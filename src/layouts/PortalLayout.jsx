@@ -68,7 +68,7 @@ function UserMenu() {
           <b>{user.name}</b>
           <span>{user.isStaff ? t(`roles.${user.role}`) : user.orgName}</span>
         </div>
-        <ChevronDown size={14} style={{ color: '#94A3B8' }} />
+        <ChevronDown size={14} style={{ color: '#A49E90' }} />
       </button>
       {open && (
         <div className="user-menu" role="menu">
@@ -77,7 +77,7 @@ function UserMenu() {
             <div>
               <div style={{ fontWeight: 700, color: 'var(--slate-900)' }}>{user.name}</div>
               <div style={{ fontSize: 11.5, color: 'var(--slate-500)' }}>{user.email}</div>
-              <div style={{ fontSize: 11, color: '#0066FF', fontWeight: 600 }}>{t(`roles.${user.role}`)}</div>
+              <div style={{ fontSize: 11, color: '#1C1B18', fontWeight: 600 }}>{t(`roles.${user.role}`)}</div>
             </div>
           </div>
           <Link to="/app/profile" role="menuitem" onClick={() => setOpen(false)}><Users size={14} />{t('nav.profile')}</Link>
@@ -169,7 +169,7 @@ export default function PortalLayout() {
             <button type="submit" className="search-submit-btn" aria-label={t('common.search')}><Search size={15} /></button>
           </div>
           <Link to="/app/search" className="advanced-search-btn" style={{ textDecoration: 'none' }}>
-            <SlidersHorizontal size={15} style={{ color: '#0066FF' }} />
+            <SlidersHorizontal size={15} style={{ color: '#1C1B18' }} />
             <span>{t('nav.advanced')}</span>
           </Link>
         </form>

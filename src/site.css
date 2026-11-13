@@ -196,7 +196,9 @@
 .field-control.has-icon > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8A97AB; pointer-events: none; }
 .field-control.has-icon .input { padding-left: 42px; }
 .field-control.has-icon .textarea { padding-left: 42px; }
-.field-control.has-icon .textarea + svg, .field-control.has-icon > svg { top: 23px; transform: none; }
+/* Inputs: icon stays vertically centred (rule above). Only the tall textarea
+   pins its icon near the first line. */
+.field-control.has-icon > svg:has(+ .textarea) { top: 22px; transform: none; }
 
 /* Request-access steps + legal pages */
 .site-access-steps { margin-bottom: 8px; }

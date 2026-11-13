@@ -176,7 +176,7 @@ function CitiesTab({ states }) {
 
   return (
     <Card title="Cities" flush>
-      <div style={{ padding: '14px 20px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderBottom: '1px solid #F1F5F9' }}>
+      <div style={{ padding: '14px 20px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderBottom: '1px solid #EFEBE2' }}>
         <select className="select" style={{ width: 240 }} value={stateId} onChange={(e) => setStateId(Number(e.target.value))} aria-label="State">
           {states.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
