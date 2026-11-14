@@ -628,59 +628,65 @@ button {
 .kpi-cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin-bottom: 22px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .kpi-metric-card {
   background: #FFFFFF;
   border: 1px solid #E4E0D6;
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: 14px;
+  padding: 20px;
   box-shadow: var(--card-shadow);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  transition: all 0.2s ease;
+  gap: 16px;
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, transform 0.18s ease;
 }
 
 .kpi-metric-card:hover {
-  border-color: #D8D2C4;
+  border-color: #CFC9BB;
   box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
 }
 
 .kpi-card-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 15px;
 }
 
 .kpi-icon-square {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-icon-square.blue { background: #EFEBE1; color: #1C1B18; }
-.kpi-icon-square.green { background: #ECFDF5; color: #10B981; }
-.kpi-icon-square.amber { background: #FFFBEB; color: #F59E0B; }
-.kpi-icon-square.purple { background: #F5F3FF; color: #8B5CF6; }
+/* One restrained, monochrome icon tile for every KPI — the icon glyph itself
+   tells them apart, and this reads far cleaner than four clashing tints. */
+.kpi-icon-square,
+.kpi-icon-square.blue,
+.kpi-icon-square.green,
+.kpi-icon-square.amber,
+.kpi-icon-square.purple { background: #F0ECE2; color: #1C1B18; }
 
 .kpi-numbers-wrap .kpi-big-value {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--slate-900);
-  line-height: 1.15;
-  letter-spacing: -0.4px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink, #1C1B18);
+  line-height: 1.1;
+  letter-spacing: -0.6px;
 }
 
 .kpi-numbers-wrap .kpi-label-text {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--slate-500);
-  margin-top: 2px;
+  font-weight: 500;
+  margin-top: 3px;
 }
 
 .kpi-delta-positive {
@@ -719,29 +725,36 @@ button {
 .analytics-cards-row {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1.35fr;
-  gap: 18px;
-  margin-bottom: 22px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .analytics-widget-card {
   background: #FFFFFF;
   border: 1px solid #E4E0D6;
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: 14px;
+  padding: 20px 22px;
   box-shadow: var(--card-shadow);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease;
+}
+
+.analytics-widget-card:hover {
+  border-color: #CFC9BB;
+  box-shadow: var(--card-shadow-hover);
 }
 
 .widget-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .widget-card-header h3 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--slate-900);
+  letter-spacing: 0.02em;
+  color: var(--ink, #1C1B18);
 }
 
 .widget-card-header a {

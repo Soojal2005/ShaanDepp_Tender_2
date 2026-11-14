@@ -45,7 +45,7 @@ a { color: #1C1B18; }
 .check-row input { accent-color: #1C1B18; width: 16px; height: 16px; }
 
 /* ---- Cards, notes, badges, states --------------------------------------- */
-.card { background: #fff; border: 1px solid #E4E0D6; border-radius: 12px; box-shadow: var(--card-shadow); margin-bottom: 18px; }
+.card { background: #fff; border: 1px solid #E4E0D6; border-radius: 14px; box-shadow: var(--card-shadow); margin-bottom: 18px; }
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #EFEBE2; }
 .card-header h3 { font-size: 14px; font-weight: 700; color: var(--slate-900); }
 .card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
