@@ -23,6 +23,18 @@ const DEPT_ICONS = [Landmark, Flag, Factory, Building2, Building, Cog, Files];
 const ABOUT_ICONS = [FileSearch, ShieldCheck, ClipboardCheck, MapPin];
 const SIDE_ICONS = [Clock, BadgeCheck, MessageCircle, Landmark];
 
+// Blueprint illustrations for the service feature cards (dark line-art). Groups
+// without an image fall back to the icon tile.
+const FEATURE_IMAGES = {
+  'tender-information': '/images/services/tender-information.jpg',
+  'gem-portal': '/images/services/gem-portal.jpg',
+  'compliance-roc': '/images/services/compliance-roc.jpg',
+  'iso-certifications': '/images/services/iso-certifications.jpg',
+  'funding-assistance': '/images/services/funding-assistance.jpg',
+  'licences-ipr-advisory': '/images/services/licences-ipr-advisory.jpg',
+  'management-advisory': '/images/services/management-advisory.jpg',
+};
+
 // Value bands map to the portal's rupee filters, so the hero search is real, not decorative.
 const VALUE_BANDS = [{ valueMax: '1000000' }, { valueMin: '1000000', valueMax: '10000000' }, { valueMin: '10000000' }];
 const TYPE_VALUES = ['Works', 'Goods', 'Services'];
@@ -197,6 +209,7 @@ export default function Home() {
               // Hand-written card copy exists for the original groups; newer groups fall back to their own title/summary.
               const card = t('site.lp.serviceCards')[i] ?? { title: g.title[L], body: g.summary[L] };
               const chips = itemsOf(g).slice(0, 6);
+              const img = FEATURE_IMAGES[g.slug];
               return (
               <Reveal key={g.slug} className={`lp-feature-wrap ${i % 2 ? 'alt' : ''}`}>
                 <Link to={`/services/${g.slug}`} className="lp-feature">
@@ -206,8 +219,8 @@ export default function Home() {
                     <p>{card.body}</p>
                     <span className="lp-feature-link">{t('site.lp.servicesAll')} <ArrowRight size={16} /></span>
                   </div>
-                  <div className="lp-feature-box">
-                    <span className="lp-feature-ico"><Icon size={26} strokeWidth={1.7} /></span>
+                  <div className={`lp-feature-box ${img ? 'has-img' : ''}`} style={img ? { backgroundImage: `url(${img})` } : undefined}>
+                    {!img && <span className="lp-feature-ico"><Icon size={26} strokeWidth={1.7} /></span>}
                     <ul className="lp-feature-chips">
                       {chips.map((it) => <li key={it.slug}>{it[L]}</li>)}
                     </ul>
