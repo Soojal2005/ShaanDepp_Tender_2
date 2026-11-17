@@ -9,7 +9,9 @@
  * "quoted phrases" must appear together.
  */
 import { z } from 'zod';
+import { config } from '../config.js';
 import { notFound } from '../errors.js';
+import { isGepnicProvider } from './ingestion/sources/cppp/portals.js';
 import { tenderRef } from '../util.js';
 
 const list = (inner, max = 100) =>
@@ -289,8 +291,13 @@ export async function getTender(q, id, { userId = null, orgId = null } = {}) {
     penaltyTerms: row.penalty_terms,
     lastUpdated: row.last_source_update,
     watchNotes: row.watch_notes,
-    // The source URL is deliberately not sent to the client; documents are fetched through our own download endpoint.
-    documents: documents.map((d) => ({ id: d.id, name: d.name, type: d.doc_type, sizeLabel: d.size_label, downloadable: Boolean(d.url) })),
+    // A document is downloadable either through the proxy (it has a stored URL)
+    // or, for a GePNIC portal with the session worker enabled, on demand via the
+    // browser worker even though no URL is stored (the link is session-bound).
+    documents: documents.map((d) => ({
+      id: d.id, name: d.name, type: d.doc_type, sizeLabel: d.size_label,
+      downloadable: Boolean(d.url) || (config.gepnic?.enabled && isGepnicProvider(row.provider_id)),
+    })),
     boqItems: boq.map((b) => ({ code: b.item_code, name: b.item_name, quantity: b.quantity, unit: b.unit, rate: b.estimated_rate, total: b.total_amount })),
     corrigenda: [...corrigendaById.values()],
   };

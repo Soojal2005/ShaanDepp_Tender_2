@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { parseDetailPage, parseListPage, createCpppClient } from '../src/services/ingestion/sources/cppp/cppp.js';
+import { applyTenderDetail, parseDetailPage, parseListPage, createCpppClient } from '../src/services/ingestion/sources/cppp/cppp.js';
 import { normalizeCpppTender, toCpppDate } from '../src/services/ingestion/sources/cppp/normalize.js';
 import { runIngestion } from '../src/services/ingestion/runner.js';
 import { SourceError } from '../src/services/ingestion/tenderbook.js';
@@ -143,6 +143,34 @@ describe('CPPP detail page parsing', () => {
     assert.equal(d.documents.length, 1);
     assert.equal(d.documents[0].name, 'NIT.pdf');
     assert.equal(d.documents[0].url, 'https://eprocure.gov.in/epublish/app?download=NIT.pdf&type=Download');
+  });
+});
+
+describe('CPPP detail merge (fields + source link)', () => {
+  const LISTING_URL = 'https://eprocure.gov.in/eprocure/app?page=FrontEndListTendersbyDate&service=page';
+
+  it('merges value/EMD/category and a source link, and does NOT store (login-gated) documents', () => {
+    const row = parseListPage(GEPNIC_HTML, 'https://eprocure.gov.in')[0];
+    assert.equal(row.tenderValue, undefined, 'the listing row has no value');
+    applyTenderDetail(row, DETAIL_HTML, { baseUrl: 'https://eprocure.gov.in', sourceUrl: LISTING_URL });
+    assert.equal(row.tenderValue, '1,25,00,000');
+    assert.equal(row.emdAmount, '2,50,000');
+    assert.equal(row.category, 'Works');
+    assert.equal(row.tenderType, 'Open Tender');
+    assert.equal(row.documents, undefined, 'GePNIC documents are login-gated, so none are stored');
+    assert.equal(row.detailUrl, LISTING_URL, 'a durable source link is set');
+  });
+
+  it('feeds the merged row through the normaliser with the new fields populated', () => {
+    const row = parseListPage(GEPNIC_HTML, 'https://eprocure.gov.in')[0];
+    applyTenderDetail(row, DETAIL_HTML, { baseUrl: 'https://eprocure.gov.in', sourceUrl: LISTING_URL });
+    const { record, problems } = normalizeCpppTender(row);
+    assert.deepEqual(problems, []);
+    assert.equal(record.estimatedValue, 12_500_000, 'value now populated from the detail page');
+    assert.equal(record.emdAmount, 250_000);
+    assert.equal(record.category, 'Works');
+    assert.equal(record.sourceUrl, LISTING_URL);
+    assert.equal(record.hasDocuments, false, 'no downloadable documents are stored for GePNIC');
   });
 });
 

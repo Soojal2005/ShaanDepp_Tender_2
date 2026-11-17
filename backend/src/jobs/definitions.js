@@ -12,6 +12,7 @@ import { drainQueue } from '../services/mail/sender.js';
 import { button, emailShell } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
 import { runIngestion } from '../services/ingestion/runner.js';
+import { pruneExpiredTenders } from '../services/ingestion/prune.js';
 import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
 import { createCpppClient } from '../services/ingestion/sources/cppp/cppp.js';
 import { createCpppBrowserClient } from '../services/ingestion/sources/cppp/browser.js';
@@ -41,13 +42,14 @@ export function createJobs(db, deps = {}) {
     tenderbook = config.tenderbook,
     crawler = config.crawler,
     enrichment = config.enrichment,
+    prune = config.prune,
     // Build a crawler client for one portal. Most portals are GePNIC; some run
     // their own software and get a dedicated adapter (selected by portal.adapter).
-    makeCrawlerClient = (portal) => {
+    makeCrawlerClient = (portal, extra = {}) => {
       if (portal.adapter === 'nprocure') return createNprocureClient({ baseUrl: portal.baseUrl, state: portal.state });
       if (portal.adapter === 'bihar') return createBiharClient({ baseUrl: portal.baseUrl, state: portal.state });
       if (portal.adapter === 'vupadhi') return createVupadhiClient({ baseUrl: portal.baseUrl, state: portal.state });
-      const opts = portalClientOptions(portal);
+      const opts = { ...portalClientOptions(portal), ...extra };
       return crawler.engine === 'http' ? createCpppClient(opts) : createCpppBrowserClient(opts);
     },
     portals = enabledPortals(),
@@ -88,7 +90,16 @@ export function createJobs(db, deps = {}) {
         // These portals are slow and occasionally time out, so retry a portal once
         // before giving up, and pace between portals to stay polite.
         const crawlOnce = async (portal) => {
-          const client = makeCrawlerClient(portal);
+          // When detail-capture is on, fetch detail pages only for tenders we do
+          // not already have, so each run adds the missing fields to new tenders
+          // without re-walking everything already stored.
+          let extra = {};
+          if (crawler.fetchDetails) {
+            const known = await db.withContext(SYSTEM, (q) =>
+              q.many('SELECT source_id FROM tenders WHERE provider_id = $1', [portal.id]));
+            extra = { fetchDetails: true, maxDetails: crawler.maxDetails, knownSourceIds: new Set(known.map((r) => r.source_id)) };
+          }
+          const client = makeCrawlerClient(portal, extra);
           const normalize = (dto) => normalizeCpppTender(portal.state ? { state: portal.state, ...dto } : dto);
           return runIngestion(db, { providerId: portal.id, kind: 'tenders', trigger: 'schedule', client, normalize });
         };
@@ -120,6 +131,20 @@ export function createJobs(db, deps = {}) {
       async run({ providerId, maxDocs } = {}) {
         const result = await runEnrichment(db, { providerId, maxDocs });
         return { ...result, activity: result.filled + result.review };
+      },
+    },
+
+    'prune-expired-tenders': {
+      label: 'Prune expired tenders',
+      description: 'Deletes tenders whose deadline has passed, keeping any a user has watchlisted or raised a submission case for so those users still see them.',
+      enabled: prune.enabled,
+      catchUp: true,
+      intervalMinutes: prune.intervalMinutes,
+      cron: prune.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(prune.intervalMinutes / 60))} * * *` : `*/${prune.intervalMinutes} * * * *`,
+      timezone: 'Asia/Kolkata',
+      async run() {
+        const result = await pruneExpiredTenders(db, { graceDays: prune.graceDays });
+        return { ...result, activity: result.deleted };
       },
     },
 

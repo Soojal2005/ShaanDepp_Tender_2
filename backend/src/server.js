@@ -9,6 +9,7 @@ import { migrate } from './db/migrate.js';
 import { DEMO_PASSWORD, seedBaseline, seedDemo } from './db/seed.js';
 import { createJobs } from './jobs/definitions.js';
 import { startScheduler } from './jobs/scheduler.js';
+import { shutdownGepnic } from './services/gepnic/index.js';
 import { log } from './log.js';
 
 const db = await getDb();
@@ -41,6 +42,7 @@ async function shutdown(signal) {
   log.info('shutting down', { signal });
   scheduler?.stop();
   server.close(async () => {
+    await shutdownGepnic().catch(() => {});
     await closeDb();
     process.exit(0);
   });

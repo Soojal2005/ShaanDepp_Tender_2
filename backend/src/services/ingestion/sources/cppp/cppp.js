@@ -196,6 +196,35 @@ export function parseDetailPage(html, baseUrl = 'https://eprocure.gov.in') {
 }
 
 /**
+ * Merge a tender's detail-page fields onto its list-level row, in place.
+ *
+ * Used by the browser crawler when CRAWLER_FETCH_DETAILS is on: the listing
+ * carries only title/dates/department, while estimated value, EMD, fee and
+ * category live on the detail page.
+ *
+ * Documents are intentionally NOT stored: live testing confirmed GePNIC tender
+ * documents are not publicly downloadable (a registered-bidder login + DSC is
+ * required) and the public detail page only links digital-signature / popup
+ * pages, not the files — so storing them would just create dead download
+ * buttons. `sourceUrl` is a durable pointer back to the portal (GePNIC has no
+ * stable per-tender URL, so it is the portal's tender listing).
+ *
+ * @param {object} row  a list-level dto from parseListPage (mutated)
+ * @param {string} detailHtml  the detail page HTML
+ * @param {{ baseUrl?: string, sourceUrl?: string }} [opts]
+ * @returns {object} the same row
+ */
+export function applyTenderDetail(row, detailHtml, { baseUrl = 'https://eprocure.gov.in', sourceUrl = null } = {}) {
+  const detail = parseDetailPage(detailHtml, baseUrl);
+  delete detail.documents; // GePNIC documents are not publicly downloadable (see above)
+  for (const [key, value] of Object.entries(detail)) {
+    if (value !== null && value !== undefined && value !== '') row[key] = value;
+  }
+  if (sourceUrl) row.detailUrl = sourceUrl;
+  return row;
+}
+
+/**
  * Build a CPPP crawler client.
  * @param {object} [opts]
  * @param {string} [opts.baseUrl]

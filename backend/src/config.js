@@ -110,7 +110,31 @@ const schema = z.object({
   CRAWLER_CHROMIUM_PATH: optionalString,
   CRAWLER_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1500),
   CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
+  // Open each NEW tender's detail page (in the live browser session) to capture
+  // the fields the listing omits: estimated value, EMD, fee, category, source
+  // link. OFF by default — detail pages are slower and portal-specific, so this
+  // is piloted per deployment. Only tenders not already stored are fetched, and
+  // at most CRAWLER_MAX_DETAILS of them per portal per run.
+  CRAWLER_FETCH_DETAILS: bool,
   CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
+
+  // On-demand GePNIC document download. A warm, anonymous Playwright context per
+  // portal is kept alive and lends pooled pages to re-walk the live listing and
+  // stream a tender's PDF when a user asks — nothing is stored. Only works for
+  // tenders still in the live closing-window listing. OFF by default.
+  GEPNIC_SESSION_ENABLED: bool,
+  GEPNIC_DOWNLOAD_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
+  GEPNIC_MAX_CONCURRENT_DOWNLOADS: z.coerce.number().int().min(1).max(10).default(3),
+  GEPNIC_SESSION_HEALTH_INTERVAL_MS: z.coerce.number().int().min(10000).default(300000),
+  GEPNIC_SESSION_RETRY_LIMIT: z.coerce.number().int().min(0).max(3).default(1),
+  GEPNIC_LOCATE_MAX_PAGES: z.coerce.number().int().min(1).max(500).default(40),
+
+  // Prune expired tenders. Deletes tenders whose deadline passed more than
+  // PRUNE_EXPIRED_GRACE_DAYS ago, keeping any a user watchlisted or raised a
+  // case for (so those users still see them). OFF by default.
+  PRUNE_EXPIRED_ENABLED: bool,
+  PRUNE_EXPIRED_GRACE_DAYS: z.coerce.number().int().min(0).max(365).default(2),
+  PRUNE_EXPIRED_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(1440),
 
   // PDF metadata enrichment (reads amounts from tender PDFs the listing omits).
   // OFF unless switched on. Optionally pin to one provider id while piloting.
@@ -228,6 +252,7 @@ function load(env) {
       chromiumPath: c.CRAWLER_CHROMIUM_PATH,
       requestDelayMs: c.CRAWLER_REQUEST_DELAY_MS,
       maxDetails: c.CRAWLER_MAX_DETAILS,
+      fetchDetails: c.CRAWLER_FETCH_DETAILS,
       maxPages: c.CRAWLER_MAX_PAGES,
       timeoutMs: c.CRAWLER_TIMEOUT_MS,
       cppp: Object.freeze({
@@ -238,6 +263,23 @@ function load(env) {
         closingWindowLink: c.CRAWLER_CPPP_CLOSING_WINDOW,
         tableSelector: c.CRAWLER_CPPP_TABLE_SELECTOR,
       }),
+    }),
+    gepnic: Object.freeze({
+      enabled: c.GEPNIC_SESSION_ENABLED,
+      downloadTimeoutMs: c.GEPNIC_DOWNLOAD_TIMEOUT_MS,
+      maxConcurrent: c.GEPNIC_MAX_CONCURRENT_DOWNLOADS,
+      healthIntervalMs: c.GEPNIC_SESSION_HEALTH_INTERVAL_MS,
+      retryLimit: c.GEPNIC_SESSION_RETRY_LIMIT,
+      locateMaxPages: c.GEPNIC_LOCATE_MAX_PAGES,
+      chromiumPath: c.CRAWLER_CHROMIUM_PATH,
+      userAgent: c.CRAWLER_USER_AGENT,
+      timeoutMs: c.CRAWLER_TIMEOUT_MS,
+      requestDelayMs: c.CRAWLER_REQUEST_DELAY_MS,
+    }),
+    prune: Object.freeze({
+      enabled: c.PRUNE_EXPIRED_ENABLED,
+      graceDays: c.PRUNE_EXPIRED_GRACE_DAYS,
+      intervalMinutes: c.PRUNE_EXPIRED_INTERVAL_MINUTES,
     }),
     enrichment: Object.freeze({
       enabled: c.ENRICH_ENABLED,

@@ -90,3 +90,17 @@ export function portalClientOptions(portal) {
 }
 
 export const enabledPortals = () => GEPNIC_PORTALS.filter((p) => p.enabled);
+
+/** The portal registry entry for a provider id, or null. */
+export const portalById = (id) => GEPNIC_PORTALS.find((p) => p.id === id) ?? null;
+
+/**
+ * True for a plain GePNIC portal (no custom adapter). These are the ones whose
+ * documents are session-bound and served on demand through the browser worker;
+ * adapter portals (nProcure/Bihar/Vupadhi) have their own flows and durable or
+ * no documents, so they are not handled by the GePNIC download worker.
+ */
+export const isGepnicProvider = (id) => {
+  const p = portalById(id);
+  return Boolean(p && !p.adapter);
+};

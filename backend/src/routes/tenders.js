@@ -1,8 +1,15 @@
+import { createReadStream } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import ExcelJS from 'exceljs';
 import { Router } from 'express';
 import { requireAuth, withUserDb } from '../auth/middleware.js';
-import { asyncHandler, conflict, notFound } from '../errors.js';
+import { config } from '../config.js';
+import { asyncHandler, conflict, HttpError, notFound } from '../errors.js';
 import { proxyDocument, pdfFileName } from '../services/documentProxy.js';
+import { getGepnicManager } from '../services/gepnic/index.js';
+import { DocumentUnavailableError, fetchTenderDocumentWithRetry } from '../services/gepnic/download.js';
+import { isGepnicProvider } from '../services/ingestion/sources/cppp/portals.js';
 import { exportTenders, filtersSchema, getTender, pagingSchema, searchTenders, tenderFacets } from '../services/tenderSearch.js';
 import { tenderRef } from '../util.js';
 import { id as idSchema, parse, z } from '../validate.js';
@@ -11,6 +18,36 @@ const MAX_SAVED_SEARCHES = 50;
 
 const parseFilters = (query) => parse(filtersSchema, query);
 const passthrough = (req, res, next) => next();
+
+/**
+ * Fetch a GePNIC document on demand through the browser worker and stream it to
+ * the client, then delete the temp file. Nothing is persisted. A tender that has
+ * aged out of the live listing yields a clear 502 rather than a silent failure.
+ */
+async function streamGepnicDocument(res, doc) {
+  const manager = getGepnicManager();
+  if (!manager) throw new HttpError(503, 'On-demand document download is not available right now.', { code: 'gepnic_off' });
+  let file;
+  try {
+    file = await fetchTenderDocumentWithRetry(manager, {
+      providerId: doc.provider_id, tenderSourceId: doc.source_id, docName: doc.name,
+    });
+  } catch (err) {
+    if (err instanceof DocumentUnavailableError) {
+      throw new HttpError(502, 'This document is only available on the government portal (the tender may have closed).', { code: 'doc_unavailable' });
+    }
+    throw new HttpError(502, 'The government portal could not be reached to fetch this document. Please try again shortly.', { code: 'bad_gateway' });
+  }
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`);
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  try {
+    await pipeline(createReadStream(file.tempPath), res);
+  } finally {
+    await unlink(file.tempPath).catch(() => {});
+  }
+}
 
 export function tendersRoutes({ limiters } = {}) {
   const r = Router();
@@ -104,8 +141,22 @@ export function tendersRoutes({ limiters } = {}) {
     asyncHandler(async (req, res) => {
       const { tenderId, docId } = parse(z.object({ tenderId: idSchema, docId: idSchema }), req.params);
       const doc = await withUserDb(req, (q) =>
-        q.maybeOne('SELECT name, url FROM tender_documents WHERE id = $1 AND tender_id = $2', [docId, tenderId]));
-      if (!doc?.url) throw notFound('Document not found');
+        q.maybeOne(
+          `SELECT d.name, d.url, t.provider_id, t.source_id
+             FROM tender_documents d JOIN tenders t ON t.id = d.tender_id
+            WHERE d.id = $1 AND d.tender_id = $2`,
+          [docId, tenderId]
+        ));
+      if (!doc) throw notFound('Document not found');
+
+      // GePNIC documents have no durable URL — serve them on demand through the
+      // browser worker, which re-opens the tender's detail page in a live session.
+      if (config.gepnic.enabled && isGepnicProvider(doc.provider_id)) {
+        await streamGepnicDocument(res, doc);
+        return;
+      }
+
+      if (!doc.url) throw notFound('Document not found');
       await proxyDocument(doc.url, res, { fileName: pdfFileName(doc.name) });
     })
   );

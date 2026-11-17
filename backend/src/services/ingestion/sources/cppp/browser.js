@@ -18,7 +18,7 @@
 import { config } from '../../../../config.js';
 import { log } from '../../../../log.js';
 import { SourceError } from '../../tenderbook.js';
-import { parseListPage } from './cppp.js';
+import { applyTenderDetail, parseListPage } from './cppp.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -45,6 +45,13 @@ export function createCpppBrowserClient(opts = {}) {
     timeoutMs = config.crawler?.timeoutMs ?? 45_000,
     requestDelayMs = config.crawler?.requestDelayMs ?? 1_500,
     maxPages = config.crawler?.maxPages ?? 3,
+    // Detail-page capture (CRAWLER_FETCH_DETAILS). When on, each NEW tender's
+    // detail page is opened in the live session to fill estimated value, EMD,
+    // fee, category and a source link. `knownSourceIds` marks the tenders
+    // already stored, so only new ones are fetched, up to `maxDetails` per run.
+    fetchDetails = config.crawler?.fetchDetails ?? false,
+    maxDetails = config.crawler?.maxDetails ?? 60,
+    knownSourceIds = null,
     headless = true,
     launchImpl = null, // tests inject a fake { launch } here
   } = opts;
@@ -120,6 +127,48 @@ export function createCpppBrowserClient(opts = {}) {
           if (row.tenderId && !byId.has(row.tenderId)) byId.set(row.tenderId, row);
         }
       };
+
+      // Detail-page capture. For each new tender on the *current* listing page,
+      // open its detail link in a fresh tab of the same session (so the portal
+      // session cookie carries), parse the extra fields, and merge them onto the
+      // row. Links are read while the page is live, because GePNIC's are
+      // session-scoped. Any single failure is logged and skipped — the
+      // listing-level row is still stored, so this can never regress the crawl.
+      const listingUrl = new URL(listPath, baseUrl).toString();
+      let detailsLeft = fetchDetails ? maxDetails : 0;
+      const detailed = new Set();
+      const fetchPageDetails = async () => {
+        if (detailsLeft <= 0) return;
+        const links = await pg.$$eval(`${tableSelector} tr`, (trs) => trs.map((tr) => {
+          const a = tr.querySelector('a[href]');
+          if (!a) return null;
+          const text = (tr.innerText || '').replace(/\s+/g, ' ');
+          const tokens = (text.match(/\[([^\]]+)\]/g) || []).map((t) => t.slice(1, -1).trim()).filter(Boolean);
+          if (!tokens.length) return null;
+          return { tenderId: tokens[tokens.length - 1], href: a.href };
+        }).filter(Boolean)).catch(() => []);
+        for (const { tenderId, href } of links) {
+          if (detailsLeft <= 0) break;
+          const row = byId.get(tenderId);
+          if (!row || detailed.has(tenderId)) continue;
+          if (knownSourceIds && knownSourceIds.has(tenderId)) continue; // new tenders only
+          detailed.add(tenderId);
+          detailsLeft--;
+          let dp;
+          try {
+            dp = await ctx.newPage();
+            await dp.goto(href, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+            await dp.waitForTimeout(600);
+            applyTenderDetail(row, await dp.content(), { baseUrl, sourceUrl: listingUrl });
+          } catch (err) {
+            log.warn('gepnic detail fetch failed', { baseUrl, tenderId, error: err.message });
+          } finally {
+            if (dp) await dp.close().catch(() => {});
+            if (requestDelayMs) await sleep(requestDelayMs);
+          }
+        }
+      };
+
       absorb(await pg.content());
       if (!byId.size) {
         // Tell a changed portal apart from a window that genuinely holds nothing.
@@ -133,6 +182,7 @@ export function createCpppBrowserClient(opts = {}) {
         log.info('gepnic listing empty for this closing window', { baseUrl });
         return { content: [], totalElements: 0, totalPages: 1, page: 0 };
       }
+      if (fetchDetails) await fetchPageDetails();
 
       // Walk the pager within the same session. GePNIC shows a sliding window of
       // page numbers, so prefer the next page number's link and fall back to the
@@ -159,6 +209,7 @@ export function createCpppBrowserClient(opts = {}) {
         if (!loaded) break;
         await pg.waitForSelector(`${tableSelector} tr`, { timeout: timeoutMs }).catch(() => {});
         absorb(await pg.content());
+        if (fetchDetails) await fetchPageDetails();
         if (byId.size === before) break; // end of list
       }
 
