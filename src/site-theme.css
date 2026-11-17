@@ -20,6 +20,13 @@
 .site :where(a:not(.btn)) { color: var(--ink); text-underline-offset: 2px; }
 .site h1, .site h2, .site h3 { color: var(--ink); }
 
+/* Didot display face for the largest headings. Latin uses GFS Didot (a true
+   Didot revival); Hindi and other scripts fall through the serif stack. */
+.site { --display: 'GFS Didot', 'Noto Serif Devanagari', 'Source Serif 4', Georgia, 'Times New Roman', serif; }
+.lp h1, .lp-head h2, .lp-about-intro h2, .lp-portal h2, .site-page > h1, .site-hero h1, .legal-page h1 {
+  font-family: var(--display); font-weight: 400; letter-spacing: -.005em;
+}
+
 /* ---- Buttons: pills; primary = solid ink, secondary = warm white ---- */
 .site .btn { border-radius: 999px; }
 .site .btn-primary, .site .btn-dark, .site .btn-blue {
@@ -96,10 +103,21 @@
   --shadow: 0 1px 2px rgba(28, 27, 24, .03), 0 10px 24px -18px rgba(28, 27, 24, .12);
   --card-hover: 0 16px 36px -20px rgba(28, 27, 24, .18); }
 
-/* Clean cream backdrop (no imagery, reference-style). */
+/* Civic line-art backdrop: the drawing sits behind the hero and fades into the
+   cream canvas so content lower down reads on plain paper. */
 .lp-bg { background: var(--page); }
-.lp-bg::before { background: radial-gradient(1000px 560px at 82% -12%, rgba(28, 27, 24, .05), transparent 62%); opacity: 1; -webkit-mask-image: none; mask-image: none; }
-.lp-bg::after { background: linear-gradient(180deg, transparent 0%, transparent 70%, var(--page) 100%); }
+.lp-bg::before {
+  background: url('/images/civic-blueprint.jpg') center 16% / cover no-repeat;
+  opacity: 1; filter: contrast(1.06);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 58%, transparent 94%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 58%, transparent 94%);
+}
+.lp-bg::after { background: linear-gradient(180deg, transparent 0%, transparent 72%, var(--page) 99%); }
+
+/* The backdrop only shows through when the page shell is transparent. site-theme's
+   own `.site { background: var(--page) }` (above) otherwise paints over the fixed
+   .lp-bg, so re-assert transparency here where it wins the cascade. */
+.site-landing, .site-landing > main { background: transparent; }
 
 /* Eyebrows + two-tone headline */
 .lp-kicker, .lp-eyebrow, .site-kicker { color: var(--muted); }
@@ -281,10 +299,48 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .site .btn:hover, .lp-feature:hover, .lp-service:hover, .lp-tender:hover, .lp-about-card:hover, .lp-contact-card:hover, .lp-feature:hover .lp-feature-ico { transform: none !important; }
 }
 
-/* ---- Get-started: the "already a user?" choice bar ---- */
-.gs-login { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 0 0 32px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-.gs-login h2 { margin: 0 0 2px; font-size: 19px; }
-.gs-login .cell-sub { margin: 0; }
+/* ==========================================================================
+   Get-started page — premium register experience.
+   Reuses the landing .lp card chrome (form panel + rail). These rules add the
+   page hero spacing, the inline "already a user?" sign-in, and the side rail's
+   numbered steps + help block.
+   ========================================================================== */
+.gs-page .lp-hero { padding: 52px 0 10px; }
+.gs-hero h1 { max-width: 760px; font-size: clamp(34px, 4.8vw, 56px); }
+.gs-hero .lp-lead { margin-bottom: 22px; }
+.gs-signin { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding: 11px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--muted); box-shadow: var(--shadow); }
+.gs-signin a { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; color: var(--ink) !important; text-decoration: none; }
+.gs-signin a svg { transition: transform .15s; }
+.gs-signin a:hover svg { transform: translateX(3px); }
+.gs-main { padding-top: 22px; }
+
+/* Side rail: "how it works" steps above a help block, beside the form. */
+.gs-side { gap: 0; }
+.gs-steps > h3, .gs-help > h3 { margin: 0 0 16px; font-family: var(--serif); font-size: 19px; color: var(--ink); }
+.gs-steps ol { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.gs-steps li { display: flex; gap: 14px; }
+.gs-step-num { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 700; box-shadow: 0 8px 18px -10px rgba(28, 27, 24, .5); }
+.gs-steps strong { display: block; margin-bottom: 3px; font-size: 15px; color: var(--ink); }
+.gs-steps p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.gs-help { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+.gs-help > p { margin: 0 0 14px; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.gs-help .site-contact-buttons { margin: 0; }
+
+/* ==========================================================================
+   Frosted translucent cards — let the civic backdrop show through on the
+   landing + get-started pages. Loaded last so it wins over the opaque
+   `var(--surface)` card rules above. Dark surfaces (nav, footer, product
+   preview, feature boxes) stay solid and are intentionally excluded.
+   ========================================================================== */
+.lp-panel, .lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-location,
+.lp-side, .lp-stat-strip, .lp-about-stats, .lp-feature,
+.lp-steps li, .lp-dept-grid li {
+  background: rgba(251, 250, 246, .72);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  backdrop-filter: blur(10px) saturate(1.05);
+}
+/* Inputs inside the translucent register panel stay crisp and readable. */
+.lp-form-panel .input, .lp-form-panel .textarea, .lp-form-panel .select { background: #fff; }
 
 /* ---- Typography polish: tighter display headings, consistent rhythm ---- */
 .site h1, .site h2 { letter-spacing: -.022em; }

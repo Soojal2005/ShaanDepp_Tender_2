@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, LogIn, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2, Mail, MapPin, Phone } from 'lucide-react';
 import { useI18n } from '../../i18n/index.jsx';
 import EnquiryForm, { ACCESS_SERVICE, ContactButtons } from '../../site/EnquiryForm.jsx';
 import { telHref, useSeo, useSiteConfig } from '../../site/hooks.js';
@@ -80,36 +80,65 @@ export function RequestAccess() {
   );
 }
 
-/** The "Get started" landing: sign in if you already have an account, or register your company (full details). */
+/**
+ * The "Get started" page: register your company for portal access (full details),
+ * or sign in if you already have an account. Reuses the landing's premium .lp
+ * treatment — a form panel beside a steps-and-help rail — so it reads as a
+ * seamless continuation of the home page rather than a plain content page.
+ */
 export function GetStarted() {
   const { t } = useI18n();
   useSeo({ title: t('site.getStarted.seoTitle'), description: t('site.getStarted.seoDesc'), path: '/get-started' });
   return (
-    <div className="site-wrap site-page">
-      <h1>{t('site.getStarted.title')}</h1>
-      <p className="site-sub">{t('site.getStarted.sub')}</p>
-
-      <div className="gs-login">
-        <div>
-          <h2>{t('site.getStarted.haveAccount')}</h2>
-          <p className="cell-sub">{t('site.getStarted.loginHint')}</p>
+    <div className="site-home lp gs-page">
+      <div className="lp-bg" aria-hidden="true" />
+      <section className="lp-hero gs-hero" aria-labelledby="gs-title">
+        <div className="site-wrap">
+          <p className="lp-kicker">{t('site.lp.getStarted')}</p>
+          <h1 id="gs-title">{t('site.getStarted.title')}</h1>
+          <p className="lp-lead">{t('site.getStarted.sub')}</p>
+          <p className="gs-signin">
+            <span>{t('site.getStarted.haveAccount')}</span>
+            <Link to="/login">{t('site.getStarted.login')}<ArrowRight size={15} aria-hidden="true" /></Link>
+          </p>
         </div>
-        <Link className="btn btn-outline" to="/login"><LogIn size={16} />{t('site.getStarted.login')}</Link>
-      </div>
+      </section>
 
-      <div className="site-two-col">
-        <div>
-          <h2>{t('site.access.stepsTitle')}</h2>
-          <ol className="site-portal-list site-access-steps">
-            {t('site.access.steps').map((step, i) => <li key={step.title}><b>{i + 1}</b><span><strong>{step.title}</strong>{step.body}</span></li>)}
-          </ol>
+      <section className="lp-section gs-main">
+        <div className="site-wrap">
+          <div className="lp-access-grid">
+            <div className="lp-panel lp-form-panel">
+              <div className="lp-form-head">
+                <span className="lp-ico lp-ico-soft"><Building2 size={22} /></span>
+                <div>
+                  <h3>{t('site.getStarted.registerTitle')}</h3>
+                  <p>{t('site.getStarted.registerHint')}</p>
+                </div>
+              </div>
+              <EnquiryForm idPrefix="gs" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.getStarted.register')} rich />
+            </div>
+
+            <aside className="lp-side gs-side">
+              <div className="gs-steps">
+                <h3>{t('site.access.stepsTitle')}</h3>
+                <ol>
+                  {t('site.access.steps').map((step, i) => (
+                    <li key={step.title}>
+                      <span className="gs-step-num">{i + 1}</span>
+                      <div><strong>{step.title}</strong><p>{step.body}</p></div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div className="gs-help">
+                <h3>{t('site.contactTitle')}</h3>
+                <p>{t('site.contactSub')}</p>
+                <ContactButtons />
+              </div>
+            </aside>
+          </div>
         </div>
-        <aside className="site-side-card">
-          <h2>{t('site.getStarted.registerTitle')}</h2>
-          <p className="cell-sub">{t('site.getStarted.registerHint')}</p>
-          <EnquiryForm idPrefix="gs" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.getStarted.register')} rich />
-        </aside>
-      </div>
+      </section>
     </div>
   );
 }

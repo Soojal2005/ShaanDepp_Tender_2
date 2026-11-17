@@ -39,7 +39,7 @@ export default function PublicLayout() {
   const links = [['/', 'home'], ['/#services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
   const waHref = whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') }));
   return (
-    <div className={`site ${pathname === '/' ? 'site-landing' : ''}`}>
+    <div className={`site ${pathname === '/' || pathname === '/get-started' ? 'site-landing' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
         <div className="site-wrap site-header-row">
