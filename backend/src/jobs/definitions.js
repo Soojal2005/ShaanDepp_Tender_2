@@ -102,14 +102,16 @@ export function createJobs(db, deps = {}) {
         // These portals are slow and occasionally time out, so retry a portal once
         // before giving up, and pace between portals to stay polite.
         const crawlOnce = async (portal) => {
-          // When detail-capture is on, fetch detail pages only for tenders we do
-          // not already have, so each run adds the missing fields to new tenders
-          // without re-walking everything already stored.
+          // When detail-capture is on, fetch detail pages for tenders still missing
+          // them: brand-new tenders AND open tenders crawled before (back-fill of the
+          // money/category fields). Skip tenders already detailed (source_url set) or
+          // already closed, so no run re-walks finished work; capped per run. Only
+          // GePNIC portals do this — the custom adapters ignore these options.
           let extra = {};
-          if (crawler.fetchDetails) {
-            const known = await db.withContext(SYSTEM, (q) =>
-              q.many('SELECT source_id FROM tenders WHERE provider_id = $1', [portal.id]));
-            extra = { fetchDetails: true, maxDetails: crawler.maxDetails, knownSourceIds: new Set(known.map((r) => r.source_id)) };
+          if (crawler.fetchDetails && !portal.adapter) {
+            const done = await db.withContext(SYSTEM, (q) =>
+              q.many('SELECT source_id FROM tenders WHERE provider_id = $1 AND (source_url IS NOT NULL OR submission_deadline < now())', [portal.id]));
+            extra = { fetchDetails: true, maxDetails: crawler.maxDetails, knownSourceIds: new Set(done.map((r) => r.source_id)) };
           }
           const client = makeCrawlerClient(portal, extra);
           const normalize = (dto) => normalizeCpppTender(portal.state ? { state: portal.state, ...dto } : dto);

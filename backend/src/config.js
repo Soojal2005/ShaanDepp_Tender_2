@@ -109,6 +109,9 @@ const schema = z.object({
   // Empty = use Playwright's own downloaded browser (local development).
   CRAWLER_CHROMIUM_PATH: optionalString,
   CRAWLER_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1500),
+  // Max detail pages fetched per GePNIC portal per run (new + open back-fill).
+  // The same budget now targets the open backlog, so each run's cost is unchanged;
+  // raise it to clear the backlog faster if crawl time allows.
   CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
   // Open each NEW tender's detail page (in the live browser session) to capture
   // the public fields the listing omits: estimated value, EMD, fee, category,

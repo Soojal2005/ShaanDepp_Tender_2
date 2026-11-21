@@ -44,11 +44,15 @@ export async function upsertTender(q, providerId, rec, index, raw = null) {
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
              $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33, now())
      ON CONFLICT (provider_id, source_id) DO UPDATE SET
-       source_url = EXCLUDED.source_url, tender_no = EXCLUDED.tender_no, title = EXCLUDED.title,
+       -- Detail-page fields (source link, category, tender type) come from the
+       -- follow-up detail fetch; a later listing-only crawl carries NULL for them,
+       -- so keep what we already captured (same rule as the money fields below).
+       -- source_url doubles as the "already detailed" marker for the back-fill.
+       source_url = COALESCE(EXCLUDED.source_url, tenders.source_url), tender_no = EXCLUDED.tender_no, title = EXCLUDED.title,
        description = EXCLUDED.description, department = EXCLUDED.department, department_id = EXCLUDED.department_id,
-       category = EXCLUDED.category, category_id = EXCLUDED.category_id, state = EXCLUDED.state,
+       category = COALESCE(EXCLUDED.category, tenders.category), category_id = COALESCE(EXCLUDED.category_id, tenders.category_id), state = EXCLUDED.state,
        state_id = EXCLUDED.state_id, city = EXCLUDED.city, city_id = EXCLUDED.city_id,
-       org_type = EXCLUDED.org_type, tender_type = EXCLUDED.tender_type,
+       org_type = EXCLUDED.org_type, tender_type = COALESCE(EXCLUDED.tender_type, tenders.tender_type),
        -- Money fields can be back-filled from the tender PDF (see services/enrichment).
        -- A later crawl that doesn't carry the amount must not erase what we found,
        -- so keep the existing value when the incoming one is NULL.
