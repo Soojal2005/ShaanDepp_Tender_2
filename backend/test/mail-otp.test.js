@@ -75,6 +75,16 @@ describe('email OTP service', () => {
     assert.equal(await run((q) => verifyOtp(q, { purpose: 'register', email: 'd@otp.test', code: issued.code })), false);
   });
 
+  it('with consume:false checks the code without using it up', async () => {
+    const issued = await run((q) => issueOtp(q, { purpose: 'register', email: 'f@otp.test' }));
+    // A non-consuming check passes repeatedly (the Verify-email button) ...
+    assert.equal(await run((q) => verifyOtp(q, { purpose: 'register', email: 'f@otp.test', code: issued.code, consume: false })), true);
+    assert.equal(await run((q) => verifyOtp(q, { purpose: 'register', email: 'f@otp.test', code: issued.code, consume: false })), true);
+    // ... and the code still works once for the final consuming verify (submit).
+    assert.equal(await run((q) => verifyOtp(q, { purpose: 'register', email: 'f@otp.test', code: issued.code })), true);
+    assert.equal(await run((q) => verifyOtp(q, { purpose: 'register', email: 'f@otp.test', code: issued.code })), false);
+  });
+
   it('keeps purposes separate', async () => {
     const reg = await run((q) => issueOtp(q, { purpose: 'register', email: 'e@otp.test' }));
     // A register code must not verify a password_reset for the same address.

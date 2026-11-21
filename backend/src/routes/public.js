@@ -107,6 +107,19 @@ export function publicRoutes({ limiters }) {
     })
   );
 
+  // Step 2: check the code the user typed and confirm the email, without using it
+  // up — the final /enquiries submit verifies and consumes it authoritatively.
+  r.post(
+    '/register/verify-otp',
+    limiters.otpRequest,
+    asyncHandler(async (req, res) => {
+      const input = parse(z.object({ email, otp: z.string().trim().regex(/^\d{6}$/, 'must be a 6-digit code') }), req.body);
+      const ok = await withSystemDb(req, (q) => verifyOtp(q, { purpose: 'register', email: input.email, code: input.otp, consume: false }));
+      if (!ok) throw badRequest('That verification code is invalid or has expired. Request a new one.');
+      res.json({ verified: true });
+    })
+  );
+
   r.post(
     '/enquiries',
     limiters.enquiry,

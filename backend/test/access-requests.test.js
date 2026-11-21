@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { SYSTEM, anon, createOrg, createUser, latestEmailToken, makeContext, registerOtp, signIn } from './helpers.js';
+import { SYSTEM, anon, createOrg, createUser, latestEmailToken, latestOtpCode, makeContext, registerOtp, signIn } from './helpers.js';
 
 const request = {
   name: 'Meena Joshi',
@@ -35,6 +35,15 @@ describe('portal access requests', () => {
     // Without the code, or with a wrong one, the registration is refused.
     assert.equal((await anon(ctx.app).post('/public/enquiries').send(request)).status, 400);
     assert.equal((await anon(ctx.app).post('/public/enquiries').send({ ...request, otp: '000000' })).status, 400);
+  });
+
+  it('verify-otp confirms the email without using the code up', async () => {
+    const email = 'verify@joshi.test';
+    await anon(ctx.app).post('/public/register/request-otp').send({ email });
+    const otp = await latestOtpCode(ctx.db, email);
+    assert.equal((await anon(ctx.app).post('/public/register/verify-otp').send({ email, otp: '000000' })).status, 400, 'wrong code rejected');
+    assert.equal((await anon(ctx.app).post('/public/register/verify-otp').send({ email, otp })).status, 200, 'right code verified');
+    assert.equal((await anon(ctx.app).post('/public/register/verify-otp').send({ email, otp })).status, 200, 'verify does not consume it');
   });
 
   it('stores a request apart from general enquiries and queues a notice for the team', async () => {

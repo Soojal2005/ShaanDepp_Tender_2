@@ -69,11 +69,14 @@ export async function issueOtp(q, { purpose, email, ip = null } = {}) {
 }
 
 /**
- * Verify a code for (purpose, email). Consumes it on success; counts the attempt
- * and burns the code once max_attempts is reached, on failure.
+ * Verify a code for (purpose, email). On a wrong code the attempt is counted and
+ * the code is burned once max_attempts is reached. On success the code is marked
+ * used when `consume` is true (the default) — the authoritative check at the
+ * point of action. Pass `consume: false` for an intermediate "is this code
+ * right?" check (e.g. a Verify-email button) that must still work at final submit.
  * @returns {Promise<boolean>}
  */
-export async function verifyOtp(q, { purpose, email, code } = {}) {
+export async function verifyOtp(q, { purpose, email, code, consume = true } = {}) {
   const addr = normalize(email);
   if (!/^\d{6}$/.test(String(code ?? ''))) return false;
 
@@ -104,7 +107,7 @@ export async function verifyOtp(q, { purpose, email, code } = {}) {
     return false;
   }
 
-  await q.query(`UPDATE email_otps SET consumed_at = now() WHERE id = $1`, [row.id]);
+  if (consume) await q.query(`UPDATE email_otps SET consumed_at = now() WHERE id = $1`, [row.id]);
   return true;
 }
 

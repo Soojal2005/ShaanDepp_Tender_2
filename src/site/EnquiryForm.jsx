@@ -48,8 +48,10 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
   const [form, setForm] = useState(blank);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
-  // Registering as a company requires verifying the email with a 6-digit code first.
+  // Registering as a company verifies the email up front: enter email -> get a
+  // 6-digit code by mail -> verify it -> then the rest of the form can be sent.
   const [otpSent, setOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
   const { pending: otpPending, run: runOtp } = useAction();
   const nameValid = form.name.trim().length >= 2;
   const companyValid = form.company.trim().length >= 2;
@@ -57,24 +59,38 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
   // The company identity required at registration: phone, city, state, industry (GSTIN and street address are optional).
   const companyValid2 = !isAccess || (form.phone.trim() && form.city.trim() && form.state.trim() && form.industry.trim());
   const otpValid = /^\d{6}$/.test(form.otp.trim());
-  // The base form is ready to request a verification code (access request only).
-  const canRequestOtp = nameValid && companyValid && emailValid && companyValid2 && form.consent;
-  const canSubmit = isAccess ? canRequestOtp && otpSent && otpValid : nameValid && companyValid && emailValid && companyValid2 && form.consent;
+  const baseValid = nameValid && companyValid && emailValid && companyValid2 && form.consent;
+  // For an access request the email must be verified before the form can be sent.
+  const canSubmit = isAccess ? baseValid && emailVerified : baseValid;
   const formHint = !nameValid || !companyValid ? t('site.f.needDetails')
     : !emailValid ? t('site.f.needEmail')
       : !companyValid2 ? t('site.f.needCompany')
         : !form.consent ? t('site.f.needConsent')
-          : isAccess && !otpSent ? t('site.f.otpNeedEmail')
-            : isAccess && !otpValid ? t('site.f.otpNeed') : t('site.f.ready');
+          : isAccess && !emailVerified ? t('site.f.otpVerifyFirst') : t('site.f.ready');
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const ph = (key) => (rich ? t(`site.f.${key}Ph`) : undefined);
   const trimmed = (key) => form[key].trim() || undefined;
 
-  // Step 1 (access request only): email a verification code to the address.
+  // Changing the email invalidates any code already sent/verified for the old one.
+  const onEmailChange = (e) => {
+    setForm({ ...form, email: e.target.value, otp: '' });
+    setOtpSent(false);
+    setEmailVerified(false);
+  };
+
+  // Step 1 (access request): email a 6-digit verification code to the address.
   const requestOtp = async () => {
     setError(null);
+    setEmailVerified(false);
     const out = await runOtp(() => api.post('/public/register/request-otp', { email: form.email.trim(), name: form.name.trim() || undefined }));
     if (out.ok) setOtpSent(true); else setError(out.error);
+  };
+
+  // Step 2: confirm the code the user typed (does not use it up — submit does).
+  const verify = async () => {
+    setError(null);
+    const out = await runOtp(() => api.post('/public/register/verify-otp', { email: form.email.trim(), otp: form.otp.trim() }));
+    if (out.ok) setEmailVerified(true); else setError({ message: t('site.f.otpInvalid') });
   };
 
   const submit = async (e) => {
@@ -85,7 +101,7 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
       service: service || undefined, kind, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
       ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry'), otp: form.otp.trim() }),
     }));
-    if (out.ok) { setDone(true); setForm(blank); setOtpSent(false); } else setError(out.error);
+    if (out.ok) { setDone(true); setForm(blank); setOtpSent(false); setEmailVerified(false); } else setError(out.error);
   };
 
   if (done) {
@@ -102,9 +118,38 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
       <div className="site-form-grid">
         <IconField label={t('site.f.name')} required icon={rich ? User : null}>{(p) => <input {...p} id={`${idPrefix}-name`} aria-label={t('site.f.name')} placeholder={ph('name')} className="input" required minLength={2} maxLength={150} autoComplete="name" value={form.name} onChange={set('name')} />}</IconField>
         <IconField label={t('site.f.company')} required icon={rich ? Building2 : null}>{(p) => <input {...p} id={`${idPrefix}-company`} aria-label={t('site.f.company')} placeholder={ph('company')} className="input" required minLength={2} maxLength={200} autoComplete="organization" value={form.company} onChange={set('company')} />}</IconField>
-        <IconField label={t('site.f.email')} required icon={rich ? Mail : null}>{(p) => <input {...p} id={`${idPrefix}-email`} aria-label={t('site.f.email')} placeholder={ph('email')} className="input" type="email" required maxLength={150} autoComplete="email" value={form.email} onChange={set('email')} />}</IconField>
+        <IconField label={t('site.f.email')} required icon={rich ? Mail : null}>{(p) => <input {...p} id={`${idPrefix}-email`} aria-label={t('site.f.email')} placeholder={ph('email')} className="input" type="email" required maxLength={150} autoComplete="email" value={form.email} onChange={onEmailChange} />}</IconField>
         <IconField label={t('site.f.phone')} required={isAccess} optional={isAccess ? undefined : t('common.optional')} icon={rich ? Phone : null}>{(p) => <input {...p} id={`${idPrefix}-phone`} aria-label={t('site.f.phone')} placeholder={ph('phone')} className="input" type="tel" required={isAccess} maxLength={50} autoComplete="tel" value={form.phone} onChange={set('phone')} />}</IconField>
       </div>
+      {isAccess && (
+        <div className="site-form-otp">
+          {emailVerified ? (
+            <p className="note note-success" role="status" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={16} /> {t('site.f.otpVerified')}
+            </p>
+          ) : !otpSent ? (
+            <Button variant="outline" pending={otpPending} disabled={otpPending || !emailValid} onClick={requestOtp}>
+              {otpPending ? t('site.f.otpSending') : t('site.f.otpSend')}
+            </Button>
+          ) : (
+            <>
+              <p className="cell-sub">{t('site.f.otpSentNote')}</p>
+              <IconField label={t('site.f.otpLabel')} required icon={rich ? Mail : null}>
+                {(p) => (
+                  <input {...p} id={`${idPrefix}-otp`} aria-label={t('site.f.otpLabel')} className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                    value={form.otp} onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })} />
+                )}
+              </IconField>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Button pending={otpPending} disabled={otpPending || !otpValid} onClick={verify}>
+                  {otpPending ? t('site.f.otpVerifying') : t('site.f.otpVerify')}
+                </Button>
+                <Button variant="outline" size="sm" pending={otpPending} disabled={otpPending} onClick={requestOtp}>{t('site.f.otpResend')}</Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       {isAccess && (
         <>
           <p className="site-form-section">{t('site.f.companyHeading')}</p>
@@ -128,35 +173,6 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
         <span>{rich ? t('site.f.consentShort') : t('site.f.consent')}</span>
       </label>
       {rich && <p className="site-form-privacy">{t('site.privacy')}</p>}
-      {isAccess && (
-        <div className="site-form-otp">
-          {!otpSent ? (
-            <Button variant="outline" pending={otpPending} disabled={otpPending || !canRequestOtp} onClick={requestOtp}>
-              {otpPending ? t('site.f.otpSending') : t('site.f.otpSend')}
-            </Button>
-          ) : (
-            <>
-              <p className="cell-sub">{t('site.f.otpSentNote')}</p>
-              <IconField label={t('site.f.otpLabel')} required icon={rich ? Mail : null}>
-                {(p) => (
-                  <input
-                    {...p}
-                    id={`${idPrefix}-otp`}
-                    aria-label={t('site.f.otpLabel')}
-                    className="input"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    value={form.otp}
-                    onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                  />
-                )}
-              </IconField>
-              <Button variant="outline" size="sm" pending={otpPending} disabled={otpPending} onClick={requestOtp}>{t('site.f.otpResend')}</Button>
-            </>
-          )}
-        </div>
-      )}
       <p className={`site-form-feedback ${canSubmit ? 'is-ready' : ''}`} role="status" aria-live="polite">{formHint}</p>
       {!rich && <p className="cell-sub">{t('site.privacy')}</p>}
       <ErrorNote error={error} />
