@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Key, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { ErrorNote, Field } from '../../components/ui.jsx';
 import { useI18n } from '../../i18n/index.jsx';
@@ -36,8 +36,7 @@ export default function Login() {
 
   return (
     <div className="gate-card">
-      <h2>{t('auth.signInTitle')}</h2>
-      <p className="gate-sub">{t('auth.signInSubtitle')}</p>
+      <h2>{t('auth.signIn')}</h2>
 
       {(location.state?.expired || expired) && !error && (
         <div className="note note-info" role="status">{t('auth.sessionExpired')}</div>
@@ -48,28 +47,25 @@ export default function Login() {
         <Field label={t('auth.email')}>
           {(p) => (
             <input {...p} className="input" type="email" autoComplete="username" required autoFocus
-              value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+              value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('auth.emailPh')} />
           )}
         </Field>
         <Field label={t('auth.password')}>
           {(p) => (
             <input {...p} className="input" type="password" autoComplete="current-password" required
-              value={password} onChange={(e) => setPassword(e.target.value)} />
+              value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('auth.passwordPh')} />
           )}
         </Field>
+        <div className="gate-row gate-row-forgot">
+          <Link to="/forgot-password">{t('auth.forgot')}</Link>
+        </div>
         <button type="submit" className="btn btn-primary" disabled={pending || !email || !password}>
-          {pending ? <Loader2 size={15} className="spin" /> : <Key size={15} />}
+          {pending && <Loader2 size={18} className="spin" />}
           <span>{pending ? t('auth.signingIn') : t('auth.signIn')}</span>
         </button>
       </form>
 
-      <div className="gate-row gate-row-forgot">
-        <Link to="/forgot-password">{t('auth.forgot')}</Link>
-      </div>
-      <div className="gate-divider"><span>{t('auth.or')}</span></div>
-      <Link className="btn btn-outline gate-alt-btn" to="/get-started">
-        {t('auth.newHere')} <b>{t('site.nav.getStarted')}</b> <ArrowRight size={15} />
-      </Link>
+      <p className="gate-alt"><Link to="/request-access">{t('auth.requestAccess')}</Link></p>
     </div>
   );
 }

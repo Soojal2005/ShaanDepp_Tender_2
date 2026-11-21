@@ -56,7 +56,8 @@ try {
   await until('document.querySelectorAll(".lp-service").length === 8 && document.querySelectorAll(".lp-tender:not(.lp-skeleton)").length === 3');
   await evaluate('localStorage.setItem("pb_lang", "EN")'); await navigate();
   await check('all eight service groups remain', 'document.querySelectorAll(".lp-service").length === 8');
-  await check('the services heading names all 81 offerings across 8 groups', 'document.querySelector("#services-title").closest("section").textContent.includes("81 services across 8")');
+  await check('services: one folder per group, only the first open, tapping a tab opens it in place', '(()=>{const f=[...document.querySelectorAll(".svc-folder")];const open=()=>f.filter(x=>x.classList.contains("is-open"));if(!f.length||open().length!==1||open()[0]!==f[0])return false;f[2].querySelector(".svc-tab").click();return true;})()');
+  await check('the tapped folder is now the only open one', '(()=>{const f=[...document.querySelectorAll(".svc-folder")];return f[2].classList.contains("is-open")&&f.filter(x=>x.classList.contains("is-open")).length===1&&f[0].querySelector(".svc-body").hasAttribute("inert");})()');
   await check('registration and GST remain in the footer', 'document.querySelector(".site-footer-reg").textContent.includes("BHOP260407SE000586") && document.querySelector(".site-footer-reg").textContent.includes("23APSPT2592R1ZR")');
   await check('all four original detailed portal features remain', 'document.querySelectorAll(".lp-checks li").length === 4 && document.querySelector(".lp-checks").textContent.includes("150") && document.querySelector(".lp-checks").textContent.includes("value and dates")');
   await evaluate('document.querySelector("button[aria-controls=dept-panel]").click()');
@@ -69,7 +70,7 @@ try {
   await check('follow-up step works', 'document.querySelector(".flow-detail").textContent.includes("EMD refund")');
   await evaluate('document.querySelector("button[aria-controls=flow-panel]").click()');
   await check('three sample cards are explicitly marked as samples', 'document.querySelectorAll(".lp-tender").length === 3 && [...document.querySelectorAll(".lp-sample")].every(e=>e.textContent.includes("Sample")) && document.querySelector("#tenders-title").closest("section").textContent.includes("Sample opportunities")');
-  await check('hero actions go to the request form and the services', 'document.querySelector(".lp-hero .lp-cta a.btn-blue").getAttribute("href") === "#access" && document.querySelector(".lp-hero .lp-cta a.btn-light").getAttribute("href") === "/services"');
+  await check('hero shows the search bar and its three filter pills', 'document.querySelector(".lp-hero .lp-search-row") && document.querySelectorAll(".lp-hero .lp-pill").length === 3');
   await check('the hero search sends a keyword into the sign-in redirect', '(()=>{const i=document.querySelector(".lp-search-field input");const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;set.call(i,"solar");i.dispatchEvent(new Event("input",{bubbles:true}));return typeof i.value==="string"&&i.value==="solar";})()');
   await check('header offers Request access and the Tender Portal', '["/request-access","/login"].every(h=>[...document.querySelectorAll(".site-nav-actions a")].some(a=>a.getAttribute("href")===h))');
   await check('footer links the three legal pages and the sitemap', '["/privacy","/terms","/disclaimer","/sitemap.xml"].every(h=>[...document.querySelectorAll(".site-legal a")].some(a=>a.getAttribute("href")===h))');

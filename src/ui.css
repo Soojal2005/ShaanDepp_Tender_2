@@ -271,69 +271,89 @@ a.sidebar-link-btn { text-decoration: none; }
 }
 @media (prefers-reduced-motion: reduce) { .dark-navy-sidebar { transition: none; } }
 
-/* ---- Sign-in gate ------------------------------------------------------- */
-.gate { min-height: 100vh; width: 100%; display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); background: #F4F2EC; color: #1C1B18; }
+/* ---- Sign-in gate --------------------------------------------------------
+   Engraved Parliament with the wordmark on the left, an ivory form panel on
+   the right. Serif for the wordmark, headings and the main button. */
+.gate {
+  --g-ink: #164B4E; --g-ivory: #FAF8F2; --g-mint: #A6DCB7; --g-line: #1F5C5F;
+  --g-serif: 'Source Serif 4', 'Noto Serif Devanagari', Georgia, serif;
+  min-height: 100vh; width: 100%; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  background: var(--g-ivory); color: var(--g-ink);
+}
 
-/* Left: dark brand panel */
-.gate-aside { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; padding: 50px 48px; background: #1C1B18; color: #fff; }
-.gate-aside::before { content: ''; position: absolute; inset: 0; background: radial-gradient(660px 380px at 12% -5%, rgba(217, 181, 131, .18), transparent 60%), radial-gradient(520px 400px at 105% 108%, rgba(255, 255, 255, .06), transparent 60%); pointer-events: none; }
-.gate-aside > * { position: relative; z-index: 1; }
-.gate-aside-body { display: flex; flex-direction: column; gap: 24px; }
-.gate-aside-body h2 { margin: 0; font-family: 'Source Serif 4', 'Noto Serif Devanagari', Georgia, serif; font-size: clamp(26px, 2.6vw, 38px); line-height: 1.12; letter-spacing: -.02em; color: #fff; }
-.gate-aside-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 15px; }
-.gate-aside-points li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, .82); }
-.gate-aside-points svg { flex: none; margin-top: 2px; color: #D9B583; }
-.gate-aside-foot { margin: 0; font-size: 12px; color: rgba(255, 255, 255, .5); }
+/* Left: the engraving; a soft ivory wash at the top keeps the wordmark legible over the cornice */
+.gate-aside {
+  position: relative; overflow: hidden; padding: 56px clamp(32px, 4.5vw, 72px);
+  background: #F3EFE4 url('/images/auth-parliament.webp') 62% 100% / cover no-repeat;
+}
+.gate-aside::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 46%; pointer-events: none;
+  background: linear-gradient(180deg, rgba(246, 243, 235, .92) 0%, rgba(246, 243, 235, .65) 55%, rgba(246, 243, 235, 0) 100%);
+}
+.gate-mark { position: relative; display: inline-block; color: var(--g-ink); text-decoration: none; font-family: var(--g-serif); }
+.gate-mark b { display: block; font-size: clamp(56px, 5.6vw, 92px); font-weight: 600; line-height: .95; letter-spacing: -.02em; }
+.gate-mark span {
+  display: block; width: max-content; margin-top: 10px; padding-bottom: 14px;
+  background: linear-gradient(var(--g-ink), var(--g-ink)) left bottom / 52% 2px no-repeat;
+  font-size: clamp(14px, 1.25vw, 20px); font-weight: 500; letter-spacing: .26em; text-transform: uppercase;
+}
+.gate-mark-sm { display: none; }
+.gate-mark-sm b { font-size: 30px; }
 
-/* Brand mark */
-.gate-brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: #fff; }
-.gate-brand-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(255, 255, 255, .12); display: grid; place-items: center; color: #fff; }
-.gate-brand h1 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.01em; color: #fff; }
-.gate-brand small { display: block; font-size: 11px; color: rgba(255, 255, 255, .55); margin-top: 1px; }
+/* Right: form panel */
+.gate-main { display: flex; flex-direction: column; min-width: 0; padding: 32px clamp(28px, 4.5vw, 64px); }
+.gate-main-top { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+.gate-form-wrap { flex: 1; display: flex; align-items: center; padding: 24px 0 40px; }
+.gate-card { width: 100%; max-width: 470px; font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
+.gate-card h2 { margin: 0 0 34px; font-family: var(--g-serif); font-size: clamp(44px, 4.2vw, 64px); font-weight: 600; line-height: 1; letter-spacing: -.02em; color: var(--g-ink); }
+.gate-sub { margin: -18px 0 28px; font-size: 15px; line-height: 1.55; color: #4E6B6B; }
 
-/* Right: form area */
-.gate-main { display: flex; flex-direction: column; }
-.gate-main-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px; }
-.gate-main-brand { display: none; }
-.gate-main-brand .gate-brand, .gate-main-brand .gate-brand h1 { color: #1C1B18; }
-.gate-main-brand .gate-brand-icon { background: #1C1B18; }
-.gate-main-brand .gate-brand small { color: #86827A; }
-.gate-form-wrap { flex: 1; display: grid; place-items: center; padding: 20px 24px 52px; }
+/* underlined fields */
+.gate-card .field { margin-bottom: 26px; }
+.gate-card .field label { display: block; margin-bottom: 4px; font-size: 18px; font-weight: 600; color: var(--g-ink); }
+.gate-card .input {
+  height: 44px; padding: 0 2px; border: 0; border-bottom: 1.5px solid var(--g-line); border-radius: 0; background: transparent;
+  font-size: 17px; color: var(--g-ink); box-shadow: none;
+}
+.gate-card .input::placeholder { color: #7A8A87; }
+.gate-card .input:focus { outline: none; border-bottom-color: var(--g-ink); box-shadow: 0 2px 0 0 var(--g-ink); }
 
-/* The card */
-.gate-card { width: 100%; max-width: 410px; background: #FBFAF6; border: 1px solid #E4E0D6; border-radius: 18px; padding: 38px 34px; box-shadow: 0 26px 52px -26px rgba(28, 27, 24, .24); }
-.gate-card h2 { margin: 0; font-size: 25px; font-weight: 650; letter-spacing: -.02em; color: #1C1B18; }
-.gate-sub { font-size: 14px; color: #86827A; margin: 8px 0 24px; line-height: 1.5; }
-.gate-card .field { margin-bottom: 16px; }
-.gate-card .field label { color: #46443E; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; }
-.gate-card .input { background: #fff; border: 1px solid #E0DBCF; border-radius: 11px; height: 46px; color: #1C1B18; }
-.gate-card .input::placeholder { color: #A49C8D; }
-.gate-card .input:focus { border-color: #1C1B18; box-shadow: 0 0 0 3px rgba(28, 27, 24, .1); outline: none; }
-.gate-card .btn-primary { width: 100%; height: 48px; border-radius: 999px; background: #1C1B18; border: 1px solid #1C1B18; color: #fff; margin-top: 4px; }
-.gate-card .btn-primary:hover:not(:disabled) { background: #33302A; }
-.gate-card .note-error { background: #FBEBE9; border: 1px solid #F0C8C2; color: #A33A2E; }
-.gate-card .note-info { background: #F2EEE4; border: 1px solid #E4DFD2; color: #6A6456; }
-.gate-card .note-success { background: #EAF2EA; border: 1px solid #CBE1CB; color: #386B3E; }
-.gate-card a, .gate-card .link-btn { color: #1C1B18; font-weight: 600; }
+.gate-row { display: flex; justify-content: flex-end; margin: 22px 0 0; font-size: 15.5px; }
+.gate-row-forgot { margin: -14px 0 30px; }
+.gate-card a, .gate-card .link-btn { color: var(--g-ink); font-weight: 500; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.gate-card a:hover, .gate-card .link-btn:hover { color: #0D3436; }
+.gate-card a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 
-.gate-row { display: flex; justify-content: flex-end; margin-top: 12px; font-size: 13px; }
-.gate-row-forgot a { color: #86827A; font-weight: 500; }
-.gate-row-forgot a:hover { color: #1C1B18; }
+.gate-card .btn-primary {
+  width: 100%; height: 58px; border: 0; border-radius: 8px; background: var(--g-mint); color: var(--g-ink) !important; box-shadow: none;
+  font-family: var(--g-serif); font-size: 26px; font-weight: 500;
+}
+.gate-card .btn-primary:hover:not(:disabled) { background: #93D3A8; }
+.gate-card .btn-primary:disabled { opacity: .6; }
+.gate-card .btn-primary:focus-visible { outline: 2px solid var(--g-ink); outline-offset: 3px; }
+.gate-alt { margin: 30px 0 0; text-align: center; font-size: 18px; }
 
-.gate-divider { display: flex; align-items: center; gap: 14px; margin: 22px 0 18px; color: #A49C8D; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-.gate-divider::before, .gate-divider::after { content: ''; flex: 1; height: 1px; background: #E4E0D6; }
-.gate-alt-btn { width: 100%; height: 46px; border-radius: 999px; background: #fff; border: 1px solid #E0DBCF; color: #1C1B18 !important; gap: 7px; font-weight: 500; text-decoration: none; }
-.gate-alt-btn b { font-weight: 700; }
-.gate-alt-btn:hover { border-color: #CFC9BB; background: #F7F5EF; }
+.gate-card .note-error { background: #FBEBE9; border: 1px solid #F0C8C2; color: #8A2A1F; }
+.gate-card .note-info { background: #EEF5EF; border: 1px solid #CFE3D3; color: var(--g-ink); }
+.gate-card .note-success { background: #EAF2EA; border: 1px solid #CBE1CB; color: #24502E; }
+.gate-card .note { margin-bottom: 22px; }
 
+/* language switch: EN / हिं, the active one underlined */
 .gate .lang-pill { background: transparent; border: 0; box-shadow: none; }
-.gate .lang-btn { color: #86827A; }
-.gate .lang-btn.active { color: #1C1B18; font-weight: 700; }
-.gate .lang-btn + .lang-btn { border-left: 1px solid #D9D3C6; }
+.gate .lang-btn { padding: 2px 12px; border-radius: 0; background: transparent; box-shadow: none; font-family: var(--g-serif); font-size: 20px; color: var(--g-ink); opacity: .75; }
+.gate .lang-btn.active { background: transparent; box-shadow: none; opacity: 1; font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.gate .lang-btn + .lang-btn { border-left: 1.5px solid rgba(22, 75, 78, .45); }
 
+/* Tablet & phone: the engraving becomes a band above the form */
 @media (max-width: 860px) {
-  .gate { grid-template-columns: 1fr; }
-  .gate-aside { display: none; }
-  .gate-main-brand { display: block; }
-  .gate-form-wrap { padding-top: 8px; }
+  .gate { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .gate-aside { min-height: 300px; padding: 28px 22px; background-position: 70% 100%; }
+  .gate-aside::before { height: 70%; }
+  .gate-mark b { font-size: 48px; }
+  .gate-mark span { font-size: 13px; letter-spacing: .2em; }
+  .gate-main { padding: 20px 22px 32px; }
+  .gate-main-top { position: absolute; top: 18px; right: 18px; }
+  .gate-form-wrap { padding: 8px 0 0; }
+  .gate-card { max-width: none; }
+  .gate-card h2 { margin-bottom: 26px; }
 }

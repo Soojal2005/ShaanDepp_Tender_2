@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowRight, BarChart3, Globe, Landmark, Mail, MapPin, Menu, MessageCircle, Phone, ShieldCheck, Users, X } from 'lucide-react';
+import { ArrowRight, Globe, Landmark, Mail, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react';
 import LangPill from '../components/LangPill.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { GROUPS } from '../content/services.js';
 import { useI18n } from '../i18n/index.jsx';
 import { telHref, useSiteConfig, whatsappHref } from '../site/hooks.js';
 
-const BADGE_ICONS = [ShieldCheck, Users, BarChart3];
 
 export default function PublicLayout() {
   const { t, lang } = useI18n();
@@ -17,6 +16,24 @@ export default function PublicLayout() {
   const L = lang === 'HI' ? 'hi' : 'en';
   const [open, setOpen] = useState(false);
   const { pathname, hash } = useLocation();
+  // The header slides away while scrolling down and returns on any scroll up.
+  // On the home page it is transparent over the hero and teal glass once scrolled.
+  const isHome = pathname === '/';
+  const [atTop, setAtTop] = useState(true);
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setAtTop(y < 24);
+      if (Math.abs(y - lastY) < 6) return; // ignore jitter
+      setHidden(y > lastY && y > 120);
+      lastY = y;
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   // On a hash link (e.g. /#services) scroll to that home section — retrying a
   // few times because the home page is lazy-loaded and may not be mounted yet.
   useEffect(() => {
@@ -39,9 +56,9 @@ export default function PublicLayout() {
   const links = [['/', 'home'], ['/#services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
   const waHref = whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') }));
   return (
-    <div className={`site ${pathname === '/' || pathname === '/get-started' ? 'site-landing' : ''}`}>
+    <div className={`site ${isHome || pathname === '/get-started' ? 'site-landing' : ''} ${isHome ? 'site-is-home' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
-      <header className="site-header">
+      <header className={`site-header ${isHome ? 'is-over-hero' : ''} ${isHome && !atTop ? 'is-scrolled' : ''} ${hidden && !open ? 'is-hidden' : ''}`}>
         <div className="site-wrap site-header-row">
           <Link to="/" className="site-brand" aria-label={t('site.brand')}>
             <span className="site-logo"><Landmark size={24} /></span>
@@ -68,74 +85,62 @@ export default function PublicLayout() {
       <main id="main"><Outlet /></main>
 
       <footer className="site-footer">
-        {/* Top: brand + tagline + three columns of real destinations. */}
-        <div className="site-wrap site-footer-main">
-          <div className="site-footer-brand">
-            <Link to="/" className="site-brand light"><span className="site-logo"><Landmark size={24} /></span><span><b>{t('brand.name')}</b><small>{t('site.brand')}</small></span></Link>
-            <p className="site-footer-tagline">{t('site.lp.footerTagline1')}<br /><span>{t('site.lp.footerTagline2')}</span></p>
-            <p className="site-footer-body">{t('site.lp.footerBody')}</p>
-            <ul className="site-footer-badges">
-              {t('site.lp.footerBadges').map((b, i) => { const Icon = BADGE_ICONS[i]; return <li key={b}><Icon size={18} />{b}</li>; })}
-            </ul>
+        {/* Brand and link columns above the Raisina skyline (public/images/wfooter.webp). */}
+        <div className="site-footer-sky">
+          <div className="site-wrap site-footer-main">
+            <div className="site-footer-brand">
+              <Link to="/" className="site-footer-logo"><b>{t('brand.name')}</b><span>{t('site.lp.footerSub')}</span></Link>
+              {/* Registration details stay on every page. */}
+              <dl className="site-footer-reg">
+                <div><dt>{t('site.trustBusiness')}</dt><dd>{site.registration.business}</dd></div>
+                <div><dt>{t('site.trustGst')}</dt><dd>{site.registration.gst}</dd></div>
+              </dl>
+            </div>
+            <nav className="site-footer-cols" aria-label="Footer">
+              <div>
+                <h4>{t('site.lp.colServices')}</h4>
+                <ul>{GROUPS.map((g) => <li key={g.slug}><Link to={`/services/${g.slug}`}>{g.title[L]}</Link></li>)}</ul>
+              </div>
+              <div>
+                <h4>{t('site.lp.colCompany')}</h4>
+                <ul>
+                  <li><Link to="/about">{t('site.lp.companyLinks.about')}</Link></li>
+                  <li><Link to="/contact">{t('site.lp.companyLinks.contact')}</Link></li>
+                </ul>
+                <h4>{t('site.lp.colPortal')}</h4>
+                <ul>
+                  <li><Link to="/request-access">{t('site.lp.portalLinks.access')}</Link></li>
+                  <li><Link to="/login">{t('site.lp.portalLinks.login')}</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4>{t('site.lp.colContact')}</h4>
+                <ul className="site-footer-contact">
+                  <li><MapPin size={20} aria-hidden="true" /><span>{t('site.city')}</span></li>
+                  <li>
+                    <Phone size={20} aria-hidden="true" /><a href={telHref(site.phone)}>{site.phone}</a>
+                    <a className="site-footer-wa" href={waHref} target="_blank" rel="noopener noreferrer" aria-label={t('site.lp.whatsapp')}><MessageCircle size={18} /></a>
+                  </li>
+                  <li><Mail size={20} aria-hidden="true" /><a href={`mailto:${site.email}`}>{site.email}</a></li>
+                </ul>
+              </div>
+            </nav>
           </div>
-          <nav className="site-footer-cols" aria-label="Footer">
-            <div>
-              <h4>{t('site.lp.colServices')}</h4>
-              <ul>{GROUPS.map((g) => <li key={g.slug}><Link to={`/services/${g.slug}`}>{g.title[L]}</Link></li>)}</ul>
-            </div>
-            <div>
-              <h4>{t('site.lp.colCompany')}</h4>
-              <ul>
-                <li><Link to="/">{t('site.lp.companyLinks.home')}</Link></li>
-                <li><Link to="/about">{t('site.lp.companyLinks.about')}</Link></li>
-                <li><Link to="/contact">{t('site.lp.companyLinks.contact')}</Link></li>
-                <li><Link to="/privacy">{t('site.lp.companyLinks.privacy')}</Link></li>
-                <li><Link to="/terms">{t('site.lp.companyLinks.terms')}</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4>{t('site.lp.colGetStarted')}</h4>
-              <ul>
-                <li><Link to="/request-access">{t('site.lp.getStartedLinks.access')}</Link></li>
-                <li><Link to="/login">{t('site.lp.getStartedLinks.login')}</Link></li>
-                <li><Link to="/services">{t('site.lp.getStartedLinks.services')}</Link></li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-
-        {/* Contact row */}
-        <div className="site-wrap">
-         <div className="site-footer-contact">
-          <a href={telHref(site.phone)}><span className="site-footer-ci"><Phone size={16} /></span><span><small>{t('site.lp.callUs')}</small><b>{site.phone}</b></span></a>
-          <a href={waHref} target="_blank" rel="noopener noreferrer"><span className="site-footer-ci site-footer-ci-wa"><MessageCircle size={16} /></span><span><small>{t('site.lp.whatsapp')}</small><b>{site.phone}</b></span></a>
-          <a href={`mailto:${site.email}`}><span className="site-footer-ci"><Mail size={16} /></span><span><small>{t('site.lp.email')}</small><b>{site.email}</b></span></a>
-          <span className="site-footer-office"><span className="site-footer-ci"><MapPin size={16} /></span><span><small>{t('site.lp.office')}</small><b>{t('site.lp.address')}</b></span></span>
-         </div>
-        </div>
-
-        {/* Registration row */}
-        <div className="site-wrap">
-          <dl className="site-footer-reg">
-            <div><dt>{t('site.trustBusiness')}</dt><dd>{site.registration.business}</dd><dd className="site-footer-reg-sub">{t('site.lp.regType')}</dd></div>
-            <div><dt>{t('site.trustGst')}</dt><dd>{site.registration.gst}</dd><dd className="site-footer-reg-sub">{t('site.city')}</dd></div>
-            <div><dt>{t('site.lp.regAddress')}</dt><dd>{t('site.lp.address')}</dd></div>
-            <div className="site-footer-reg-lang"><dt>{t('site.lp.language')}</dt><dd><LangPill /></dd></div>
-          </dl>
         </div>
 
         {/* Bottom bar */}
-        <div className="site-wrap">
-         <div className="site-copy">
-          <span>© {new Date().getFullYear()} {t('site.brand')}. {t('site.home.rights')}</span>
-          <nav className="site-legal" aria-label="Legal">
-            <Link to="/privacy">{t('site.lp.legal.privacy')}</Link>
-            <Link to="/terms">{t('site.lp.legal.terms')}</Link>
-            <Link to="/disclaimer">{t('site.lp.legal.disclaimer')}</Link>
-            <a href="/sitemap.xml">{t('site.lp.legal.sitemap')}</a>
-          </nav>
-         </div>
-         <p className="site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
+        <div className="site-footer-bar">
+          <div className="site-wrap site-copy">
+            <span>© {new Date().getFullYear()} {t('site.brand')}</span>
+            <nav className="site-legal" aria-label="Legal">
+              <Link to="/privacy">{t('site.lp.legal.privacy')}</Link>
+              <Link to="/terms">{t('site.lp.legal.terms')}</Link>
+              <Link to="/disclaimer">{t('site.lp.legal.disclaimer')}</Link>
+              <a href="/sitemap.xml">{t('site.lp.legal.sitemap')}</a>
+            </nav>
+            <LangPill />
+          </div>
+          <p className="site-wrap site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
         </div>
       </footer>
     </div>
