@@ -8,6 +8,7 @@ import { log } from '../log.js';
 import { runDueDigests } from '../services/alerts/digest.js';
 import { pollBounces } from '../services/mail/bounces.js';
 import { createGraphClient } from '../services/mail/graph.js';
+import { createSmtpClient } from '../services/mail/smtp.js';
 import { drainQueue } from '../services/mail/sender.js';
 import { button, emailShell } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
@@ -21,6 +22,11 @@ import { enabledPortals, portalClientOptions } from '../services/ingestion/sourc
 import { createNprocureClient } from '../services/ingestion/sources/nprocure/nprocure.js';
 import { createBiharClient } from '../services/ingestion/sources/bihar/bihar.js';
 import { createVupadhiClient } from '../services/ingestion/sources/vupadhi/vupadhi.js';
+import { createIsroClient } from '../services/ingestion/sources/isro/isro.js';
+import { createPowergridClient } from '../services/ingestion/sources/powergrid/powergrid.js';
+import { createHpclClient } from '../services/ingestion/sources/hpcl/hpcl.js';
+import { createBpclClient } from '../services/ingestion/sources/bpcl/bpcl.js';
+import { createCpwdClient } from '../services/ingestion/sources/cpwd/cpwd.js';
 import { runEnrichment } from '../services/enrichment/runner.js';
 import { generateForOrganizations } from '../services/bundle/index.js';
 import { queueCaseReminders } from '../services/caseReminders.js';
@@ -37,7 +43,8 @@ export function createJobs(db, deps = {}) {
   const {
     settings = config.mail,
     baseUrl = config.publicBaseUrl,
-    makeMailClient = () => (settings.dryRun ? null : createGraphClient()),
+    // Pick the live transport by config: Hostinger SMTP (default) or Microsoft Graph.
+    makeMailClient = () => (settings.dryRun ? null : settings.transport === 'smtp' ? createSmtpClient() : createGraphClient()),
     makeTenderbookClient = createTenderbookClient,
     tenderbook = config.tenderbook,
     crawler = config.crawler,
@@ -49,6 +56,11 @@ export function createJobs(db, deps = {}) {
       if (portal.adapter === 'nprocure') return createNprocureClient({ baseUrl: portal.baseUrl, state: portal.state });
       if (portal.adapter === 'bihar') return createBiharClient({ baseUrl: portal.baseUrl, state: portal.state });
       if (portal.adapter === 'vupadhi') return createVupadhiClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'isro') return createIsroClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'powergrid') return createPowergridClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'hpcl') return createHpclClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'bpcl') return createBpclClient({ baseUrl: portal.baseUrl, state: portal.state });
+      if (portal.adapter === 'cpwd') return createCpwdClient({ baseUrl: portal.baseUrl, state: portal.state });
       const opts = { ...portalClientOptions(portal), ...extra };
       return crawler.engine === 'http' ? createCpppClient(opts) : createCpppBrowserClient(opts);
     },
@@ -176,7 +188,8 @@ export function createJobs(db, deps = {}) {
     bounces: {
       label: 'Read delivery failures',
       description: 'Records bounced addresses from the sending mailbox so they are not mailed again.',
-      enabled: settings.pollBounces && !settings.dryRun,
+      // Bounce polling reads the Graph mailbox inbox; it only applies to the Graph transport.
+      enabled: settings.pollBounces && !settings.dryRun && settings.transport === 'graph',
       cron: '*/10 * * * *',
       quiet: true,
       async run() {

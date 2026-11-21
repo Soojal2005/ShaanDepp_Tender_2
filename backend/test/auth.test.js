@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import request from 'supertest';
-import { API, PASSWORD, SYSTEM, anon, createOrg, createUser, latestEmailToken, makeContext, signIn } from './helpers.js';
+import { API, PASSWORD, SYSTEM, anon, createOrg, createUser, latestOtpCode, makeContext, signIn } from './helpers.js';
 
 const count = (ctx, sql, params = []) => ctx.db.withContext(SYSTEM, async (q) => (await q.one(sql, params)).n);
 
@@ -107,34 +107,37 @@ describe('authentication', () => {
     assert.equal((await anon(ctx.app).post('/auth/login').send({ email: 'leaver@auth.test', password: PASSWORD })).status, 403);
   });
 
-  it('resets a forgotten password with a single-use emailed link', async () => {
+  it('resets a forgotten password with an emailed 6-digit code', async () => {
     await createUser(ctx.db, { orgId, email: 'forgot@auth.test', name: 'Forgetful' });
     const old = await signIn(ctx.app, 'forgot@auth.test');
 
     const res = await anon(ctx.app).post('/auth/forgot-password').send({ email: 'forgot@auth.test' });
     assert.equal(res.status, 202);
-    const token = await latestEmailToken(ctx.db, 'forgot@auth.test');
-    assert.ok(token, 'reset link queued');
+    const otp = await latestOtpCode(ctx.db, 'forgot@auth.test');
+    assert.ok(otp, 'reset code queued');
 
-    const weak = await anon(ctx.app).post('/auth/reset-password').send({ token, password: 'short1' });
-    assert.equal(weak.status, 400, 'weak password rejected and token not consumed');
+    const wrong = await anon(ctx.app).post('/auth/reset-password').send({ email: 'forgot@auth.test', otp: '000000', password: 'Brand-New-Pass9' });
+    assert.equal(wrong.status, 400, 'a wrong code is rejected');
 
-    const done = await anon(ctx.app).post('/auth/reset-password').send({ token, password: 'Brand-New-Pass9' });
+    const weak = await anon(ctx.app).post('/auth/reset-password').send({ email: 'forgot@auth.test', otp, password: 'short1' });
+    assert.equal(weak.status, 400, 'weak password rejected before the code is consumed');
+
+    const done = await anon(ctx.app).post('/auth/reset-password').send({ email: 'forgot@auth.test', otp, password: 'Brand-New-Pass9' });
     assert.equal(done.status, 204);
     assert.equal((await old.get('/auth/me')).status, 401, 'old sessions are signed out');
     assert.equal((await anon(ctx.app).post('/auth/login').send({ email: 'forgot@auth.test', password: PASSWORD })).status, 401);
     assert.equal((await anon(ctx.app).post('/auth/login').send({ email: 'forgot@auth.test', password: 'Brand-New-Pass9' })).status, 200);
 
-    const reuse = await anon(ctx.app).post('/auth/reset-password').send({ token, password: 'Another-Pass-77' });
-    assert.equal(reuse.status, 400, 'a reset link works only once');
+    const reuse = await anon(ctx.app).post('/auth/reset-password').send({ email: 'forgot@auth.test', otp, password: 'Another-Pass-77' });
+    assert.equal(reuse.status, 400, 'a code works only once');
   });
 
-  it('rejects an expired reset link', async () => {
+  it('rejects an expired reset code', async () => {
     await createUser(ctx.db, { orgId, email: 'late@auth.test' });
     await anon(ctx.app).post('/auth/forgot-password').send({ email: 'late@auth.test' });
-    const token = await latestEmailToken(ctx.db, 'late@auth.test');
-    await ctx.db.withContext(SYSTEM, (q) => q.query(`UPDATE password_reset_tokens SET expires_at = now() - interval '1 hour'`));
-    const res = await anon(ctx.app).post('/auth/reset-password').send({ token, password: 'Brand-New-Pass9' });
+    const otp = await latestOtpCode(ctx.db, 'late@auth.test');
+    await ctx.db.withContext(SYSTEM, (q) => q.query(`UPDATE email_otps SET expires_at = now() - interval '1 hour'`));
+    const res = await anon(ctx.app).post('/auth/reset-password').send({ email: 'late@auth.test', otp, password: 'Brand-New-Pass9' });
     assert.equal(res.status, 400);
   });
 

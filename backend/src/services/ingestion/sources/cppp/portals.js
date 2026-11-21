@@ -22,6 +22,7 @@ export const GEPNIC_PORTALS = [
   { id: 'cppp', name: 'CPPP (Central Public Procurement Portal)', state: null, type: 'central_portal', baseUrl: 'https://eprocure.gov.in', appPath: '/eprocure/app', enabled: true },
   { id: 'etenders', name: 'Central eTenders (MoRTH/NHAI etc.)', state: null, type: 'central_portal', baseUrl: 'https://etenders.gov.in', appPath: '/eprocure/app', enabled: true },
   { id: 'defence', name: 'Defence (defproc)', state: null, type: 'central_portal', baseUrl: 'https://defproc.gov.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'pmgsy', name: 'PMGSY (Rural Roads)', state: null, type: 'central_portal', baseUrl: 'https://pmgsytenders.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'coalindia', name: 'Coal India', state: null, type: 'psu_direct', baseUrl: 'https://coalindiatenders.nic.in', appPath: '/nicgep/app', enabled: true },
   { id: 'ntpc', name: 'NTPC', state: null, type: 'psu_direct', baseUrl: 'https://eprocurentpc.nic.in', appPath: '/nicgep/app', enabled: true },
   // The rest of GePNIC's public-sector-enterprise deployments. Each was probed
@@ -35,6 +36,7 @@ export const GEPNIC_PORTALS = [
   { id: 'goashipyard', name: 'Goa Shipyard', state: null, type: 'psu_direct', baseUrl: 'https://eprocuregsl.nic.in', appPath: '/nicgep/app', enabled: true },
   { id: 'cpcl', name: 'Chennai Petroleum (CPCL)', state: null, type: 'psu_direct', baseUrl: 'https://cpcletenders.nic.in', appPath: '/nicgep/app', enabled: true },
   { id: 'midhani', name: 'Midhani', state: null, type: 'psu_direct', baseUrl: 'https://eprocuremidhani.nic.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'beml', name: 'BEML', state: null, type: 'psu_direct', baseUrl: 'https://eprocurebeml.nic.in', appPath: '/nicgep/app', enabled: true },
 
   // --- State / UT portals (GePNIC) -----------------------------------------
   { id: 'mp', name: 'Madhya Pradesh', state: 'Madhya Pradesh', type: 'state_portal', baseUrl: 'https://mptenders.gov.in', appPath: '/nicgep/app', enabled: true },
@@ -63,7 +65,8 @@ export const GEPNIC_PORTALS = [
   { id: 'arunachal', name: 'Arunachal Pradesh', state: 'Arunachal Pradesh', type: 'state_portal', baseUrl: 'https://arunachaltenders.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'puducherry', name: 'Puducherry', state: 'Puducherry', type: 'state_portal', baseUrl: 'https://pudutenders.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'andaman', name: 'Andaman & Nicobar', state: 'Andaman and Nicobar Islands', type: 'state_portal', baseUrl: 'https://eprocure.andamannicobar.gov.in', appPath: '/nicgep/app', enabled: true },
-  { id: 'dnhdd', name: 'DNH & Daman Diu', state: 'Dadra and Nagar Haveli and Daman and Diu', type: 'state_portal', baseUrl: 'https://ddtenders.gov.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'dnhdd', name: 'Daman & Diu (DD)', state: 'Dadra and Nagar Haveli and Daman and Diu', type: 'state_portal', baseUrl: 'https://ddtenders.gov.in', appPath: '/nicgep/app', enabled: true },
+  { id: 'dnh', name: 'Dadra & Nagar Haveli (DNH)', state: 'Dadra and Nagar Haveli and Daman and Diu', type: 'state_portal', baseUrl: 'https://dnhtenders.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'ladakh', name: 'Ladakh', state: 'Ladakh', type: 'state_portal', baseUrl: 'https://tenders.ladakh.gov.in', appPath: '/nicgep/app', enabled: true },
   { id: 'lakshadweep', name: 'Lakshadweep', state: 'Lakshadweep', type: 'state_portal', baseUrl: 'https://tendersutl.gov.in', appPath: '/nicgep/app', enabled: true },
 
@@ -76,6 +79,29 @@ export const GEPNIC_PORTALS = [
   { id: 'telangana', name: 'Telangana', state: 'Telangana', type: 'state_portal', baseUrl: 'https://tender.telangana.gov.in', appPath: '/', adapter: 'vupadhi', enabled: true },
   { id: 'chhattisgarh', name: 'Chhattisgarh', state: 'Chhattisgarh', type: 'state_portal', baseUrl: 'https://eproc.cgstate.gov.in', appPath: '/', enabled: false, note: 'text captcha required — cannot automate without circumvention' },
   { id: 'ireps', name: 'IREPS (Indian Railways)', state: null, type: 'psu_direct', baseUrl: 'https://www.ireps.gov.in', appPath: '/', enabled: false, note: 'robots.txt: Disallow / (verified 2026-11-01)' },
+
+  // --- Accessible, NOT plain GePNIC, own adapter built ---------------------
+  // ISRO/DoS eProc: public server-rendered listing (one table, ~96 tenders, no
+  // login on the list), parsed by a dedicated cheerio adapter (sources/isro).
+  { id: 'isro', name: 'ISRO / Dept. of Space eProc', state: null, type: 'central_portal', baseUrl: 'https://eproc.isro.gov.in', appPath: '/', adapter: 'isro', enabled: true },
+  // POWERGRID: the SAP bidding portal (etender.powergrid.in) is login-walled, but
+  // the PUBLIC "Published Tenders" index (apps.powergrid.in/pgciltenders) is a
+  // plain server-rendered ASP.NET page — parsed by the cheerio adapter (sources/powergrid).
+  { id: 'powergrid', name: 'POWERGRID (published tenders)', state: null, type: 'psu_direct', baseUrl: 'https://apps.powergrid.in', appPath: '/pgciltenders/u/', adapter: 'powergrid', enabled: true },
+  // HPCL: the eProc login page also carries a public, server-rendered "Public
+  // Tenders" table — read by the cheerio adapter (sources/hpcl). No login needed.
+  { id: 'hpcl', name: 'Hindustan Petroleum (HPCL)', state: null, type: 'psu_direct', baseUrl: 'https://etender.hpcl.co.in', appPath: '/', adapter: 'hpcl', enabled: true },
+
+  // BPCL: the bidding SPA (bpcleproc.in) hides its list behind an encrypted search,
+  // but abcProcure's public dashboard (bpcltenders.eproc.in/Product/publicDash) is
+  // server-rendered and login-free — read by the cheerio adapter (sources/bpcl).
+  // It shows the current live tenders (a subset; full archive = future enhancement).
+  { id: 'bpcl', name: 'Bharat Petroleum (BPCL)', state: null, type: 'psu_direct', baseUrl: 'https://bpcltenders.eproc.in', appPath: '/Product/publicDash', adapter: 'bpcl', enabled: true },
+
+  // CPWD: NIC-TMS; the login-looking entry hides a PUBLIC "All Tenders" DataTable
+  // (newest-first). The browser-driven adapter (sources/cpwd) opens it and walks
+  // the first pages. CPWD publishes estimated value + EMD, so those are captured.
+  { id: 'cpwd', name: 'CPWD (Central Public Works)', state: null, type: 'central_portal', baseUrl: 'https://etender.cpwd.gov.in', appPath: '/', adapter: 'cpwd', enabled: true },
 ];
 
 /** Build the per-portal options the browser client / runner need. */

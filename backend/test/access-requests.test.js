@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { SYSTEM, anon, createOrg, createUser, latestEmailToken, makeContext, signIn } from './helpers.js';
+import { SYSTEM, anon, createOrg, createUser, latestEmailToken, makeContext, registerOtp, signIn } from './helpers.js';
 
 const request = {
   name: 'Meena Joshi',
@@ -31,8 +31,17 @@ describe('portal access requests', () => {
   });
   after(() => ctx.close());
 
+  it('requires a verified email (OTP) to register as a company', async () => {
+    // Without the code, or with a wrong one, the registration is refused.
+    assert.equal((await anon(ctx.app).post('/public/enquiries').send(request)).status, 400);
+    assert.equal((await anon(ctx.app).post('/public/enquiries').send({ ...request, otp: '000000' })).status, 400);
+  });
+
   it('stores a request apart from general enquiries and queues a notice for the team', async () => {
-    assert.equal((await anon(ctx.app).post('/public/enquiries').send(request)).status, 201);
+    const otp = await registerOtp(ctx.app, ctx.db, request.email);
+    assert.ok(otp, 'a verification code was emailed');
+    assert.equal((await anon(ctx.app).post('/public/enquiries').send({ ...request, otp })).status, 201);
+    // A general enquiry needs no verification code.
     assert.equal((await anon(ctx.app).post('/public/enquiries').send({ ...request, kind: undefined, email: 'general@joshi.test', company: 'General Co' })).status, 201);
 
     const queued = await ctx.db.withContext(SYSTEM, (q) => q.many(`SELECT recipient, subject FROM email_queue WHERE kind = 'ops_alert'`));

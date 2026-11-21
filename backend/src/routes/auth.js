@@ -5,8 +5,8 @@ import { clientIp, requireAuth, withSystemDb } from '../auth/middleware.js';
 import { cookieOptions, createSession, destroySession, destroyUserSessions, publicUser } from '../auth/sessions.js';
 import { HttpError, asyncHandler, forbidden, unauthorized } from '../errors.js';
 import { audit, actorOf } from '../services/audit.js';
-import { queuePasswordReset } from '../services/accountEmails.js';
 import { consumeResetToken } from '../services/accountTokens.js';
+import { issueOtp, verifyOtp, queueOtpEmail } from '../services/emailOtp.js';
 import { getOrganization, orgView } from '../services/orgs.js';
 import { email, parse, password, z } from '../validate.js';
 
@@ -160,7 +160,8 @@ export function authRoutes({ limiters }) {
     })
   );
 
-  // Always answers 202 so the form cannot be used to discover which emails have accounts.
+  // Always answers 202 so the form cannot be used to discover which emails have
+  // accounts. A valid account is emailed a 6-digit OTP (purpose 'password_reset').
   r.post(
     '/forgot-password',
     limiters.passwordReset,
@@ -173,21 +174,41 @@ export function authRoutes({ limiters }) {
             WHERE u.email = $1 AND u.is_active AND o.status = 'Active'`,
           [input.email]
         );
-        if (user) await queuePasswordReset(q, user);
+        if (!user) return;
+        const issued = await issueOtp(q, { purpose: 'password_reset', email: input.email, ip: clientIp(req) });
+        // On cooldown, issueOtp returns no code; the earlier email still stands.
+        if (issued.code) {
+          await queueOtpEmail(q, {
+            purpose: 'password_reset', email: input.email, code: issued.code, otpId: issued.otpId,
+            name: user.name, orgId: user.organization_id,
+          });
+        }
       });
-      res.status(202).json({ message: 'If that email has an account, a reset link is on its way.' });
+      res.status(202).json({ message: 'If that email has an account, a verification code is on its way.' });
     })
   );
 
-  // Also used to accept an invitation (the invited user chooses their first password).
+  // Two ways in: a 6-digit OTP from forgot-password { email, otp, password }, or a
+  // single-use link token { token, password } (invitations and legacy links).
   r.post(
     '/reset-password',
     limiters.passwordReset,
     asyncHandler(async (req, res) => {
-      const input = parse(z.object({ token: z.string().min(10).max(200), password }), req.body);
-      const userId = await withSystemDb(req, async (q) => {
-        const id = await consumeResetToken(q, input.token);
-        if (!id) return null;
+      const input = parse(
+        z.object({
+          token: z.string().min(10).max(200).optional(),
+          email: email.optional(),
+          otp: z.string().regex(/^\d{6}$/, 'must be a 6-digit code').optional(),
+          password,
+        }),
+        req.body
+      );
+      const viaOtp = Boolean(input.email && input.otp);
+      if (!input.token && !viaOtp) {
+        throw new HttpError(400, 'Provide either a reset code or a reset link token', { code: 'missing_credential' });
+      }
+
+      const setPassword = async (q, id) => {
         await q.query(
           `UPDATE user_credentials
               SET password_hash = $2, password_changed_at = now(), failed_login_count = 0, locked_until = NULL
@@ -196,9 +217,29 @@ export function authRoutes({ limiters }) {
         );
         await destroyUserSessions(q, id);
         await audit(q, { user: null, ip: clientIp(req) }, 'auth.password_reset', 'user', id);
-        return id;
+      };
+
+      const outcome = await withSystemDb(req, async (q) => {
+        if (viaOtp) {
+          const ok = await verifyOtp(q, { purpose: 'password_reset', email: input.email, code: input.otp });
+          if (!ok) return { error: 'otp' };
+          const user = await q.maybeOne(
+            `SELECT u.id FROM users u JOIN organizations o ON o.id = u.organization_id
+              WHERE u.email = $1 AND u.is_active AND o.status = 'Active'`,
+            [input.email]
+          );
+          if (!user) return { error: 'otp' };
+          await setPassword(q, user.id);
+          return { ok: true };
+        }
+        const id = await consumeResetToken(q, input.token);
+        if (!id) return { error: 'token' };
+        await setPassword(q, id);
+        return { ok: true };
       });
-      if (!userId) throw new HttpError(400, 'This link is invalid or has expired', { code: 'invalid_token' });
+
+      if (outcome.error === 'otp') throw new HttpError(400, 'That code is invalid or has expired', { code: 'invalid_otp' });
+      if (outcome.error === 'token') throw new HttpError(400, 'This link is invalid or has expired', { code: 'invalid_token' });
       res.status(204).end();
     })
   );

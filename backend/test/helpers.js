@@ -216,3 +216,18 @@ export async function latestEmailToken(db, recipient) {
   const match = row?.html_body.match(/token=([A-Za-z0-9_%-]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
+
+/** Pull the 6-digit OTP out of the newest queued email for an address. */
+export async function latestOtpCode(db, recipient) {
+  const row = await db.withContext(SYSTEM, (q) =>
+    q.maybeOne('SELECT html_body FROM email_queue WHERE recipient = $1 ORDER BY id DESC LIMIT 1', [recipient.toLowerCase()])
+  );
+  const match = row?.html_body.match(/Your code is (\d{6})/);
+  return match ? match[1] : null;
+}
+
+/** Request a registration OTP for an email and return the emailed code. */
+export async function registerOtp(app, db, email) {
+  await request(app).post(`${API}/public/register/request-otp`).send({ email });
+  return latestOtpCode(db, email);
+}

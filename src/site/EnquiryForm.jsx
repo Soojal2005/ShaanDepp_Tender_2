@@ -44,23 +44,38 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
   const { pending, run } = useAction();
   // Registering "as a company" (access_request) also captures the company's identity.
   const isAccess = kind === 'access_request';
-  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '', gstin: '', address: '', city: '', state: '', industry: '' };
+  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '', gstin: '', address: '', city: '', state: '', industry: '', otp: '' };
   const [form, setForm] = useState(blank);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
+  // Registering as a company requires verifying the email with a 6-digit code first.
+  const [otpSent, setOtpSent] = useState(false);
+  const { pending: otpPending, run: runOtp } = useAction();
   const nameValid = form.name.trim().length >= 2;
   const companyValid = form.company.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
   // The company identity required at registration: phone, city, state, industry (GSTIN and street address are optional).
   const companyValid2 = !isAccess || (form.phone.trim() && form.city.trim() && form.state.trim() && form.industry.trim());
-  const canSubmit = nameValid && companyValid && emailValid && companyValid2 && form.consent;
+  const otpValid = /^\d{6}$/.test(form.otp.trim());
+  // The base form is ready to request a verification code (access request only).
+  const canRequestOtp = nameValid && companyValid && emailValid && companyValid2 && form.consent;
+  const canSubmit = isAccess ? canRequestOtp && otpSent && otpValid : nameValid && companyValid && emailValid && companyValid2 && form.consent;
   const formHint = !nameValid || !companyValid ? t('site.f.needDetails')
     : !emailValid ? t('site.f.needEmail')
       : !companyValid2 ? t('site.f.needCompany')
-        : !form.consent ? t('site.f.needConsent') : t('site.f.ready');
+        : !form.consent ? t('site.f.needConsent')
+          : isAccess && !otpSent ? t('site.f.otpNeedEmail')
+            : isAccess && !otpValid ? t('site.f.otpNeed') : t('site.f.ready');
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const ph = (key) => (rich ? t(`site.f.${key}Ph`) : undefined);
   const trimmed = (key) => form[key].trim() || undefined;
+
+  // Step 1 (access request only): email a verification code to the address.
+  const requestOtp = async () => {
+    setError(null);
+    const out = await runOtp(() => api.post('/public/register/request-otp', { email: form.email.trim(), name: form.name.trim() || undefined }));
+    if (out.ok) setOtpSent(true); else setError(out.error);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -68,9 +83,9 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
     const out = await run(() => api.post('/public/enquiries', {
       name: form.name.trim(), company: form.company.trim(), email: form.email.trim(), phone: form.phone.trim() || undefined,
       service: service || undefined, kind, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
-      ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry') }),
+      ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry'), otp: form.otp.trim() }),
     }));
-    if (out.ok) { setDone(true); setForm(blank); } else setError(out.error);
+    if (out.ok) { setDone(true); setForm(blank); setOtpSent(false); } else setError(out.error);
   };
 
   if (done) {
@@ -113,6 +128,35 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
         <span>{rich ? t('site.f.consentShort') : t('site.f.consent')}</span>
       </label>
       {rich && <p className="site-form-privacy">{t('site.privacy')}</p>}
+      {isAccess && (
+        <div className="site-form-otp">
+          {!otpSent ? (
+            <Button variant="outline" pending={otpPending} disabled={otpPending || !canRequestOtp} onClick={requestOtp}>
+              {otpPending ? t('site.f.otpSending') : t('site.f.otpSend')}
+            </Button>
+          ) : (
+            <>
+              <p className="cell-sub">{t('site.f.otpSentNote')}</p>
+              <IconField label={t('site.f.otpLabel')} required icon={rich ? Mail : null}>
+                {(p) => (
+                  <input
+                    {...p}
+                    id={`${idPrefix}-otp`}
+                    aria-label={t('site.f.otpLabel')}
+                    className="input"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={form.otp}
+                    onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                  />
+                )}
+              </IconField>
+              <Button variant="outline" size="sm" pending={otpPending} disabled={otpPending} onClick={requestOtp}>{t('site.f.otpResend')}</Button>
+            </>
+          )}
+        </div>
+      )}
       <p className={`site-form-feedback ${canSubmit ? 'is-ready' : ''}`} role="status" aria-live="polite">{formHint}</p>
       {!rich && <p className="cell-sub">{t('site.privacy')}</p>}
       <ErrorNote error={error} />

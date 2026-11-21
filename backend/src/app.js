@@ -46,7 +46,7 @@ function buildLimiters(enabled) {
   // A generous ceiling for the whole API per address; the limits above are the tight ones.
   const api = enabled && config.isProd ? make(3000) : (req, res, next) => next();
   // Each document download is a live fetch to a government portal, so cap it per person.
-  return { login: make(20), passwordReset: make(10), enquiry: make(5), alertTest: perUser(10, 60 * 60 * 1000), documentDownload: perUser(120, 60 * 60 * 1000), api };
+  return { login: make(20), passwordReset: make(10), enquiry: make(5), otpRequest: make(8), alertTest: perUser(10, 60 * 60 * 1000), documentDownload: perUser(120, 60 * 60 * 1000), api };
 }
 
 // Paths the single-page app answers. Anything else gets a real 404 status (with the same page).

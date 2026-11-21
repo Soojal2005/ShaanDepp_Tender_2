@@ -111,11 +111,12 @@ const schema = z.object({
   CRAWLER_REQUEST_DELAY_MS: z.coerce.number().int().min(0).default(1500),
   CRAWLER_MAX_DETAILS: z.coerce.number().int().min(0).default(60),
   // Open each NEW tender's detail page (in the live browser session) to capture
-  // the fields the listing omits: estimated value, EMD, fee, category, source
-  // link. OFF by default — detail pages are slower and portal-specific, so this
-  // is piloted per deployment. Only tenders not already stored are fetched, and
-  // at most CRAWLER_MAX_DETAILS of them per portal per run.
-  CRAWLER_FETCH_DETAILS: bool,
+  // the public fields the listing omits: estimated value, EMD, fee, category,
+  // tender type, source link. ON by default so the crawl fills every public field
+  // the frontend shows; set CRAWLER_FETCH_DETAILS=off to fall back to listing-only.
+  // Only tenders not already stored are fetched, and at most CRAWLER_MAX_DETAILS
+  // of them per portal per run, so the extra cost stays bounded.
+  CRAWLER_FETCH_DETAILS: boolDefaultOn,
   CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
 
   // On-demand GePNIC document download. A warm, anonymous Playwright context per
@@ -148,8 +149,26 @@ const schema = z.object({
   ENRICH_MAX_PAGES: z.coerce.number().int().min(1).max(100).default(15),
   ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
 
-  // Microsoft 365 / Graph. MAIL_MODE=live is required to actually send.
+  // Mail. MAIL_MODE=live is required to actually send; dry_run writes to the outbox.
   MAIL_MODE: z.enum(['dry_run', 'live']).default('dry_run'),
+  // Which transport delivers mail: 'smtp' (Hostinger) or 'graph' (Microsoft 365).
+  MAIL_TRANSPORT: z.enum(['smtp', 'graph']).default('smtp'),
+  // Hostinger (or any) SMTP. Used when MAIL_TRANSPORT=smtp and MAIL_MODE=live.
+  // Port 465 = implicit TLS (SMTP_SECURE on); 587 = STARTTLS (set SMTP_SECURE=off).
+  SMTP_HOST: optionalString,
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_SECURE: boolDefaultOn,
+  SMTP_USER: optionalString,
+  SMTP_PASS: optionalString,
+  // The From header, e.g. "Procure Brain <shantanu.trivedi@procure-brain.in>".
+  // Hostinger requires the From mailbox to match the authenticated SMTP_USER domain.
+  SMTP_FROM: optionalString,
+  MAIL_FROM: optionalString, // accepted as an alias for SMTP_FROM
+  // Email OTP (registration email verification + password reset).
+  OTP_TTL_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
+  OTP_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
+  OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(600).default(60),
+  // Microsoft 365 / Graph (alternative transport).
   AZURE_TENANT_ID: optionalString,
   AZURE_CLIENT_ID: optionalString,
   AZURE_CLIENT_SECRET: optionalString,
@@ -183,10 +202,14 @@ function load(env) {
   const graphReady = Boolean(
     c.AZURE_TENANT_ID && c.AZURE_CLIENT_ID && c.AZURE_CLIENT_SECRET && c.GRAPH_SENDER_MAILBOX
   );
-  if (c.MAIL_MODE === 'live' && !graphReady) {
-    throw new Error(
-      'MAIL_MODE=live needs AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET and GRAPH_SENDER_MAILBOX.'
-    );
+  const smtpReady = Boolean(c.SMTP_HOST && c.SMTP_USER && c.SMTP_PASS && (c.SMTP_FROM || c.MAIL_FROM));
+  if (c.MAIL_MODE === 'live') {
+    if (c.MAIL_TRANSPORT === 'smtp' && !smtpReady) {
+      throw new Error('MAIL_MODE=live with MAIL_TRANSPORT=smtp needs SMTP_HOST, SMTP_USER, SMTP_PASS and SMTP_FROM.');
+    }
+    if (c.MAIL_TRANSPORT === 'graph' && !graphReady) {
+      throw new Error('MAIL_MODE=live with MAIL_TRANSPORT=graph needs AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET and GRAPH_SENDER_MAILBOX.');
+    }
   }
   if (c.TENDERBOOK_SYNC && !c.TENDERBOOK_API_KEY) {
     throw new Error('TENDERBOOK_SYNC=on needs TENDERBOOK_API_KEY.');
@@ -295,6 +318,15 @@ function load(env) {
     mail: Object.freeze({
       mode: c.MAIL_MODE,
       dryRun: c.MAIL_MODE !== 'live',
+      transport: c.MAIL_TRANSPORT,
+      smtp: Object.freeze({
+        host: c.SMTP_HOST,
+        port: c.SMTP_PORT,
+        secure: c.SMTP_SECURE,
+        user: c.SMTP_USER,
+        pass: c.SMTP_PASS,
+        from: c.SMTP_FROM || c.MAIL_FROM,
+      }),
       tenantId: c.AZURE_TENANT_ID,
       clientId: c.AZURE_CLIENT_ID,
       clientSecret: c.AZURE_CLIENT_SECRET,
@@ -303,6 +335,11 @@ function load(env) {
       perDay: c.GRAPH_DAILY_LIMIT,
       pollBounces: c.GRAPH_BOUNCE_POLL,
       opsAlertEmail: c.OPS_ALERT_EMAIL,
+    }),
+    otp: Object.freeze({
+      ttlMinutes: c.OTP_TTL_MINUTES,
+      maxAttempts: c.OTP_MAX_ATTEMPTS,
+      resendCooldownSeconds: c.OTP_RESEND_COOLDOWN_SECONDS,
     }),
     frontend: Object.freeze({
       dir: c.FRONTEND_DIR ? path.resolve(c.FRONTEND_DIR) : path.join(REPO_ROOT, 'dist'),

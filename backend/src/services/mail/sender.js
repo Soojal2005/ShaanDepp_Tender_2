@@ -145,7 +145,8 @@ export async function drainQueue(db, { client = null, settings = config.mail, ou
       stats.sent++;
       transientStreak = 0;
     } catch (err) {
-      const kind = err instanceof GraphError ? err.kind : 'transient';
+      // Both the Graph and SMTP transports throw errors carrying a delivery `kind`.
+      const kind = (err instanceof GraphError ? err.kind : err?.kind) ?? 'transient';
       const message = err.message ?? String(err);
       const ms = Date.now() - started;
 

@@ -6,10 +6,11 @@
 import { Router } from 'express';
 import { config } from '../config.js';
 import { clientIp, withSystemDb } from '../auth/middleware.js';
-import { asyncHandler } from '../errors.js';
+import { asyncHandler, badRequest } from '../errors.js';
 import { audit } from '../services/audit.js';
 import { button, emailShell, esc } from '../services/mail/html.js';
 import { enqueueEmail } from '../services/mail/queue.js';
+import { issueOtp, verifyOtp, queueOtpEmail } from '../services/emailOtp.js';
 import { email, parse, z } from '../validate.js';
 
 // A 15-character GSTIN, e.g. 22AAAAA0000A1Z5.
@@ -33,11 +34,14 @@ const enquirySchema = z
     state: z.string().trim().max(100).optional(),
     industry: z.string().trim().max(120).optional(),
     consent: z.literal(true, { error: 'must be accepted' }),
+    // The 6-digit email verification code (required for an access request).
+    otp: z.string().trim().regex(/^\d{6}$/, 'must be the 6-digit code emailed to you').optional(),
     // Honeypot: real visitors never see or fill this field.
     website: z.string().max(200).optional(),
   })
-  // A registration must identify the company and the person, so these are required
-  // for an access request (GSTIN and a full street address stay optional).
+  // A registration must identify the company and the person, and the email must be
+  // verified, so these are required for an access request (GSTIN and a full street
+  // address stay optional).
   .superRefine((v, ctx) => {
     if (v.kind !== 'access_request') return;
     for (const field of ['phone', 'city', 'state', 'industry']) {
@@ -45,7 +49,10 @@ const enquirySchema = z
         ctx.addIssue({ code: 'custom', path: [field], message: 'is required to register as a company' });
       }
     }
+    if (!v.otp) ctx.addIssue({ code: 'custom', path: ['otp'], message: 'is required — verify your email first' });
   });
+
+const otpRequestSchema = z.object({ email, name: z.string().trim().max(150).optional() });
 
 /** Tell the team a new access request is waiting. Queued in the same transaction, so a failed save sends nothing. */
 async function notifyStaff(q, enquiryId, input) {
@@ -78,6 +85,28 @@ export function publicRoutes({ limiters }) {
     });
   });
 
+  // Step 1 of registering as a company: email a 6-digit code to prove the address.
+  // Always 202 so it cannot be used to probe addresses; cooldown is enforced server-side.
+  r.post(
+    '/register/request-otp',
+    limiters.otpRequest,
+    asyncHandler(async (req, res) => {
+      const input = parse(otpRequestSchema, req.body);
+      const result = await withSystemDb(req, async (q) => {
+        const issued = await issueOtp(q, { purpose: 'register', email: input.email, ip: clientIp(req) });
+        if (issued.code) {
+          await queueOtpEmail(q, { purpose: 'register', email: input.email, code: issued.code, otpId: issued.otpId, name: input.name });
+          return { sent: true };
+        }
+        return { cooldownSeconds: issued.cooldownSeconds };
+      });
+      res.status(202).json({
+        message: 'If that address is valid, a verification code is on its way.',
+        ...(result.cooldownSeconds ? { cooldownSeconds: result.cooldownSeconds } : {}),
+      });
+    })
+  );
+
   r.post(
     '/enquiries',
     limiters.enquiry,
@@ -87,7 +116,12 @@ export function publicRoutes({ limiters }) {
       if (input.website) return res.status(201).json({ message: 'Thank you. Our team will contact you shortly.' });
 
       const ip = clientIp(req);
-      await withSystemDb(req, async (q) => {
+      const outcome = await withSystemDb(req, async (q) => {
+        // Registering as a company requires a verified email (consumes the OTP).
+        if (input.kind === 'access_request') {
+          const ok = await verifyOtp(q, { purpose: 'register', email: input.email, code: input.otp });
+          if (!ok) return { error: 'otp' };
+        }
         const row = await q.one(
           `INSERT INTO enquiries (name, company, phone, email, service, message, language, ip_address, kind, gstin, address, city, state, industry)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
@@ -97,7 +131,9 @@ export function publicRoutes({ limiters }) {
         );
         await audit(q, { user: null, ip }, 'enquiry.create', 'enquiry', row.id, { service: input.service ?? null, kind: input.kind });
         if (input.kind === 'access_request') await notifyStaff(q, row.id, input);
+        return { ok: true };
       });
+      if (outcome.error === 'otp') throw badRequest('That verification code is invalid or has expired. Request a new one.');
       res.status(201).json({ message: 'Thank you. Our team will contact you shortly.' });
     })
   );
