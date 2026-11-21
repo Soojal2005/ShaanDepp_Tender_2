@@ -51,6 +51,17 @@ export function createSmtpClient({
 } = {}) {
   if (!host || !user || !pass || !from) throw new Error('SMTP is not fully configured (host, user, pass, from)');
 
+  // Split the configured From into a display name and a bare address, so a value
+  // like "Procure Brain <a@b>" (or a mangled "Procure Brain a@b" that lost its
+  // angle brackets) still yields a clean header. The SMTP envelope sender is
+  // ALWAYS the authenticated mailbox (`user`) — Hostinger (and most providers)
+  // reject a MAIL FROM that is "not owned by" the login, which is exactly the
+  // 553 5.7.1 we hit when the display name leaked into the envelope address.
+  const addrMatch = String(from).match(/[^\s<>"]+@[^\s<>"]+/);
+  const address = addrMatch ? addrMatch[0] : user;
+  const displayName = String(from).replace(address, '').replace(/[<>"]/g, '').replace(/\s+/g, ' ').trim();
+  const headerFrom = displayName ? { name: displayName, address } : address;
+
   // Pooled so the drainer can send a batch over a few reused connections.
   const transporter = transport ?? nodemailer.createTransport({
     host,
@@ -66,11 +77,18 @@ export function createSmtpClient({
   });
 
   return {
-    from,
+    from: address,
 
     async sendMail({ to, subject, html }) {
       try {
-        await transporter.sendMail({ from, to, subject, html, replyTo: from });
+        await transporter.sendMail({
+          from: headerFrom,        // header: "Procure Brain <addr>"
+          to,
+          subject,
+          html,
+          replyTo: address,
+          envelope: { from: user, to }, // envelope MAIL FROM = the owned mailbox
+        });
         return { status: 202 };
       } catch (err) {
         throw classify(err);
