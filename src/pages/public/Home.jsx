@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, Award, BadgeCheck, Bell, Building2, CalendarDays, Check, ChevronDown, ClipboardCheck, ClipboardList, Database, FileSearch, FileText,
-  IndianRupee, Landmark, Lightbulb, Mail, MapPin, MessageCircle, Phone, ScrollText, Search, ShieldCheck,
+  ArrowRight, Award, BadgeCheck, Bell, Building2, Check, ChevronDown, ClipboardCheck, ClipboardList, Database, FileSearch, FileSignature,
+  Landmark, Lightbulb, Mail, MapPin, MessageCircle, Phone, ScrollText, Search, ShieldCheck,
   ShoppingBag, SlidersHorizontal, Tag, TrendingUp, Trophy,
 } from 'lucide-react';
 import { DEPARTMENTS, GROUPS, SERVICE_COUNT, itemsOf } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
-import { formatDate, formatInr } from '../../lib/format.js';
+import { formatInr } from '../../lib/format.js';
 import EnquiryForm, { ACCESS_SERVICE } from '../../site/EnquiryForm.jsx';
 import FlowChart from '../../site/FlowChart.jsx';
 import PortalPreview from '../../site/PortalPreview.jsx';
@@ -17,7 +17,6 @@ import { telHref, useSeo, useSiteConfig, whatsappHref } from '../../site/hooks.j
 export const GROUP_ICONS = { FileSearch, ShoppingBag, Building2, ClipboardList, BadgeCheck, Landmark, ScrollText, Lightbulb, TrendingUp, Award };
 
 const PORTAL_ICONS = [Bell, Search, Trophy, ClipboardCheck];
-const ABOUT_ICONS = [FileSearch, ShieldCheck, ClipboardCheck, MapPin];
 
 // Value bands map to the portal's rupee filters, so the hero search is real, not decorative.
 const VALUE_BANDS = [{ valueMax: '1000000' }, { valueMin: '1000000', valueMax: '10000000' }, { valueMin: '10000000' }];
@@ -95,7 +94,7 @@ function HowWeHelp({ t }) {
   };
   return (
     <section className="lp-how" aria-labelledby="process-title">
-      <div className="site-wrap">
+      <div className="landing-container">
         <p className="lp-how-kicker">{t('site.lp.helpKicker')}</p>
         <h2 id="process-title">{t('site.lp.processPre')}<span className="lp-how-mark">{t('site.lp.processMark')}</span>{t('site.lp.processPost')}</h2>
         <div className="lp-how-grid">
@@ -125,6 +124,49 @@ function HowWeHelp({ t }) {
         </div>
         <div id="flow-panel" className="lp-expand" hidden={!showFlow}>
           {showFlow && <div className="lp-panel"><h3>{t('site.flowTitle')}</h3><p className="lp-head-sub">{t('site.flowSub')}</p><FlowChart /></div>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Which preview sidebar item each portal feature lives under: Alerts, Search, Reports, Submissions.
+const FEATURE_NAV = [2, 1, 4, 3];
+
+/**
+ * "One workspace for every tender": the pitch beside a portal preview. The four features below are tabs;
+ * picking one highlights its place in the preview's sidebar and spells it out in the callout.
+ */
+function PortalShowcase({ t }) {
+  const [feature, setFeature] = useState(0);
+  const tabs = t('site.lp.portalTabs');
+  const points = t('site.portalPoints');
+  return (
+    <section className="lp-ws" aria-labelledby="portal-title">
+      <div className="landing-container">
+        <div className="lp-ws-grid">
+          <div className="lp-ws-copy">
+            <p className="lp-ws-kicker">{t('site.lp.portalKicker')}</p>
+            <h2 id="portal-title">{t('site.lp.portalTitle')}</h2>
+            <p className="lp-ws-body">{t('site.lp.portalBody')}</p>
+            <div className="lp-ws-cta">
+              <a className="lp-ws-btn is-primary" href="#access">{t('site.lp.ctaAccess')}</a>
+              <Link className="lp-ws-btn" to="/login">{t('site.ctaPortal')}</Link>
+            </div>
+          </div>
+          <div className="lp-ws-preview">
+            <p className="lp-ws-note" id="ws-note" aria-live="polite" key={feature}>{points[feature]}</p>
+            <PortalPreview active={FEATURE_NAV[feature]} />
+          </div>
+        </div>
+        <div className="lp-ws-tabs" role="group" aria-label={t('site.lp.portalKicker')}>
+          {tabs.map((label, i) => { const Icon = PORTAL_ICONS[i]; return (
+            <Fragment key={label}>{i > 0 && <span className="lp-ws-rule" aria-hidden="true" />}
+            <button type="button" aria-pressed={i === feature} aria-describedby={i === feature ? 'ws-note' : undefined}
+              className={i === feature ? 'is-on' : undefined} onClick={() => setFeature(i)}>
+              <Icon size={22} strokeWidth={1.7} aria-hidden="true" />{label}
+            </button></Fragment>
+          ); })}
         </div>
       </div>
     </section>
@@ -181,41 +223,91 @@ function HeroSearch() {
   );
 }
 
-/** A section heading: eyebrow kicker plus a two-tone serif title, matching the reference. */
-function Heading({ id, kicker, a, b, sub, action }) {
+/** Photo for a sample tender, matched on its title. Rows without a match simply open without a photo. */
+// ponytail: keyword match, fine for the three illustrative samples; give tenders an image field if real rows need photos.
+const TENDER_PHOTOS = [
+  [/\bIT\b|computer|आईटी/i, '/images/tender-it-delhi.webp'],
+  [/road|सड़क/i, '/images/tender-road-maharashtra.webp'],
+  [/medicine|दवा/i, '/images/tender-medicine-karnataka.webp'],
+];
+const photoFor = (title = '') => TENDER_PHOTOS.find(([re]) => re.test(title))?.[1];
+
+/**
+ * "Latest government tenders" as a ruled table. Choosing a row opens it: the row turns to paper, its state
+ * gets a highlighter stroke, and a photo of the kind of work drops open beneath it.
+ */
+function LatestTenders({ t, tenders, loading }) {
+  const [open, setOpen] = useState(1);
   return (
-    <header className="lp-head">
-      <div>
-        <p className="lp-eyebrow">{kicker}</p>
-        <h2 id={id}>{a}{b && <> <span>{b}</span></>}</h2>
-        {sub && <p className="lp-head-sub">{sub}</p>}
+    <section className="lp-tn" aria-labelledby="tenders-title">
+      <div className="landing-container">
+        <div className="lp-tn-head">
+          <div>
+            <h2 id="tenders-title">{t('site.lp.tendersTitle')}</h2>
+            <p>{t('site.lp.tendersSub')}</p>
+          </div>
+          <Link className="lp-tn-all" to="/login">{t('site.lp.tendersAll')} <ArrowRight size={20} aria-hidden="true" /></Link>
+        </div>
+        <div className="lp-tn-table" role="table" aria-labelledby="tenders-title" aria-busy={loading}>
+          <div className="lp-tn-row lp-tn-th" role="row">
+            <span role="columnheader">{t('site.lp.colTender')}</span>
+            <span role="columnheader">{t('site.home.previewDepartment')}</span>
+            <span role="columnheader">{t('site.lp.colState')}</span>
+            <span role="columnheader">{t('site.lp.colValue')}</span>
+            <span aria-hidden="true" />
+          </div>
+          {loading
+            ? [0, 1, 2].map((i) => <div key={i} className="lp-tn-row lp-tn-skel" aria-hidden="true"><i /><i /><i /><i /></div>)
+            : tenders.map((item, i) => {
+              const title = (item.title || '').replace(/^\[sample\]\s*/i, '');
+              const value = item.estimated_value ?? item.value;
+              const photo = photoFor(title);
+              const isOpen = open === i;
+              return (
+                <div key={item.id || title} className={`lp-tn-item ${isOpen ? 'is-open' : ''}`} role="rowgroup">
+                  <div className="lp-tn-row" role="row" onClick={() => setOpen(i)}>
+                    <span role="cell" className="lp-tn-title">
+                      <button type="button" aria-expanded={isOpen} aria-controls={photo ? `tn-photo-${i}` : undefined} onClick={() => setOpen(i)}>{title}</button>
+                    </span>
+                    <span role="cell" data-state={item.state || ""}>{item.department || t("common.unavailable")}</span>
+                    <span role="cell"><span className="lp-tn-state">{item.state || '—'}</span></span>
+                    <span role="cell"><span className={`lp-tn-value ${value == null ? 'is-na' : ''}`}>{formatInr(value, t('site.lp.valueNA')).replace('₹ ', '₹')}</span></span>
+                    <span role="cell"><Link to="/login" className="lp-tn-go" aria-label={`${t('site.lp.tendersAll')}: ${title}`}><ArrowRight size={22} /></Link></span>
+                  </div>
+                  {photo && (
+                    <div className="lp-tn-photo" id={`tn-photo-${i}`} aria-hidden={!isOpen}>
+                      <div><picture><source media="(max-width: 760px)" srcSet={photo.replace('.webp', '-m.webp')} /><img src={photo} alt="" loading="lazy" decoding="async" /></picture></div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
       </div>
-      {action}
-    </header>
+    </section>
   );
 }
 
-/** A single tender row. Live synthetic samples come from the public table; otherwise labelled illustrations. */
-function TenderCard({ item, lang, t, tone }) {
-  const title = (item.title || '').replace(/^\[sample\]\s*/i, '');
-  const value = item.estimated_value ?? item.value;
+const ABOUT_ICONS = [FileSearch, ShieldCheck, FileSignature];
+
+/** "About Shan-Deep": a short statement and three focus areas over the Bhopal lakefront. */
+function AboutShanDeep({ t }) {
   return (
-    <Link to="/login" className="lp-tender">
-      <div className="lp-tender-top">
-        <span className={`lp-chip lp-tone-${tone}`}>{item.department || t('common.unavailable')}</span>
-        {item.submission_deadline && <span className="lp-deadline"><CalendarDays size={13} />{t('site.lp.deadline')}: {formatDate(item.submission_deadline, lang)}</span>}
+    <section id="about" className="lp-ab" aria-labelledby="about-title">
+      <div className="landing-container">
+        <div className="lp-ab-copy">
+          <h2 id="about-title">{t('site.lp.aboutHeading')}</h2>
+          <p className="lp-ab-body">{t('site.lp.aboutShort')}</p>
+          <ul className="lp-ab-focus">
+            {t('site.lp.aboutFocus').map((label, i) => { const Icon = ABOUT_ICONS[i]; return (
+              <li key={label}><Icon size={40} strokeWidth={1.4} aria-hidden="true" /><span>{label}</span></li>
+            ); })}
+          </ul>
+          <Link className="lp-ab-link" to="/services">{t('site.lp.aboutExplore')} <ArrowRight size={22} aria-hidden="true" /></Link>
+        </div>
       </div>
-      <h3>{title}</h3>
-      <ul className="lp-tender-meta">
-        {item.state && <li><MapPin size={15} />{item.state}</li>}
-        <li><IndianRupee size={15} />{value != null ? formatInr(value) : t('site.lp.valueNA')}</li>
-        {item.tender_no && <li><FileText size={15} />{t('site.lp.refNo')}: {item.tender_no}</li>}
-      </ul>
-      <div className="lp-tender-foot">
-        <span className="lp-sample">{t('site.lp.sample')}{!item.submission_deadline && ` · ${t('site.lp.noDeadline')}`}</span>
-        <ArrowRight size={18} aria-hidden="true" />
-      </div>
-    </Link>
+      <div className="lp-ab-art" aria-hidden="true" />
+    </section>
   );
 }
 
@@ -235,28 +327,26 @@ export default function Home() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [wantsLive]);
-  // Reveal cards and the folder stack when they scroll into view.
-  // Re-runs when live samples arrive so their freshly-rendered cards get observed too.
+  // Play the folder stack's entrance once it scrolls into view.
   useEffect(() => {
-    const els = document.querySelectorAll('.svc-stack, .lp-tender, .lp-service, .lp-about-card, .lp-contact-card, .lp-dept-grid li');
+    const els = document.querySelectorAll('.svc-stack');
     if (!els.length) return undefined;
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
     }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [samples]);
+  }, []);
   const tenders = (samples.length ? samples : t('site.lp.samples')).slice(0, 3);
   const waHref = useMemo(() => whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') })), [site.whatsappNumber, t]);
   useSeo({ title: t('site.seo.homeTitle'), description: t('site.seo.homeDesc'), path: '/' });
 
   return (
-    <div className="site-home lp">
-      <div className="lp-bg" aria-hidden="true" />
+    <div className="site-home lp landing">
 
       {/* ---- Hero: teal civic illustration (desktop / mobile art in public/images) ---- */}
       <section className="lp-hero" aria-labelledby="hero-title">
-        <div className="site-wrap">
+        <div className="landing-container">
           <h1 id="hero-title">{t('site.lp.heroLine1')} <span>{t('site.lp.heroLine2')}</span></h1>
           <p className="lp-lead">{t('site.lp.heroBody')}</p>
           <HeroSearch />
@@ -265,7 +355,7 @@ export default function Home() {
 
       {/* ---- Our Services ---- */}
       <section id="services" className="lp-svc" aria-labelledby="services-title">
-        <div className="site-wrap lp-svc-grid">
+        <div className="landing-container lp-svc-grid">
           <div className="lp-svc-head">
             <h2 id="services-title">{t('site.lp.servicesTitle1')} <span>{t('site.lp.servicesTitle2')}</span></h2>
             <Link className="lp-svc-all" to="/services">{t('site.lp.servicesAll', { n: SERVICE_COUNT })} <ArrowRight size={18} aria-hidden="true" /></Link>
@@ -284,62 +374,18 @@ export default function Home() {
       <HowWeHelp t={t} />
 
       {/* ---- Latest tenders ---- */}
-      <section className="lp-section" aria-labelledby="tenders-title">
-        <div className="site-wrap">
-          <Heading id="tenders-title" kicker={t('site.lp.tendersKicker')} a={t('site.lp.tendersTitle')} sub={t('site.lp.tendersSub')}
-            action={<Link className="lp-link" to="/login">{t('site.lp.tendersAll')} <ArrowRight size={16} /></Link>} />
-          <div className="lp-tender-grid" aria-busy={loading}>
-            {loading
-              ? [0, 1, 2].map((i) => <div key={i} className="lp-tender lp-skeleton" aria-hidden="true"><i /><i /><i /><i /></div>)
-              : tenders.map((item, i) => <TenderCard key={item.id || item.title} item={item} lang={lang} t={t} tone={i % 3} />)}
-          </div>
-        </div>
-      </section>
+      <LatestTenders t={t} tenders={tenders} loading={loading} />
 
       {/* ---- Portal ---- */}
-      <section className="lp-portal" aria-labelledby="portal-title">
-        <div className="site-wrap lp-portal-grid">
-          <div>
-            <p className="lp-eyebrow">{t('site.lp.portalKicker')}</p>
-            <h2 id="portal-title">{t('site.lp.portalTitle')}</h2>
-            <p className="lp-portal-body">{t('site.lp.portalBody')}</p>
-            <ul className="lp-checks">
-              {t('site.portalPoints').map((point, i) => { const Icon = PORTAL_ICONS[i]; return <li key={point}><span><Icon size={17} /></span>{point}</li>; })}
-            </ul>
-            <div className="lp-cta">
-              <a className="btn btn-blue" href="#access">{t('site.lp.ctaAccess')} <ArrowRight size={16} /></a>
-              <Link className="btn btn-light" to="/login">{t('site.ctaPortal')}</Link>
-            </div>
-          </div>
-          <div className="lp-preview"><PortalPreview /></div>
-        </div>
-      </section>
+      <PortalShowcase t={t} />
 
 
       {/* ---- About ---- */}
-      <section id="about" className="lp-section" aria-labelledby="about-title">
-        <div className="site-wrap">
-          <div className="lp-about-intro">
-            <p className="lp-eyebrow">{t('site.lp.aboutKicker')}</p>
-            <h2 id="about-title">{t('site.lp.aboutTitle1')} <span>{t('site.lp.aboutTitle2')}</span></h2>
-            <p className="lp-lead lp-about-lead">{t('site.lp.aboutBody')}</p>
-          </div>
-          <div className="lp-about-grid">
-            {t('site.lp.aboutCards').map((card, i) => { const Icon = ABOUT_ICONS[i]; return (
-              <article key={card.title} className="lp-about-card"><span className="lp-ico lp-ico-soft"><Icon size={24} strokeWidth={1.7} /></span><h3>{card.title}</h3><p>{card.body}</p></article>
-            ); })}
-          </div>
-          <ul className="lp-about-stats">
-            {t('site.lp.aboutStats').map((s, i) => { const Icon = [FileText, MapPin, Landmark][i]; return (
-              <li key={s.label}><span className="lp-stat-ico"><Icon size={22} /></span><span><b>{s.n ?? SERVICE_COUNT}</b><small>{s.label}</small></span></li>
-            ); })}
-          </ul>
-        </div>
-      </section>
+      <AboutShanDeep t={t} />
 
       {/* ---- Departments: the list beside a big count, over the civic buildings ---- */}
       <section className="lp-dept2" aria-labelledby="dept-title">
-        <div className="site-wrap">
+        <div className="landing-container">
           <div className="lp-dept2-copy">
             <h2 id="dept-title">{t('site.lp.deptTitle')}</h2>
             <ul className="lp-dept2-list">{t('site.lp.depts').map((name) => <li key={name}>{name}</li>)}</ul>
@@ -357,10 +403,22 @@ export default function Home() {
         <div className="lp-dept2-art" aria-hidden="true"><span>{t('site.lp.depts').length}</span></div>
       </section>
 
+      {/* ---- Request access: Parliament behind the heading, the form on a white card ---- */}
+      <section className="lp-access2" id="access" aria-labelledby="access-title">
+        <div className="landing-container lp-access2-grid">
+          <div className="lp-access2-side">
+            <h2 id="access-title">{t('site.lp.accessTitle1')} <span>{t('site.lp.accessTitle2')}</span></h2>
+          </div>
+          <div className="lp-access2-form">
+            <EnquiryForm idPrefix="home" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.lp.submit')} rich />
+          </div>
+        </div>
+      </section>
+
       {/* ---- Contact: details on the left, Bhopal on the map ---- */}
       <section id="contact" className="lp-touch" aria-labelledby="contact-title">
         <div className="lp-touch-map" aria-hidden="true"><span className="lp-touch-pin">{t('site.lp.mapCity')}</span></div>
-        <div className="site-wrap">
+        <div className="landing-container">
           <h2 id="contact-title">{t('site.lp.contactHeading')}</h2>
           <ul className="lp-touch-list">
             <li>
@@ -380,16 +438,6 @@ export default function Home() {
             </li>
           </ul>
           <a className="lp-touch-btn" href="#access">{t('site.lp.cCallback')}</a>
-        </div>
-      </section>
-
-      {/* ---- Request access: Parliament on the left, the form on white ---- */}
-      <section className="lp-access2" id="access" aria-labelledby="access-title">
-        <div className="lp-access2-side">
-          <h2 id="access-title">{t('site.lp.accessTitle1')} <span>{t('site.lp.accessTitle2')}</span></h2>
-        </div>
-        <div className="lp-access2-form">
-          <EnquiryForm idPrefix="home" service={ACCESS_SERVICE} kind="access_request" sendLabel={t('site.lp.submit')} rich />
         </div>
       </section>
     </div>

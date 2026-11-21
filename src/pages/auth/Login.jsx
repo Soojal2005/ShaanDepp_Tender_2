@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { ErrorNote, Field } from '../../components/ui.jsx';
 import { useI18n } from '../../i18n/index.jsx';
@@ -12,6 +12,7 @@ export default function Login() {
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
 
@@ -52,8 +53,14 @@ export default function Login() {
         </Field>
         <Field label={t('auth.password')}>
           {(p) => (
-            <input {...p} className="input" type="password" autoComplete="current-password" required
-              value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('auth.passwordPh')} />
+            <div className="gate-pass">
+              <input {...p} className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" required
+                value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('auth.passwordPh')} />
+              <button type="button" className="gate-eye" aria-pressed={showPass} aria-label={showPass ? t('auth.hidePassword') : t('auth.showPassword')}
+                onClick={() => setShowPass(!showPass)}>
+                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           )}
         </Field>
         <div className="gate-row gate-row-forgot">

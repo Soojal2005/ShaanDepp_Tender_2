@@ -53,7 +53,7 @@ try {
   await cdp('Page.enable'); await cdp('Runtime.enable');
   await cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate();
-  await until('document.querySelectorAll(".lp-service").length === 8 && document.querySelectorAll(".lp-tender:not(.lp-skeleton)").length === 3');
+  await until('document.querySelectorAll(".svc-folder").length > 0 && document.querySelectorAll(".lp-tn-item").length === 3');
   await evaluate('localStorage.setItem("pb_lang", "EN")'); await navigate();
   await check('all eight service groups remain', 'document.querySelectorAll(".lp-service").length === 8');
   await check('services: one folder per group, only the first open, tapping a tab opens it in place', '(()=>{const f=[...document.querySelectorAll(".svc-folder")];const open=()=>f.filter(x=>x.classList.contains("is-open"));if(!f.length||open().length!==1||open()[0]!==f[0])return false;f[2].querySelector(".svc-tab").click();return true;})()');
@@ -69,7 +69,7 @@ try {
   await evaluate('document.querySelectorAll(".flow-step")[8].click()');
   await check('follow-up step works', 'document.querySelector(".flow-detail").textContent.includes("EMD refund")');
   await evaluate('document.querySelector("button[aria-controls=flow-panel]").click()');
-  await check('three sample cards are explicitly marked as samples', 'document.querySelectorAll(".lp-tender").length === 3 && [...document.querySelectorAll(".lp-sample")].every(e=>e.textContent.includes("Sample")) && document.querySelector("#tenders-title").closest("section").textContent.includes("Sample opportunities")');
+  await check('three sample tenders labelled illustrative, the second open with its photo', 'document.querySelectorAll(".lp-tn-item").length === 3 && document.querySelector("#tenders-title").closest("section").textContent.includes("Illustrative opportunities") && document.querySelectorAll(".lp-tn-item")[1].classList.contains("is-open")');
   await check('hero shows the search bar and its three filter pills', 'document.querySelector(".lp-hero .lp-search-row") && document.querySelectorAll(".lp-hero .lp-pill").length === 3');
   await check('the hero search sends a keyword into the sign-in redirect', '(()=>{const i=document.querySelector(".lp-search-field input");const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;set.call(i,"solar");i.dispatchEvent(new Event("input",{bubbles:true}));return typeof i.value==="string"&&i.value==="solar";})()');
   await check('header offers Request access and the Tender Portal', '["/request-access","/login"].every(h=>[...document.querySelectorAll(".site-nav-actions a")].some(a=>a.getAttribute("href")===h))');

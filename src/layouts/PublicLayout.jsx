@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowRight, Globe, Landmark, Mail, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react';
+import { ArrowUpRight, Globe, Mail, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react';
 import LangPill from '../components/LangPill.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { GROUPS } from '../content/services.js';
@@ -19,6 +19,8 @@ export default function PublicLayout() {
   // The header slides away while scrolling down and returns on any scroll up.
   // On the home page it is transparent over the hero and teal glass once scrolled.
   const isHome = pathname === '/';
+  // Pages that open on a full-bleed teal panel: the header floats over it, transparent until scrolled.
+  const isLanding = isHome || pathname === '/get-started';
   const [atTop, setAtTop] = useState(true);
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
@@ -53,30 +55,31 @@ export default function PublicLayout() {
   }, [pathname, hash]);
 
   // Services/About/Contact scroll to the matching section on the home page.
-  const links = [['/', 'home'], ['/#services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
+  // Services opens the services page; About and Contact scroll to their home sections.
+  const links = [['/', 'home'], ['/services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
   const waHref = whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') }));
   return (
-    <div className={`site ${isHome || pathname === '/get-started' ? 'site-landing' : ''} ${isHome ? 'site-is-home' : ''}`}>
+    <div className={`site ${isLanding ? 'site-landing site-is-home' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
-      <header className={`site-header ${isHome ? 'is-over-hero' : ''} ${isHome && !atTop ? 'is-scrolled' : ''} ${hidden && !open ? 'is-hidden' : ''}`}>
-        <div className="site-wrap site-header-row">
+      {/* One teal header everywhere: transparent over a landing hero until scrolled, solid elsewhere. */}
+      <header className={`site-header is-over-hero ${!isLanding || !atTop ? 'is-scrolled' : ''} ${hidden && !open ? 'is-hidden' : ''}`}>
+        <div className="site-wrap site-header-row landing-container">
           <Link to="/" className="site-brand" aria-label={t('site.brand')}>
-            <span className="site-logo"><Landmark size={24} /></span>
-            <span><b>{t('brand.name')}</b><small>{t('site.brand')}</small></span>
+            <span><b>{t('brand.name')}</b><small>{t('site.lp.footerSub')}</small></span>
           </Link>
           <button type="button" className="site-menu-btn" aria-label={t('site.nav.menu')} aria-expanded={open} aria-controls="public-navigation" onClick={() => setOpen(!open)}>{open ? <X size={22} /> : <Menu size={22} />}</button>
           <nav id="public-navigation" className={`site-nav ${open ? 'open' : ''}`} aria-label="Main" onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}>
             <div className="site-nav-links">
               {links.map(([to, key]) => {
-                const active = pathname === '/' && (to === '/' ? !hash : hash === to.slice(1));
+                const active = (pathname === '/' && (to === '/' ? !hash : hash === to.slice(1))) || (key === 'services' && pathname.startsWith('/services'));
                 return <Link key={to} to={to} className={active ? 'active' : undefined}>{t(`site.nav.${key}`)}</Link>;
               })}
             </div>
             <div className="site-nav-actions">
-              <LangPill />
+              <LangPill full />
               {authed
-                ? <Link className="btn btn-dark btn-sm" to="/app/dashboard">{t('site.nav.dashboard')} <ArrowRight size={15} /></Link>
-                : <Link className="btn btn-dark btn-sm" to="/get-started">{t('site.nav.getStarted')} <ArrowRight size={15} /></Link>}
+                ? <Link className="btn btn-dark btn-sm" to="/app/dashboard">{t('site.nav.dashboard')} <ArrowUpRight size={16} /></Link>
+                : <Link className="btn btn-dark btn-sm" to="/get-started">{t('site.nav.getStarted')} <ArrowUpRight size={16} /></Link>}
             </div>
           </nav>
         </div>
@@ -87,7 +90,7 @@ export default function PublicLayout() {
       <footer className="site-footer">
         {/* Brand and link columns above the Raisina skyline (public/images/wfooter.webp). */}
         <div className="site-footer-sky">
-          <div className="site-wrap site-footer-main">
+          <div className="site-wrap landing-container site-footer-main">
             <div className="site-footer-brand">
               <Link to="/" className="site-footer-logo"><b>{t('brand.name')}</b><span>{t('site.lp.footerSub')}</span></Link>
               {/* Registration details stay on every page. */}
@@ -130,7 +133,7 @@ export default function PublicLayout() {
 
         {/* Bottom bar */}
         <div className="site-footer-bar">
-          <div className="site-wrap site-copy">
+          <div className="site-wrap landing-container site-copy">
             <span>© {new Date().getFullYear()} {t('site.brand')}</span>
             <nav className="site-legal" aria-label="Legal">
               <Link to="/privacy">{t('site.lp.legal.privacy')}</Link>
@@ -140,7 +143,7 @@ export default function PublicLayout() {
             </nav>
             <LangPill />
           </div>
-          <p className="site-wrap site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
+          <p className="site-wrap landing-container site-footer-note"><Globe size={13} aria-hidden="true" /> {t('site.footerNote')}</p>
         </div>
       </footer>
     </div>

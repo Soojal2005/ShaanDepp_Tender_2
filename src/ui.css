@@ -303,7 +303,7 @@ a.sidebar-link-btn { text-decoration: none; }
 /* Right: form panel */
 .gate-main { display: flex; flex-direction: column; min-width: 0; padding: 32px clamp(28px, 4.5vw, 64px); }
 .gate-main-top { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
-.gate-form-wrap { flex: 1; display: flex; align-items: center; padding: 24px 0 40px; }
+.gate-form-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 0 40px; }
 .gate-card { width: 100%; max-width: 470px; font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
 .gate-card h2 { margin: 0 0 34px; font-family: var(--g-serif); font-size: clamp(44px, 4.2vw, 64px); font-weight: 600; line-height: 1; letter-spacing: -.02em; color: var(--g-ink); }
 .gate-sub { margin: -18px 0 28px; font-size: 15px; line-height: 1.55; color: #4E6B6B; }
@@ -318,6 +318,12 @@ a.sidebar-link-btn { text-decoration: none; }
 .gate-card .input::placeholder { color: #7A8A87; }
 .gate-card .input:focus { outline: none; border-bottom-color: var(--g-ink); box-shadow: 0 2px 0 0 var(--g-ink); }
 
+/* show/hide password */
+.gate-pass { position: relative; }
+.gate-pass .input { padding-right: 44px; }
+.gate-eye { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 40px; border: 0; background: none; color: var(--g-ink); cursor: pointer; border-radius: 6px; }
+.gate-eye:hover { background: rgba(22, 75, 78, .06); }
+.gate-eye:focus-visible { outline: 2px solid var(--g-ink); outline-offset: 1px; }
 .gate-row { display: flex; justify-content: flex-end; margin: 22px 0 0; font-size: 15.5px; }
 .gate-row-forgot { margin: -14px 0 30px; }
 .gate-card a, .gate-card .link-btn { color: var(--g-ink); font-weight: 500; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
@@ -344,16 +350,23 @@ a.sidebar-link-btn { text-decoration: none; }
 .gate .lang-btn.active { background: transparent; box-shadow: none; opacity: 1; font-weight: 600; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .gate .lang-btn + .lang-btn { border-left: 1.5px solid rgba(22, 75, 78, .45); }
 
-/* Tablet & phone: the engraving becomes a band above the form */
+/* Tablet & phone: a short engraving band with a small italic wordmark and the language switch over its sky; white form below */
 @media (max-width: 860px) {
-  .gate { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .gate-aside { min-height: 300px; padding: 28px 22px; background-position: 70% 100%; }
-  .gate-aside::before { height: 70%; }
-  .gate-mark b { font-size: 48px; }
-  .gate-mark span { font-size: 13px; letter-spacing: .2em; }
-  .gate-main { padding: 20px 22px 32px; }
-  .gate-main-top { position: absolute; top: 18px; right: 18px; }
-  .gate-form-wrap { padding: 8px 0 0; }
+  .gate { grid-template-columns: 1fr; grid-template-rows: auto 1fr; position: relative; background: #FFFFFF; }
+  .gate-aside { min-height: 0; height: clamp(180px, 50vw, 300px); padding: 16px 18px; background: #F3EFE4 url('/images/auth-mobile.webp') center 40% / cover no-repeat; }
+  .gate-aside::before { height: 55%; background: linear-gradient(180deg, rgba(246, 243, 235, .85), rgba(246, 243, 235, 0)); }
+  .gate-mark b { font-size: 22px; font-style: italic; font-weight: 500; letter-spacing: 0; }
+  .gate-mark span { display: none; }
+  .gate-main { padding: 26px 18px 36px; background: #FFFFFF; }
+  .gate-main-top { position: absolute; top: 10px; right: 10px; }
+  .gate .lang-btn { padding: 2px 8px; font-size: 15px; }
+  .gate-form-wrap { padding: 0; align-items: flex-start; }
   .gate-card { max-width: none; }
-  .gate-card h2 { margin-bottom: 26px; }
+  .gate-card h2 { margin-bottom: 24px; font-size: 44px; }
+  .gate-card .field { margin-bottom: 22px; }
+  .gate-card .field label { font-size: 16px; font-weight: 500; }
+  .gate-card .input { font-size: 16px; }
+  .gate-row-forgot { margin: -10px 0 30px; font-size: 14px; }
+  .gate-card .btn-primary { height: 52px; font-size: 22px; font-weight: 600; }
+  .gate-alt { margin-top: 24px; font-size: 16px; }
 }

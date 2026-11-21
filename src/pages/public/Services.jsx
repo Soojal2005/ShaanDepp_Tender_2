@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ChevronRight, Search } from 'lucide-react';
+import { describe } from '../../content/serviceDescriptions.js';
 import { GROUPS, findGroup, findItem, itemsOf, leadFor } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
 import EnquiryForm, { ContactButtons } from '../../site/EnquiryForm.jsx';
@@ -16,40 +17,87 @@ const Crumbs = ({ items }) => (
   </nav>
 );
 
+/** One service in the two-column list: name, one-line description, arrow. */
+function ServiceRow({ g, i, L, lang, showGroup }) {
+  return (
+    <li>
+      <Link className="svb-item" to={`/services/${g.slug}/${i.slug}`}>
+        <span>
+          <b>{i[L]}</b>
+          <small>{showGroup ? `${g.title[L]} · ` : ''}{describe(g.slug, i.slug, lang)}</small>
+        </span>
+        <ArrowRight size={20} aria-hidden="true" />
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * Our services: the groups down a teal sidebar, the chosen group's services in two columns on white.
+ * The group lives in the URL (?group=…) so it can be shared and the back button works. Search covers
+ * every group, by name or description.
+ */
 export function ServicesIndex() {
   const { t, lang } = useI18n();
   const L = lang === 'HI' ? 'hi' : 'en';
+  const [params] = useSearchParams();
   const [text, setText] = useState('');
   useSeo({ title: t('site.seo.servicesTitle'), description: t('site.servicesSub'), path: '/services' });
+  const active = findGroup(params.get('group')) ?? GROUPS[0];
+  // On phones the groups are a sideways strip: keep the chosen one in view.
+  const strip = useRef(null);
+  useEffect(() => {
+    const ul = strip.current; const on = ul?.querySelector('.is-on');
+    if (ul && on && ul.scrollWidth > ul.clientWidth) ul.scrollLeft = on.offsetLeft - (ul.clientWidth - on.offsetWidth) / 2;
+  }, [active.slug]);
   const needle = text.trim().toLowerCase();
   const matches = useMemo(() => (needle
-    ? GROUPS.flatMap((g) => itemsOf(g).filter((i) => `${i.en} ${i.hi}`.toLowerCase().includes(needle)).map((i) => ({ g, i })))
+    ? GROUPS.flatMap((g) => itemsOf(g)
+      .filter((i) => `${i.en} ${i.hi} ${describe(g.slug, i.slug, 'EN')} ${describe(g.slug, i.slug, 'HI')}`.toLowerCase().includes(needle))
+      .map((i) => ({ g, i })))
     : []), [needle]);
+
   return (
-    <div className="site-wrap site-page">
-      <Crumbs items={[{ label: t('site.nav.home'), to: '/' }, { label: t('site.servicesPageTitle') }]} />
-      <h1>{t('site.servicesPageTitle')}</h1>
-      <p className="site-sub">{t('site.servicesPageSub')}</p>
-      <input className="input site-search" type="search" aria-label={t('site.search')} placeholder={t('site.search')} value={text} onChange={(e) => setText(e.target.value)} />
-      {needle ? (
-        matches.length === 0 ? <p>{t('site.noMatch')}</p> : (
-          <ul className="site-result-list">
-            {matches.map(({ g, i }) => <li key={`${g.slug}/${i.slug}`}><Link to={`/services/${g.slug}/${i.slug}`}><b>{i[L]}</b><span>{g.title[L]}</span></Link></li>)}
+    <div className="svb">
+      <div className="landing-container svb-frame">
+        <div className="svb-head">
+          <h1>{t('site.servicesPageTitle')}</h1>
+          <label className="svb-search">
+            <Search size={20} aria-hidden="true" />
+            <input type="search" aria-label={t('site.search')} placeholder={t('site.search')} value={text} onChange={(e) => setText(e.target.value)} />
+          </label>
+        </div>
+        <nav className="svb-side" aria-label={t('site.servicesPageTitle')}>
+          <ul ref={strip}>
+            {GROUPS.map((g) => {
+              const Icon = GROUP_ICONS[g.icon];
+              const on = !needle && g === active;
+              return (
+                <li key={g.slug}>
+                  <Link to={{ search: `?group=${g.slug}` }} replace className={on ? 'is-on' : undefined} aria-current={on ? 'page' : undefined} onClick={() => setText('')}>
+                    <Icon size={22} strokeWidth={1.6} aria-hidden="true" /><span>{g.title[L]}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
-        )
-      ) : (
-        GROUPS.map((g) => {
-          const Icon = GROUP_ICONS[g.icon];
-          return (
-            <section key={g.slug} className="site-index-group">
-              <h2><span className="site-group-icon sm"><Icon size={18} /></span><Link to={`/services/${g.slug}`}>{g.title[L]}</Link></h2>
-              <ul className="site-chip-list">
-                {itemsOf(g).map((i) => <li key={i.slug}><Link to={`/services/${g.slug}/${i.slug}`}>{i[L]}</Link></li>)}
-              </ul>
-            </section>
-          );
-        })
-      )}
+        </nav>
+        <section className="svb-body" aria-live="polite">
+          {needle ? (
+            <>
+              <h2>{t('site.search')}: “{text.trim()}”</h2>
+              {matches.length === 0
+                ? <p className="svb-empty">{t('site.noMatch')}</p>
+                : <ul className="svb-list">{matches.map(({ g, i }) => <ServiceRow key={`${g.slug}/${i.slug}`} g={g} i={i} L={L} lang={lang} showGroup />)}</ul>}
+            </>
+          ) : (
+            <>
+              <h2><Link to={`/services/${active.slug}`}>{active.title[L]}</Link></h2>
+              <ul className="svb-list">{itemsOf(active).map((i) => <ServiceRow key={i.slug} g={active} i={i} L={L} lang={lang} />)}</ul>
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

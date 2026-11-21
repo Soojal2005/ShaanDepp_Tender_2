@@ -37,7 +37,7 @@ export default {
     asideTitle: 'Win more government tenders.',
     asidePoints: ['Daily alerts matched to your categories and states', 'Search, results analytics and upcoming projects', 'A desk that helps you prepare and submit bids'],
     newHere: 'New to Shan-Deep?', or: 'or',
-    email: 'Work email', password: 'Password', forgot: 'Forgot password?', emailPh: 'Enter your work email', passwordPh: 'Enter your password',
+    email: 'Work email', password: 'Password', forgot: 'Forgot password?', emailPh: 'Enter your work email', passwordPh: 'Enter your password', showPassword: 'Show password', hidePassword: 'Hide password',
     noAccount: 'Do not have an account?', requestAccess: 'Request access',
     signIn: 'Sign in', signingIn: 'Signing in...',
     invalidCredentials: 'Invalid email or password.',
@@ -237,7 +237,7 @@ export default {
         { n: '100%', label: 'Compliance Focus' },
       ],
       // Latest tenders
-      tendersKicker: 'Live from the portal', tendersTitle: 'Latest government tenders', tendersSub: 'Sample opportunities from central, state and other government departments.',
+      tendersKicker: 'Live from the portal', tendersTitle: 'Latest government tenders', tendersSub: 'Illustrative opportunities', colTender: 'Tender', colState: 'State', colValue: 'Value',
       tendersAll: 'View all tenders', deadline: 'Deadline', refNo: 'Ref No', valueNA: 'Value not published', sample: 'Sample', noDeadline: 'Illustrative example',
       samples: [
         { title: 'Supply of IT Equipment for Government Schools', department: 'Ministry of Education', state: 'Delhi', value: 24000000 },
@@ -260,7 +260,7 @@ export default {
       // Portal
       statusCol: 'Status',
       portalStatus: ['Open', 'Closing', 'New'],
-      portalKicker: 'The Shan-Deep tender portal', portalTitle: 'One workspace for every tender',
+      portalKicker: 'The Shan-Deep tender portal', portalTabs: ['Ranked alerts', 'Search', 'Results & rates', 'Submission desk'], live: 'Live', portalTitle: 'One workspace for every tender',
       portalBody: 'Subscribers get daily ranked alerts, search across departments and states, results and rate analysis, a weekly report and a submission desk that prepares and files the bid.',
       // How we help
       helpKicker: 'How it works', processPre: 'How we help you ', processMark: 'win', processPost: '', processAll: 'View detailed process', processHide: 'Hide detailed process',
@@ -281,7 +281,7 @@ export default {
         ],
       },
       // About
-      aboutKicker: 'About Us', aboutTitle1: 'About', aboutTitle2: 'Shan-Deep',
+      aboutHeading: 'About Shan-Deep', aboutShort: 'Based in Bhopal, Shan-Deep Management Advisory helps Indian businesses find government tenders, assess eligibility and prepare bids.', aboutFocus: ['Tender intelligence', 'Compliance guidance', 'Submission support'], aboutExplore: 'Explore our services', aboutKicker: 'About Us', aboutTitle1: 'About', aboutTitle2: 'Shan-Deep',
       aboutBody: 'Shan-Deep Management Advisory helps Indian businesses find and win government tenders with expert advisory, end-to-end compliance support and practical, hands-on guidance across the entire bid lifecycle.',
       aboutCards: [
         { title: 'Government Tender Intelligence', body: 'Discover relevant tenders across central, state and other government departments with curated insights.' },
