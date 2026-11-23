@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowRight, Briefcase, Building2, CheckCircle2, Hash, Mail, MapPin, MessageCircle, MessageSquare, Phone, User } from 'lucide-react';
+import { ArrowRight, Briefcase, Building2, CheckCircle2, Hash, Mail, MapPin, MessageCircle, MessageSquare, Phone, Tags, User } from 'lucide-react';
 import { Button, ErrorNote, Field } from '../components/ui.jsx';
+import { INDUSTRIES } from '../content/industries.js';
 import { useI18n } from '../i18n/index.jsx';
 import { api } from '../lib/api.js';
 import { useAction } from '../lib/hooks.js';
@@ -44,7 +45,7 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
   const { pending, run } = useAction();
   // Registering "as a company" (access_request) also captures the company's identity.
   const isAccess = kind === 'access_request';
-  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '', gstin: '', address: '', city: '', state: '', industry: '', otp: '' };
+  const blank = { name: '', company: '', email: '', phone: '', message: '', consent: false, website: '', gstin: '', address: '', city: '', state: '', industry: '', keywords: '', otp: '' };
   const [form, setForm] = useState(blank);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
@@ -99,7 +100,7 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
     const out = await run(() => api.post('/public/enquiries', {
       name: form.name.trim(), company: form.company.trim(), email: form.email.trim(), phone: form.phone.trim() || undefined,
       service: service || undefined, kind, message: form.message.trim() || undefined, language: lang, consent: form.consent, website: form.website,
-      ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry'), otp: form.otp.trim() }),
+      ...(isAccess && { gstin: trimmed('gstin'), address: trimmed('address'), city: trimmed('city'), state: trimmed('state'), industry: trimmed('industry'), keywords: trimmed('keywords'), otp: form.otp.trim() }),
     }));
     if (out.ok) { setDone(true); setForm(blank); setOtpSent(false); setEmailVerified(false); } else setError(out.error);
   };
@@ -156,10 +157,17 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
           <div className="site-form-grid">
             <IconField label={t('site.f.city')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-city`} aria-label={t('site.f.city')} placeholder={ph('city')} className="input" required maxLength={100} autoComplete="address-level2" value={form.city} onChange={set('city')} />}</IconField>
             <IconField label={t('site.f.state')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-state`} aria-label={t('site.f.state')} placeholder={ph('state')} className="input" required maxLength={100} autoComplete="address-level1" value={form.state} onChange={set('state')} />}</IconField>
-            <IconField label={t('site.f.industry')} required icon={rich ? Briefcase : null}>{(p) => <input {...p} id={`${idPrefix}-industry`} aria-label={t('site.f.industry')} placeholder={ph('industry')} className="input" required maxLength={120} value={form.industry} onChange={set('industry')} />}</IconField>
+            <IconField label={t('site.f.industry')} required icon={rich ? Briefcase : null}>{(p) => (
+              <select {...p} id={`${idPrefix}-industry`} aria-label={t('site.f.industry')} className="input" required value={form.industry} onChange={set('industry')}>
+                <option value="" disabled>{t('site.f.industrySelect')}</option>
+                {INDUSTRIES.map((it) => <option key={it.value} value={it.value}>{lang === 'HI' ? it.hi : it.value}</option>)}
+              </select>
+            )}</IconField>
             <IconField label={t('site.f.gstin')} optional={t('common.optional')} icon={rich ? Hash : null}>{(p) => <input {...p} id={`${idPrefix}-gstin`} aria-label={t('site.f.gstin')} placeholder={ph('gstin')} className="input" maxLength={15} style={{ textTransform: 'uppercase' }} value={form.gstin} onChange={set('gstin')} />}</IconField>
           </div>
           <IconField label={t('site.f.address')} optional={t('common.optional')} icon={rich ? Building2 : null}>{(p) => <input {...p} id={`${idPrefix}-address`} aria-label={t('site.f.address')} placeholder={ph('address')} className="input" maxLength={300} autoComplete="street-address" value={form.address} onChange={set('address')} />}</IconField>
+          <IconField label={t('site.f.keywords')} optional={t('common.optional')} icon={rich ? Tags : null}>{(p) => <textarea {...p} id={`${idPrefix}-keywords`} aria-label={t('site.f.keywords')} placeholder={ph('keywords')} className="input textarea" rows={2} maxLength={1000} value={form.keywords} onChange={set('keywords')} />}</IconField>
+          <p className="cell-sub" style={{ margin: '-6px 0 2px' }}>{t('site.f.keywordsHint')}</p>
         </>
       )}
       <IconField label={t('site.f.message')} required={rich} optional={rich ? undefined : t('common.optional')} icon={rich ? MessageSquare : null}>{(p) => <textarea {...p} id={`${idPrefix}-message`} aria-label={t('site.f.message')} placeholder={ph('message')} className="input textarea" rows={4} maxLength={MESSAGE_MAX} value={form.message} onChange={set('message')} />}</IconField>

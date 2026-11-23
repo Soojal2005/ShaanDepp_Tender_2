@@ -16,7 +16,7 @@ import { queueInvite } from './accountEmails.js';
 
 const ORG_SELECT = `
   SELECT o.id, o.name, o.domain, o.gstin, o.contact_name, o.contact_phone,
-         o.address, o.city, o.state, o.industry, o.status, o.is_staff_org,
+         o.address, o.city, o.state, o.industry, o.keywords, o.status, o.is_staff_org,
          o.language, o.created_at, o.plan_id, o.alert_cap_override, o.seat_limit_override,
          p.code AS plan_code, p.name AS plan_name,
          coalesce(o.alert_cap_override, p.daily_alert_cap) AS alert_cap,
@@ -37,6 +37,7 @@ export const orgView = (r) => ({
   city: r.city,
   state: r.state,
   industry: r.industry,
+  keywords: r.keywords,
   status: r.status,
   isStaffOrg: r.is_staff_org,
   language: r.language,
@@ -58,6 +59,8 @@ export const memberView = (u) => ({
   role: u.role,
   isActive: u.is_active,
   language: u.language,
+  industry: u.industry ?? null,
+  keywords: u.keywords ?? null,
   lastLoginAt: u.last_login_at,
   createdAt: u.created_at,
 });
@@ -77,7 +80,7 @@ export async function listOrganizations(q) {
 
 export async function listMembers(q, orgId) {
   const rows = await q.many(
-    `SELECT id, name, email, phone, role, is_active, language, last_login_at, created_at
+    `SELECT id, name, email, phone, role, is_active, language, industry, keywords, last_login_at, created_at
        FROM users WHERE organization_id = $1 ORDER BY is_active DESC, name`,
     [orgId]
   );
@@ -105,7 +108,7 @@ function assertSeatAvailable(org) {
 }
 
 /** Create a user for an organization and email them a link to set their password. */
-export async function inviteMember(q, actor, orgId, { name, email, phone = null, role, language = null }) {
+export async function inviteMember(q, actor, orgId, { name, email, phone = null, role, language = null, industry = null, keywords = null }) {
   const org = await getOrganization(q, orgId, { lock: true });
   if (!org) throw notFound('Organization not found');
   if (org.status === 'Suspended') throw conflict('This organization is suspended');
@@ -116,9 +119,9 @@ export async function inviteMember(q, actor, orgId, { name, email, phone = null,
   if (taken) throw conflict('A user with this email address already exists');
 
   const user = await q.one(
-    `INSERT INTO users (organization_id, name, email, phone, role, language)
-     VALUES ($1, $2, $3, $4, $5, coalesce($6, $7)) RETURNING *`,
-    [orgId, name, email, phone, role, language, org.language]
+    `INSERT INTO users (organization_id, name, email, phone, role, language, industry, keywords)
+     VALUES ($1, $2, $3, $4, $5, coalesce($6, $7), $8, $9) RETURNING *`,
+    [orgId, name, email, phone, role, language, org.language, industry, keywords]
   );
   await q.query('INSERT INTO user_credentials (user_id, password_hash) VALUES ($1, $2)', [
     user.id,
@@ -187,17 +190,22 @@ export async function createOrganization(q, actor, input) {
   if (input.planCode && !plan) throw badRequest(`Unknown plan: ${input.planCode}`);
 
   const org = await q.one(
-    `INSERT INTO organizations (name, domain, gstin, contact_name, contact_phone, address, city, state, industry, plan_id, language, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Active') RETURNING id`,
+    `INSERT INTO organizations (name, domain, gstin, contact_name, contact_phone, address, city, state, industry, keywords, plan_id, language, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active') RETURNING id`,
     [input.name, input.domain ?? null, input.gstin ?? null, input.contactName ?? null,
      input.contactPhone ?? null, input.address ?? null, input.city ?? null, input.state ?? null,
-     input.industry ?? null, plan?.id ?? null, input.language ?? 'EN']
+     input.industry ?? null, input.keywords ?? null, plan?.id ?? null, input.language ?? 'EN']
   );
   await audit(q, actor, 'org.create', 'organization', org.id, { name: input.name, plan: input.planCode ?? null });
 
   let admin = null;
   if (input.admin) {
-    admin = await inviteMember(q, actor, org.id, { ...input.admin, role: 'tenant_admin', language: input.language });
+    // The first account is the organization admin by default; an access-request
+    // approval may instead register the person as a subscriber (or other role).
+    admin = await inviteMember(q, actor, org.id, {
+      ...input.admin, role: input.adminRole ?? 'tenant_admin', language: input.language,
+      industry: input.industry ?? null, keywords: input.keywords ?? null,
+    });
   }
   return { organization: orgView(await getOrganization(q, org.id)), admin };
 }

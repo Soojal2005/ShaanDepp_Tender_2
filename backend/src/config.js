@@ -214,6 +214,12 @@ function load(env) {
       throw new Error('MAIL_MODE=live with MAIL_TRANSPORT=graph needs AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET and GRAPH_SENDER_MAILBOX.');
     }
   }
+  // Password-reset and invitation emails embed PUBLIC_BASE_URL. If live mail goes
+  // out while it still points at localhost, every "set your password" link is dead
+  // for the recipient, so refuse to start rather than send broken links.
+  if (c.MAIL_MODE === 'live' && /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/|$)/i.test(c.PUBLIC_BASE_URL)) {
+    throw new Error('MAIL_MODE=live requires PUBLIC_BASE_URL to be the public site URL (e.g. https://www.procure-brain.in). It still points at localhost, so password-reset and invitation links in emails would not work for recipients.');
+  }
   if (c.TENDERBOOK_SYNC && !c.TENDERBOOK_API_KEY) {
     throw new Error('TENDERBOOK_SYNC=on needs TENDERBOOK_API_KEY.');
   }

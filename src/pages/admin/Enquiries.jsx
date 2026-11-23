@@ -2,15 +2,125 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Mail, MessageCircle, Phone, UserPlus } from 'lucide-react';
 import { can, useAuth } from '../../auth/AuthContext.jsx';
-import { Badge, Button, Card, Empty, ErrorNote, Field, Loading, PageHeader } from '../../components/ui.jsx';
+import { Badge, Button, Card, Empty, ErrorNote, Field, Loading, Modal, PageHeader } from '../../components/ui.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { api } from '../../lib/api.js';
 import { formatDateTime } from '../../lib/format.js';
-import { useAsync } from '../../lib/hooks.js';
-import { NewOrganization } from './Organizations.jsx';
+import { useAction, useAsync } from '../../lib/hooks.js';
 
 const STATUSES = ['New', 'Contacted', 'Qualified', 'Closed'];
 const tone = { New: 'blue', Contacted: 'amber', Qualified: 'green', Converted: 'green', Closed: 'slate' };
+
+// What role the admin can grant when approving a request. Staff roles land in the Shan-Deep staff organization.
+const STAFF_ROLES = ['analyst', 'case_manager', 'platform_admin'];
+const ROLE_OPTIONS = [
+  { value: 'subscriber', label: 'Subscriber (client user)' },
+  { value: 'tenant_admin', label: 'Organization admin (client)' },
+  { value: 'analyst', label: 'Analyst (Shan-Deep staff)' },
+  { value: 'case_manager', label: 'Case manager (Shan-Deep staff)' },
+  { value: 'platform_admin', label: 'Platform admin (Shan-Deep staff)' },
+];
+
+/** Approve an access request: create the person's login with a chosen role and target organization. */
+function ApproveModal({ enquiry, plans, onClose, onApproved }) {
+  const { pending, run } = useAction();
+  const [error, setError] = useState(null);
+  const [role, setRole] = useState('subscriber');
+  const [target, setTarget] = useState('new_org');
+  const [orgId, setOrgId] = useState('');
+  const [planCode, setPlanCode] = useState(plans[0]?.code ?? '');
+  const [orgName, setOrgName] = useState(enquiry.company);
+  const [name, setName] = useState(enquiry.name);
+  const [personEmail, setPersonEmail] = useState(enquiry.email);
+  const orgs = useAsync(async () => (await api.get('/admin/organizations')).organizations, []);
+  const isStaff = STAFF_ROLES.includes(role);
+  const clientOrgs = (orgs.data ?? []).filter((o) => !o.isStaffOrg);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    const body = { role, name: name.trim(), email: personEmail.trim() };
+    if (!isStaff) {
+      body.target = target;
+      if (target === 'existing_org') body.orgId = Number(orgId);
+      else { body.orgName = orgName.trim(); body.planCode = planCode; }
+    }
+    const result = await run(() => api.post(`/admin/enquiries/${enquiry.id}/approve`, body));
+    if (!result.ok) return setError(result.error);
+    onApproved(result.value);
+  };
+
+  const canSubmit = name.trim() && personEmail.trim()
+    && (isStaff || (target === 'existing_org' ? orgId : orgName.trim() && planCode));
+
+  return (
+    <Modal
+      wide
+      title="Approve access request"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="approve-form" pending={pending} disabled={!canSubmit}>Approve and send invite</Button>
+        </>
+      }
+    >
+      <ErrorNote error={error} />
+      <div className="note note-info">The person gets an email to set their password. Company details from the request are carried over, and a starter alert profile is built from their industry and keywords.</div>
+      <form id="approve-form" onSubmit={submit}>
+        <div className="form-grid">
+          <Field label="Register as (role)">
+            {(p) => (
+              <select {...p} className="select" value={role} onChange={(e) => setRole(e.target.value)}>
+                {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            )}
+          </Field>
+          {!isStaff && (
+            <Field label="Add to">
+              {(p) => (
+                <select {...p} className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
+                  <option value="new_org">A new organization</option>
+                  <option value="existing_org">An existing organization</option>
+                </select>
+              )}
+            </Field>
+          )}
+          {!isStaff && target === 'new_org' && (
+            <>
+              <Field label="Organization name">{(p) => <input {...p} className="input" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />}</Field>
+              <Field label="Plan">
+                {(p) => (
+                  <select {...p} className="select" value={planCode} onChange={(e) => setPlanCode(e.target.value)}>
+                    {plans.filter((pl) => pl.is_active).map((pl) => <option key={pl.code} value={pl.code}>{pl.name} ({pl.daily_alert_cap} alerts/day)</option>)}
+                  </select>
+                )}
+              </Field>
+            </>
+          )}
+          {!isStaff && target === 'existing_org' && (
+            <Field label="Organization">
+              {(p) => (
+                <select {...p} className="select" value={orgId} onChange={(e) => setOrgId(e.target.value)} required>
+                  <option value="" disabled>{orgs.loading ? 'Loading…' : 'Select organization'}</option>
+                  {clientOrgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              )}
+            </Field>
+          )}
+        </div>
+        {isStaff && <p className="cell-sub" style={{ margin: '0 0 10px' }}>Staff roles are added to the Shan-Deep staff organization.</p>}
+        <h4 style={{ margin: '6px 0 10px', fontSize: 13 }}>Person</h4>
+        <div className="form-grid">
+          <Field label="Name">{(p) => <input {...p} className="input" value={name} onChange={(e) => setName(e.target.value)} required />}</Field>
+          <Field label="Email" hint="They receive a link to set their password.">
+            {(p) => <input {...p} className="input" type="email" value={personEmail} onChange={(e) => setPersonEmail(e.target.value)} required />}
+          </Field>
+        </div>
+      </form>
+    </Modal>
+  );
+}
 
 const COPY = {
   general: {
@@ -91,8 +201,8 @@ function EnquiryCard({ enquiry, kind, canConvert, onConvert, onChanged }) {
             </>
           ) : canConvert ? (
             <>
-              <span>Ready to onboard? Create the organization and we email {enquiry.name} an invitation.</span>
-              <Button size="sm" disabled={busy || enquiry.status === 'Closed'} onClick={() => onConvert(enquiry)}><UserPlus size={13} />Create organization</Button>
+              <span>Ready to onboard? Approve this request, choose their role, and we email {enquiry.name} an invitation.</span>
+              <Button size="sm" disabled={busy || enquiry.status === 'Closed'} onClick={() => onConvert(enquiry)}><UserPlus size={13} />Approve &amp; create account</Button>
             </>
           ) : (
             <span>An administrator creates the organization once this request is qualified.</span>
@@ -156,15 +266,16 @@ export default function Enquiries({ kind = 'general' }) {
         <EnquiryCard key={`${e.id}-${e.status}`} enquiry={e} kind={kind} canConvert={canConvert && Boolean(plans.data)} onConvert={setConverting} onChanged={enquiries.reload} />
       ))}
       {converting && plans.data && (
-        <NewOrganization
+        <ApproveModal
+          enquiry={converting}
           plans={plans.data}
-          fromEnquiryId={converting.id}
-          prefill={{
-            name: converting.company, contactName: converting.name, contactPhone: converting.phone ?? '',
-            language: converting.language, adminName: converting.name, adminEmail: converting.email,
-          }}
           onClose={() => setConverting(null)}
-          onCreated={(org) => { setConverting(null); toast.success(`${org.name} created. An invitation email has been queued.`); navigate(`/app/admin/organizations/${org.id}`); }}
+          onApproved={({ organization }) => {
+            setConverting(null);
+            enquiries.reload();
+            if (organization) { toast.success(`${organization.name}: invitation email queued.`); navigate(`/app/admin/organizations/${organization.id}`); }
+            else toast.success('Account created. An invitation email has been queued.');
+          }}
         />
       )}
     </>

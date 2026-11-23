@@ -34,6 +34,31 @@ export function dashboardRoutes() {
           `SELECT count(DISTINCT i.tender_id)::int AS n
              FROM alert_digest_items i JOIN alert_digests d ON d.id = i.digest_id
             WHERE i.in_digest AND NOT d.is_test AND d.generated_at >= now() - interval '7 days'`);
+        // Matches for THIS subscriber's own alert profiles (keywords + industry they registered with).
+        const myMatched = await q.one(
+          `SELECT count(DISTINCT i.tender_id)::int AS n
+             FROM alert_digest_items i
+             JOIN alert_digests d ON d.id = i.digest_id
+             JOIN alert_profiles p ON p.id = d.profile_id
+            WHERE i.in_digest AND NOT d.is_test AND p.user_id = $1
+              AND d.generated_at >= now() - interval '7 days'`, [userId]);
+        const myMatchTenders = await q.many(
+          `SELECT t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
+                  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
+                  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
+                  true AS in_digest,
+                  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted
+             FROM tenders t
+             JOIN (SELECT i.tender_id, max(d.generated_at) AS matched_at
+                     FROM alert_digest_items i
+                     JOIN alert_digests d ON d.id = i.digest_id
+                     JOIN alert_profiles p ON p.id = d.profile_id
+                    WHERE i.in_digest AND NOT d.is_test AND p.user_id = $1
+                      AND d.generated_at >= now() - interval '21 days'
+                    GROUP BY i.tender_id) mm ON mm.tender_id = t.id
+            WHERE ${OPEN}
+            ORDER BY mm.matched_at DESC, t.submission_deadline NULLS LAST
+            LIMIT 6`, [userId]);
 
         const byDepartment = await q.many(`
           SELECT t.department AS label, count(*)::int AS count, coalesce(sum(t.estimated_value), 0) AS value
@@ -63,7 +88,7 @@ export function dashboardRoutes() {
              FROM tenders t
             WHERE ${OPEN} AND t.submission_deadline <= now() + interval '72 hours'
             ORDER BY t.submission_deadline LIMIT 8`, [userId]);
-        return { kpi, watch, matched, byDepartment, stateRows, monthly, bands, closing };
+        return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing };
       });
 
       // Last six calendar months, with zero where nothing was published.
@@ -94,7 +119,9 @@ export function dashboardRoutes() {
           newWeekChangePct: pct(k.new_week, k.new_prev_week),
           watchlisted: data.watch.n,
           matchedToAlertsThisWeek: data.matched.n,
+          myMatchesThisWeek: data.myMatched.n,
         },
+        matchedTenders: data.myMatchTenders.map(listView),
         byDepartment: data.byDepartment.map((d) => ({ ...d, value: Number(d.value) })),
         byState: states,
         monthly: months.map((month) => ({

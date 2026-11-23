@@ -17,6 +17,7 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const [expired, setExpired] = useState(false);
   const [pending, setPending] = useState(false);
 
   const weak = password.length > 0 && !isStrongPassword(password);
@@ -32,18 +33,23 @@ export default function ResetPassword() {
       await api.post('/auth/reset-password', { token, password });
       setDone(true);
     } catch (err) {
-      setError(err.code === 'invalid_token' ? { message: t('auth.resetInvalid') } : err);
+      // An expired / already-used / malformed link: offer a clear way to get a fresh one.
+      if (err.code === 'invalid_token') setExpired(true);
+      else setError(err);
     } finally {
       setPending(false);
     }
   };
 
-  if (!token) {
+  // No token in the link, or the link is expired / already used: recover by requesting a fresh one.
+  if (!token || expired) {
     return (
       <div className="gate-card">
         <h2>{t('auth.resetTitle')}</h2>
-        <div className="note note-error" role="alert">{t('auth.missingToken')}</div>
-        <div className="gate-row"><Link to="/forgot-password">{t('auth.forgotTitle')}</Link></div>
+        <div className="note note-error" role="alert">{token ? t('auth.resetInvalid') : t('auth.missingToken')}</div>
+        <p className="gate-sub" style={{ margin: '0 0 22px' }}>{t('auth.resetRecover')}</p>
+        <Link to="/forgot-password" className="btn btn-primary" style={{ textDecoration: 'none', color: '#fff' }}>{t('auth.sendLink')}</Link>
+        <div className="gate-row"><Link to="/login">{t('auth.backToSignIn')}</Link></div>
       </div>
     );
   }

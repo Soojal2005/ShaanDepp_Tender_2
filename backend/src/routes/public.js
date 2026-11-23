@@ -33,6 +33,8 @@ const enquirySchema = z
     city: z.string().trim().max(100).optional(),
     state: z.string().trim().max(100).optional(),
     industry: z.string().trim().max(120).optional(),
+    // Free text: what the business supplies or does. Seeds the subscriber's alert matching.
+    keywords: z.string().trim().max(1000).optional(),
     consent: z.literal(true, { error: 'must be accepted' }),
     // The 6-digit email verification code (required for an access request).
     otp: z.string().trim().regex(/^\d{6}$/, 'must be the 6-digit code emailed to you').optional(),
@@ -136,11 +138,11 @@ export function publicRoutes({ limiters }) {
           if (!ok) return { error: 'otp' };
         }
         const row = await q.one(
-          `INSERT INTO enquiries (name, company, phone, email, service, message, language, ip_address, kind, gstin, address, city, state, industry)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+          `INSERT INTO enquiries (name, company, phone, email, service, message, language, ip_address, kind, gstin, address, city, state, industry, keywords)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
           [input.name, input.company, input.phone ?? null, input.email, input.service ?? null,
            input.message ?? null, input.language, ip, input.kind,
-           input.gstin ?? null, input.address ?? null, input.city ?? null, input.state ?? null, input.industry ?? null]
+           input.gstin ?? null, input.address ?? null, input.city ?? null, input.state ?? null, input.industry ?? null, input.keywords ?? null]
         );
         await audit(q, { user: null, ip }, 'enquiry.create', 'enquiry', row.id, { service: input.service ?? null, kind: input.kind });
         if (input.kind === 'access_request') await notifyStaff(q, row.id, input);

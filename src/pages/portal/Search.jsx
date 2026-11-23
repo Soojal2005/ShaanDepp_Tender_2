@@ -142,6 +142,13 @@ export default function Search() {
   const openId = Number(params.get('tender')) || null;
 
   const masters = useAsync(() => api.get('/masters'), []);
+  // Cities depend on the chosen state(s); the main /masters payload omits them, so load them on demand.
+  const cityMasters = useAsync(
+    () => (filters.stateIds.length
+      ? Promise.all(filters.stateIds.map((sid) => api.get('/masters/cities', { query: { stateId: sid } }))).then((rs) => rs.flatMap((r) => r.cities))
+      : Promise.resolve([])),
+    [filters.stateIds.join(',')]
+  );
   const searchKey = toParams(filters, { page }).toString();
   const results = useAsync(
     () => api.get('/tenders', { query: toQuery(filters, { facets: 1, page, pageSize: PAGE_SIZE }) }),
@@ -200,6 +207,7 @@ export default function Search() {
   const facets = data?.facets;
   const nameOf = (list, id) => list?.find((x) => x.id === id)?.name;
   const stateOptions = masters.data?.states ?? [];
+  const cityOptions = cityMasters.data ?? [];
   const activeCount = activeFilterCount(filters);
   const scopeOn = (s) => (filters.scope.length ? filters.scope.includes(s) : true);
   const sortValue = filters.sort || data?.sort || 'deadline';
@@ -273,6 +281,8 @@ export default function Search() {
             extra={{ options: masters.data?.departments ?? [], labelOf: (id) => nameOf(masters.data?.departments, id) }} />
           <FacetGroup title={t('search.state')} items={facets?.states ?? []} selected={filters.stateIds} onToggle={toggleIn('stateIds')}
             extra={{ options: stateOptions, labelOf: (id) => nameOf(stateOptions, id) }} />
+          <FacetGroup title={t('search.city')} items={facets?.cities ?? []} selected={filters.cityIds} onToggle={toggleIn('cityIds')}
+            extra={cityOptions.length ? { options: cityOptions, labelOf: (id) => nameOf(cityOptions, id) } : undefined} />
           <FacetGroup title={t('search.category')} items={facets?.categories ?? []} selected={filters.categoryIds} onToggle={toggleIn('categoryIds')}
             extra={{ options: masters.data?.categories ?? [], labelOf: (id) => nameOf(masters.data?.categories, id) }} />
 

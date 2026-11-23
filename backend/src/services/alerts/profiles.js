@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { badRequest, conflict, notFound } from '../../errors.js';
 import { audit } from '../audit.js';
+import { matchingKeywords } from '../../content/industries.js';
 import { email } from '../../validate.js';
 
 const words = (max = 30) => z.array(z.string().trim().min(1).max(80)).max(max);
@@ -168,6 +169,36 @@ export async function deleteProfile(q, actor, orgId, profileId) {
   const done = await q.query('DELETE FROM alert_profiles WHERE organization_id = $1 AND id = $2', [orgId, profileId]);
   if (!done.rowCount) throw notFound('Alert profile not found');
   await audit(q, actor, 'alert_profile.delete', 'alert_profile', profileId, { orgId });
+}
+
+/**
+ * Create a subscriber's starter alert profile from what they told us at
+ * registration: their free-text keywords plus the keyword terms their industry
+ * expands into. Called when an access request is approved. It respects the
+ * plan's profile cap and skips silently when there is nothing to match on or no
+ * room, so approval never fails because of it. The subscriber can refine or
+ * delete the profile on the Alert Profiles page afterwards.
+ */
+export async function seedSubscriberProfile(q, actor, { orgId, userId, userEmail, industry, keywords, name }) {
+  const kw = matchingKeywords({ keywords, industry });
+  if (!kw.length) return null; // Nothing specific to match on: a blank profile would match everything.
+  const org = await q.maybeOne(
+    `SELECT coalesce(p.max_alert_profiles, 5) AS max_profiles FROM organizations o
+       LEFT JOIN plans p ON p.id = o.plan_id WHERE o.id = $1 FOR UPDATE OF o`, [orgId]);
+  if (!org) return null;
+  const { n } = await q.one('SELECT count(*)::int AS n FROM alert_profiles WHERE organization_id = $1', [orgId]);
+  if (n >= org.max_profiles) return null;
+  const profileName = (name || (industry && industry !== 'Other' ? `${industry} tenders` : 'My tenders')).slice(0, 150);
+  const recipients = userEmail ? [userEmail] : [];
+  const row = await q.one(
+    `INSERT INTO alert_profiles
+       (organization_id, user_id, name, keywords, exclude_keywords, category_ids, department_ids, state_ids, tender_types,
+        value_min, value_max, include_unknown_value, recipient_emails, frequency, weekly_day, status)
+     VALUES ($1, $2, $3, $4, '{}', '{}', '{}', '{}', '{}', NULL, NULL, true, $5, 'daily', 1, 'active') RETURNING id`,
+    [orgId, userId ?? null, profileName, kw, recipients]
+  );
+  await audit(q, actor, 'alert_profile.seed', 'alert_profile', row.id, { orgId, userId, keywords: kw.length });
+  return row.id;
 }
 
 /**

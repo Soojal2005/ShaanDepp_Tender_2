@@ -236,6 +236,7 @@ export async function tenderFacets(q, filters, { orgId = null } = {}) {
   return Object.fromEntries(await Promise.all([
     facet('departmentIds', 't.department_id', 't.department', 'departments'),
     facet('stateIds', 't.state_id', 't.state', 'states'),
+    facet('cityIds', 't.city_id', 't.city', 'cities'),
     facet('categoryIds', 't.category_id', 't.category', 'categories'),
     types(),
   ]));

@@ -66,8 +66,20 @@ export default function Dashboard() {
           note={k.openValueUndisclosed > 0 ? t('dash.kpiValueNote', { n: k.openValueUndisclosed }) : null} />
         <Kpi icon={Clock} tone="amber" value={formatNumber(k.closingSoon, lang)} label={t('dash.kpiClosing')} />
         <Kpi icon={Bookmark} tone="purple" value={formatNumber(k.watchlisted, lang)} label={t('dash.kpiWatch')}
-          note={`${t('dash.kpiMatched')}: ${k.matchedToAlertsThisWeek}`} />
+          note={`${t('dash.kpiMatched')}: ${k.myMatchesThisWeek ?? k.matchedToAlertsThisWeek}`} />
       </div>
+
+      {d.matchedTenders?.length > 0 && (
+        <Card title={t('dash.myMatchesTitle')} flush>
+          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {d.matchedTenders.map((item) => (
+              <TenderCard key={item.id} compact tender={item} onOpen={(x) => setOpenId(x.id)} onToggleWatch={async (x) => {
+                try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
+              }} />
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="analytics-cards-row">
         <div className="analytics-widget-card">

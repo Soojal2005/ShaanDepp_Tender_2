@@ -1,16 +1,19 @@
 /** Platform administration: plans, organizations, users, enquiries inbox and the audit log. */
 import { Router } from 'express';
 import { requirePermission, withSystemDb } from '../auth/middleware.js';
-import { STAFF_ROLES } from '../auth/permissions.js';
+import { CLIENT_ROLES, STAFF_ROLES } from '../auth/permissions.js';
 import { destroyUserSessions } from '../auth/sessions.js';
 import { asyncHandler, badRequest, conflict, notFound } from '../errors.js';
 import { actorOf, audit } from '../services/audit.js';
 import { queuePasswordReset } from '../services/accountEmails.js';
+import { seedSubscriberProfile } from '../services/alerts/profiles.js';
 import {
   createOrganization, getOrganization, inviteMember, listMembers, listOrganizations,
   orgView, updateMember, updateOrganization,
 } from '../services/orgs.js';
 import { email, id, parse, z } from '../validate.js';
+
+const ALL_ROLES = [...CLIENT_ROLES, ...STAFF_ROLES];
 
 const adminUser = z.object({
   name: z.string().trim().min(1).max(150),
@@ -87,6 +90,8 @@ export function adminRoutes() {
           planCode: z.string().trim().min(1).max(50),
           language: z.enum(['EN', 'HI']).default('EN'),
           admin: adminUser,
+          // The first account's role (default: organization admin). Lets staff register the first user as a subscriber.
+          adminRole: z.enum(CLIENT_ROLES).default('tenant_admin'),
           // Set when the organization is created from an access request, so the request is closed out with it.
           fromEnquiryId: id.optional(),
         }),
@@ -96,7 +101,7 @@ export function adminRoutes() {
       const created = await withSystemDb(req, async (q) => {
         if (fromEnquiryId) {
           const enquiry = await q.maybeOne(
-            'SELECT id, organization_id, name, phone, gstin, address, city, state, industry FROM enquiries WHERE id = $1 FOR UPDATE',
+            'SELECT id, organization_id, name, phone, gstin, address, city, state, industry, keywords FROM enquiries WHERE id = $1 FOR UPDATE',
             [fromEnquiryId]
           );
           if (!enquiry) throw notFound('Access request not found');
@@ -108,10 +113,17 @@ export function adminRoutes() {
           orgInput.city ??= enquiry.city;
           orgInput.state ??= enquiry.state;
           orgInput.industry ??= enquiry.industry;
+          orgInput.keywords ??= enquiry.keywords;
           orgInput.contactName ??= enquiry.name;
           orgInput.contactPhone ??= enquiry.phone;
         }
         const result = await createOrganization(q, actorOf(req), orgInput);
+        if (fromEnquiryId && result.admin) {
+          await seedSubscriberProfile(q, actorOf(req), {
+            orgId: result.organization.id, userId: result.admin.id, userEmail: result.admin.email,
+            industry: orgInput.industry, keywords: orgInput.keywords,
+          });
+        }
         if (fromEnquiryId) {
           await q.query(
             `UPDATE enquiries SET organization_id = $1, status = 'Converted', converted_at = now() WHERE id = $2`,
@@ -213,6 +225,96 @@ export function adminRoutes() {
         await audit(q, actorOf(req), 'user.reset_password_requested', 'user', userId);
       });
       res.status(202).json({ message: 'Reset email queued' });
+    })
+  );
+
+  // Approve an access request and create the person's login with a chosen role.
+  // Three targets: a brand-new organization (client role), an existing
+  // organization (client role), or the Shan-Deep staff organization (staff role).
+  // Carries the company identity and seeds the subscriber's alert matching.
+  r.post(
+    '/enquiries/:enquiryId/approve',
+    requirePermission('orgs:manage'),
+    asyncHandler(async (req, res) => {
+      const enquiryId = parse(z.object({ enquiryId: id }), req.params).enquiryId;
+      const input = parse(
+        z.object({
+          role: z.enum(ALL_ROLES),
+          target: z.enum(['new_org', 'existing_org']).default('new_org'),
+          orgId: id.optional(),
+          orgName: z.string().trim().min(2).max(255).optional(),
+          planCode: z.string().trim().min(1).max(50).optional(),
+          language: z.enum(['EN', 'HI']).optional(),
+          // The person; defaults to what the request captured.
+          name: z.string().trim().min(1).max(150).optional(),
+          email: email.optional(),
+          phone: z.string().trim().max(50).nullish(),
+        }),
+        req.body
+      );
+      const out = await withSystemDb(req, async (q) => {
+        const enquiry = await q.maybeOne(
+          `SELECT id, organization_id, name, email, phone, company, gstin, address, city, state, industry, keywords, language
+             FROM enquiries WHERE id = $1 FOR UPDATE`,
+          [enquiryId]
+        );
+        if (!enquiry) throw notFound('Access request not found');
+        if (enquiry.organization_id) throw conflict('An organization was already created from this request');
+        const person = {
+          name: input.name ?? enquiry.name,
+          email: input.email ?? enquiry.email,
+          phone: input.phone ?? enquiry.phone ?? null,
+        };
+        const isStaff = STAFF_ROLES.includes(input.role);
+        let organization = null;
+        let member;
+        let targetOrgId;
+
+        if (isStaff) {
+          const staff = await q.maybeOne('SELECT id FROM organizations WHERE is_staff_org LIMIT 1');
+          if (!staff) throw conflict('No staff organization exists to add this person to');
+          targetOrgId = staff.id;
+          member = await inviteMember(q, actorOf(req), targetOrgId, { ...person, role: input.role });
+        } else if (input.target === 'existing_org') {
+          if (!input.orgId) throw badRequest('Choose an organization to add this person to');
+          targetOrgId = input.orgId;
+          member = await inviteMember(q, actorOf(req), targetOrgId, {
+            ...person, role: input.role, industry: enquiry.industry, keywords: enquiry.keywords,
+          });
+          organization = orgView(await getOrganization(q, targetOrgId));
+          await seedSubscriberProfile(q, actorOf(req), {
+            orgId: targetOrgId, userId: member.id, userEmail: person.email,
+            industry: enquiry.industry, keywords: enquiry.keywords,
+          });
+        } else {
+          if (!input.planCode) throw badRequest('Choose a plan for the new organization');
+          const created = await createOrganization(q, actorOf(req), {
+            name: input.orgName ?? enquiry.company,
+            gstin: enquiry.gstin, address: enquiry.address, city: enquiry.city, state: enquiry.state,
+            industry: enquiry.industry, keywords: enquiry.keywords,
+            contactName: enquiry.name, contactPhone: enquiry.phone,
+            planCode: input.planCode, language: input.language ?? enquiry.language ?? 'EN',
+            admin: { name: person.name, email: person.email, phone: person.phone }, adminRole: input.role,
+          });
+          organization = created.organization;
+          member = created.admin;
+          targetOrgId = organization.id;
+          await seedSubscriberProfile(q, actorOf(req), {
+            orgId: targetOrgId, userId: member.id, userEmail: person.email,
+            industry: enquiry.industry, keywords: enquiry.keywords,
+          });
+        }
+
+        await q.query(
+          `UPDATE enquiries SET organization_id = $1, status = 'Converted', converted_at = now() WHERE id = $2`,
+          [targetOrgId, enquiryId]
+        );
+        await audit(q, actorOf(req), 'enquiry.convert', 'enquiry', enquiryId, {
+          organizationId: targetOrgId, role: input.role, target: isStaff ? 'staff_org' : input.target,
+        });
+        return { organization, member };
+      });
+      res.status(201).json(out);
     })
   );
 
