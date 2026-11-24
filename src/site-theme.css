@@ -1110,6 +1110,9 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   overflow: hidden; font-family: var(--sd-serif);
 }
 .svb-side { grid-area: side; padding: 40px 14px; background: #0D5B5B; }
+.site-services-index .site-header.is-over-hero.is-scrolled { background: var(--landing-teal); border-bottom: 1px solid rgba(189, 232, 189, .65); box-shadow: none; }
+.site.site-services-index .site-header .site-header-row { width: 100%; max-width: none; padding-inline: clamp(20px, 2.5vw, 48px); }
+.site-services-index .svb-side { background: var(--landing-teal); }
 .svb-side ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .site .svb-side a {
   display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 6px; text-decoration: none;
@@ -1151,7 +1154,7 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .svb-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: 'head' 'side' 'body'; }
   .svb-head { flex-direction: column; align-items: stretch; padding: 28px 20px 20px; background: #FFFFFF; }
   .svb-search { flex-basis: auto; }
-  .svb-side { padding: 10px; background: #0D5B5B; }
+  .svb-side { padding: 10px; background: var(--landing-teal); }
   .svb-side ul { position: relative; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .svb-side li { flex: none; }
   .site .svb-side a { gap: 10px; padding: 10px 14px; font-size: 15px; white-space: nowrap; }
@@ -1188,17 +1191,17 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 
 /* Blend illustrations into the page and keep copy clear of the artwork. */
 .lp-ab-copy, .lp-dept2-copy, .lp-touch > .landing-container { position: relative; z-index: 1; }
-.lp-ab-art { z-index: 0; -webkit-mask-image: linear-gradient(to right, transparent 42%, #000 70%); mask-image: linear-gradient(to right, transparent 42%, #000 70%); }
+.landing .lp-ab-art { z-index: 0; -webkit-mask-image: linear-gradient(to right, transparent 45%, #000 70%); mask-image: linear-gradient(to right, transparent 45%, #000 70%); }
 .lp-ab-copy { max-width: min(700px, 46%); }
 .lp-dept2-art { -webkit-mask-image: linear-gradient(to right, transparent 30%, #000 55%); mask-image: linear-gradient(to right, transparent 30%, #000 55%); }
 .lp-touch-map { -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 25%); mask-image: linear-gradient(to right, transparent 0%, #000 25%); }
 @media (max-width: 980px) {
   .lp-ab-copy { max-width: 60%; }
-  .lp-ab-art { -webkit-mask-image: linear-gradient(to right, transparent 30%, #000 85%); mask-image: linear-gradient(to right, transparent 30%, #000 85%); }
+  .landing .lp-ab-art { -webkit-mask-image: linear-gradient(to right, transparent 55%, #000 85%); mask-image: linear-gradient(to right, transparent 55%, #000 85%); }
 }
 @media (max-width: 560px) {
   .lp-ab-copy { max-width: none; }
-  .lp-ab-art { -webkit-mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); }
+  .landing .lp-ab-art { -webkit-mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); }
 }
 
 /* Fade the image boundaries horizontally as well as between sections. */
