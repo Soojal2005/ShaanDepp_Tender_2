@@ -1,5 +1,7 @@
-# Automatic HTTPS (Let's Encrypt) for the domain in SITE_DOMAIN. The DNS A record must already point here.
-{$SITE_DOMAIN} {
+# Automatic HTTPS (Let's Encrypt). www.{$SITE_DOMAIN} is the canonical host (it is
+# what the email links use); the bare apex redirects to it. BOTH DNS records — the
+# apex and the www CNAME/A — must point at this server.
+www.{$SITE_DOMAIN} {
 	encode zstd gzip
 
 	# Uploads are capped at 15 MB by the application; leave headroom for the form fields.
@@ -13,6 +15,6 @@
 	}
 }
 
-www.{$SITE_DOMAIN} {
-	redir https://{$SITE_DOMAIN}{uri} permanent
+{$SITE_DOMAIN} {
+	redir https://www.{$SITE_DOMAIN}{uri} permanent
 }

@@ -40,7 +40,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      PUBLIC_BASE_URL: https://${SITE_DOMAIN}
+      # Canonical public origin embedded in password-reset / invite email links.
+      # SITE_DOMAIN is the bare apex, so the www host is the canonical one; a bare
+      # apex here produces dead "this site can't be reached" links when only www
+      # resolves. Set SITE_DOMAIN to the apex (e.g. procure-brain.in), not the www host.
+      PUBLIC_BASE_URL: https://www.${SITE_DOMAIN}
       # Migrations run as the database owner; the running application is the restricted role.
       MIGRATION_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/shandeep
       DATABASE_URL: postgres://app_api_user:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/shandeep
