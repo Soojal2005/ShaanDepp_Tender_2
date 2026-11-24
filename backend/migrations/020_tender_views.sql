@@ -14,6 +14,10 @@ CREATE INDEX IF NOT EXISTS idx_tender_views_user ON tender_views (user_id, viewe
 
 ALTER TABLE tender_views ENABLE ROW LEVEL SECURITY;
 -- Tenant may read and write its own rows (same shape as watchlist_items etc.).
+-- Idempotent: the forward-only runner re-applies this on every boot, and the
+-- table/policy may already exist (created out of band), so drop before re-creating
+-- rather than letting "policy already exists" abort the migration and the boot.
+DROP POLICY IF EXISTS tenant_rw ON tender_views;
 CREATE POLICY tenant_rw ON tender_views FOR ALL
   USING (is_privileged() OR organization_id = current_tenant_org_id())
   WITH CHECK (is_privileged() OR organization_id = current_tenant_org_id());
