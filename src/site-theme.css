@@ -425,8 +425,9 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
    and its ivory sheet slides up out of it.
    ========================================================================== */
 .lp-svc::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: url('/images/services-bg.webp') left bottom / cover no-repeat; }
-.lp-svc { position: relative; isolation: isolate; padding: var(--space) 0 0; color: var(--sd-ivory); font-family: var(--sd-serif); }
+.lp-svc { position: relative; isolation: isolate; padding: var(--space) 0 72px; color: var(--sd-ivory); font-family: var(--sd-serif); }
 .lp-svc-grid { display: grid; grid-template-columns: var(--landing-cols); gap: var(--landing-gap); align-items: start; }
+.lp-svc-head { transform: translateY(-64px); }
 .site-home .lp-svc h2 { margin: 0 0 40px; font-family: var(--sd-serif); font-weight: 500; font-size: clamp(64px, 7.4vw, 124px); line-height: .9; letter-spacing: -.03em; color: var(--sd-ivory); }
 .site-home .lp-svc h2 span { display: block; color: var(--sd-ivory); }
 :lang(hi) .site-home .lp-svc h2 { line-height: 1.15; letter-spacing: 0; }
@@ -526,10 +527,10 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .svc-folder, .svc-body, .svc-sheets, .svc-tab { transition: none; }
 }
 
-/* Key figures: a quiet row of numbers on hairlines under the folders. */
-.lp-svc-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 24px; margin: 56px 0 0; padding: 0; list-style: none; font-family: var(--sd-serif); }
+/* Key figures below the services link. */
+.lp-svc-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 56px 0 0; padding: 0; list-style: none; font-family: var(--sd-serif); }
 .lp-svc-stats li { padding-top: 16px; border-top: 1px solid rgba(245, 241, 231, .24); }
-.lp-svc-stats b { display: block; font-size: 40px; font-weight: 500; line-height: 1.05; letter-spacing: -.01em; color: var(--sd-ivory); }
+.lp-svc-stats b { display: block; font-size: clamp(24px, 2.5vw, 40px); font-weight: 500; line-height: 1.05; letter-spacing: -.01em; color: var(--sd-ivory); }
 .lp-svc-stats small { display: block; margin-top: 8px; font-size: 15px; line-height: 1.35; color: rgba(245, 241, 231, .72); }
 
 @media (max-width: 980px) {
@@ -553,8 +554,9 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .svc-sheet-back.is-3 { right: -24px; }
   .svc-checks { font-size: 16px; }
   .site-home .svc-explore { padding: 14px 0 0; border-left: 0; border-top: 1px solid rgba(22, 60, 62, .2); font-size: 16px; }
-  .lp-svc-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; margin-top: 56px; }
-  .lp-svc-stats b { font-size: 34px; }
+  .lp-svc-stats { gap: 10px; margin-top: 56px; }
+  .lp-svc-stats b { font-size: clamp(20px, 5vw, 34px); }
+  .lp-svc-stats small { font-size: 12px; }
 }
 
 /* ==========================================================================
@@ -685,6 +687,7 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 .lp-dept2-all svg { transition: transform .2s; }
 .lp-dept2-all:hover svg { transform: translateX(4px); }
 .lp-dept2-panel { max-width: 580px; margin-top: 22px; }
+.lp-dept2-panel[hidden] { display: block; visibility: hidden; }
 .lp-dept2 .lp-dept-wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 28px; margin: 0; padding: 0; list-style: none; }
 .lp-dept2 .lp-dept-wall li { display: flex; gap: 10px; padding: 0; border: 0; background: none; font-size: 16px; line-height: 1.4; color: rgba(245, 241, 231, .88); }
 .lp-dept2 .lp-dept-wall li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: .55em; border-radius: 50%; background: var(--sd-mint); }
@@ -1097,15 +1100,16 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 .site-footer-sky::before { --fade-bottom: 0px; }
 
 /* ==========================================================================
-   Our services page — groups down a teal sidebar (blueprint at its foot),
+   Our services page — groups down a teal sidebar,
    the chosen group's services in two columns on white.
    ========================================================================== */
-.svb { padding: 32px 0 96px; background: var(--landing-teal); }
+.svb { padding: 0; background: #fff; }
 .svb-frame {
   display: grid; grid-template-columns: 280px minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'side head' 'side body';
-  overflow: hidden; border-radius: 4px; box-shadow: 0 30px 60px -34px rgba(2, 24, 25, .7); font-family: var(--sd-serif);
+  width: 100%; max-width: none; min-height: calc(100vh - 80px); margin: 0; padding: 0;
+  overflow: hidden; font-family: var(--sd-serif);
 }
-.svb-side { grid-area: side; padding: 40px 14px 320px; background: url('/images/services-side.webp') center bottom / 100% auto no-repeat, #0D5B5B; }
+.svb-side { grid-area: side; padding: 40px 14px; background: #0D5B5B; }
 .svb-side ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .site .svb-side a {
   display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 6px; text-decoration: none;
@@ -1143,7 +1147,7 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 
 /* Tablet & phone: heading and search first, the groups as a swipeable strip, then the list. */
 @media (max-width: 860px) {
-  .svb { padding: 16px 0 56px; }
+  .svb { padding: 0; }
   .svb-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: 'head' 'side' 'body'; }
   .svb-head { flex-direction: column; align-items: stretch; padding: 28px 20px 20px; background: #FFFFFF; }
   .svb-search { flex-basis: auto; }
@@ -1154,4 +1158,68 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .svb-body { padding: 22px 20px 32px; }
   .svb-list { grid-template-columns: minmax(0, 1fr); }
   .svb-item b { font-size: 20px; }
+}
+
+/* Make the landing page brand easier to read. */
+.site-is-home .site-header.is-over-hero .site-brand b { font-size: 31px; text-transform: uppercase; }
+.site-is-home .site-header.is-over-hero .site-brand small { font-size: 12px; }
+.site-is-home .site-footer-logo { text-transform: uppercase; }
+@media (max-width: 1080px) { .site-is-home .site-header.is-over-hero .site-brand b { font-size: 25px; } }
+
+/* Landing-page tender process */
+.site-home .lp-expand .lp-panel { padding: clamp(24px, 3vw, 44px); border: 1px solid rgba(189, 232, 189, .42); border-radius: 4px; background: #0b5051; box-shadow: none; }
+.site-home .lp-expand .lp-panel > h3 { margin: 0; color: var(--sd-ivory); font-family: var(--sd-serif); font-size: clamp(27px, 2.5vw, 40px); font-weight: 500; line-height: 1.15; }
+.site-home .lp-expand .lp-head-sub { margin: 10px 0 28px; color: rgba(245, 241, 231, .75); font-size: 16px; }
+.site-home .flow-steps { gap: 8px; margin-bottom: 20px; }
+.site-home .flow-step { min-height: 112px; height: 100%; padding: 16px 8px; border: 1px solid rgba(189, 232, 189, .3); border-radius: 3px; background: rgba(245, 241, 231, .06); color: var(--sd-ivory); }
+.site-home .flow-step:hover, .site-home .flow-step:focus-visible { border-color: var(--sd-mint); background: rgba(189, 232, 189, .15); }
+.site-home .flow-num, .site-home .flow-step.past .flow-num { width: 34px; height: 34px; background: transparent; border: 1px solid rgba(189, 232, 189, .65); color: var(--sd-mint); }
+.site-home .flow-name { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; }
+.site-home .flow-step.active { border-color: var(--sd-mint); background: var(--sd-mint); color: #123e3d; box-shadow: none; }
+.site-home .flow-step.active .flow-num { background: #124b49; border-color: #124b49; color: var(--sd-ivory); }
+.site-home .flow-detail { min-height: 0; padding: 24px 28px; border-left: 3px solid var(--sd-mint); border-radius: 0; background: rgba(245, 241, 231, .08); }
+.site-home .flow-detail h3 { margin: 0 0 8px; color: var(--sd-ivory); font-family: var(--sd-serif); font-size: 25px; font-weight: 500; }
+.site-home .flow-detail p { color: rgba(245, 241, 231, .85); }
+@media (max-width: 560px) {
+  .site-home .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .site-home .flow-step { min-height: 94px; }
+  .site-home .flow-detail { padding: 20px; }
+}
+
+/* Blend illustrations into the page and keep copy clear of the artwork. */
+.lp-ab-copy, .lp-dept2-copy, .lp-touch > .landing-container { position: relative; z-index: 1; }
+.lp-ab-art { z-index: 0; -webkit-mask-image: linear-gradient(to right, transparent 42%, #000 70%); mask-image: linear-gradient(to right, transparent 42%, #000 70%); }
+.lp-ab-copy { max-width: min(700px, 46%); }
+.lp-dept2-art { -webkit-mask-image: linear-gradient(to right, transparent 30%, #000 55%); mask-image: linear-gradient(to right, transparent 30%, #000 55%); }
+.lp-touch-map { -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 25%); mask-image: linear-gradient(to right, transparent 0%, #000 25%); }
+@media (max-width: 980px) {
+  .lp-ab-copy { max-width: 60%; }
+  .lp-ab-art { -webkit-mask-image: linear-gradient(to right, transparent 30%, #000 85%); mask-image: linear-gradient(to right, transparent 30%, #000 85%); }
+}
+@media (max-width: 560px) {
+  .lp-ab-copy { max-width: none; }
+  .lp-ab-art { -webkit-mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); mask-image: linear-gradient(to bottom, transparent 42%, #000 70%); }
+}
+
+/* Fade the image boundaries horizontally as well as between sections. */
+.landing .lp-access2::before {
+  right: auto;
+  width: 50%;
+  -webkit-mask-image: linear-gradient(to right, #000 45%, transparent 100%), var(--edge-mask);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, #000 45%, transparent 100%), var(--edge-mask);
+  mask-composite: intersect;
+}
+.landing .lp-touch-map {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 40%), var(--edge-mask);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0%, #000 40%), var(--edge-mask);
+  mask-composite: intersect;
+}
+@media (max-width: 700px) {
+  .landing .lp-access2::before { width: 100%; }
+  .landing .lp-touch-map {
+    -webkit-mask-image: var(--edge-mask);
+    mask-image: var(--edge-mask);
+  }
 }

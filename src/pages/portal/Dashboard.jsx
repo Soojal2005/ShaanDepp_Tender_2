@@ -9,7 +9,7 @@ import { api } from '../../lib/api.js';
 import { formatDateTime, formatInr, formatNumber } from '../../lib/format.js';
 import { useAsync } from '../../lib/hooks.js';
 
-const PALETTE = ['#1C1B18', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#A49E90'];
+const PALETTE = ['#08726B', '#4CB5A1', '#87CDAA', '#E5BE62', '#9C91BB', '#A9B9B0'];
 const monthLabel = (ym, lang) => {
   const [y, m] = ym.split('-').map(Number);
   return new Intl.DateTimeFormat(lang === 'HI' ? 'hi-IN' : 'en-IN', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1)));
@@ -175,3 +175,4 @@ export default function Dashboard() {
     </>
   );
 }
+

@@ -41,6 +41,7 @@ function ServiceFolders({ t, lang }) {
   return (
     <div className="svc-stack">
       {GROUPS.map((g, i) => {
+        if (g.slug === 'funding-assistance') return null;
         const isOpen = open === i;
         return (
           <div key={g.slug} className={`svc-folder ${i % 2 ? 'alt' : ''} ${isOpen ? 'is-open' : ''} ${i <= open ? 'is-raised' : ''}`} style={{ '--i': i }}
@@ -359,13 +360,12 @@ export default function Home() {
           <div className="lp-svc-head">
             <h2 id="services-title">{t('site.lp.servicesTitle1')} <span>{t('site.lp.servicesTitle2')}</span></h2>
             <Link className="lp-svc-all" to="/services">{t('site.lp.servicesAll', { n: SERVICE_COUNT })} <ArrowRight size={18} aria-hidden="true" /></Link>
-          </div>
-          <div className="lp-svc-right">
-            <ServiceFolders t={t} lang={lang} />
-            {/* Key figures as a quiet row under the folders. The services count comes from the catalogue. */}
             <ul className="lp-svc-stats">
               {t('site.lp.stats').map((s) => <li key={s.label}><b>{s.n ?? SERVICE_COUNT}</b><small>{s.label}</small></li>)}
             </ul>
+          </div>
+          <div className="lp-svc-right">
+            <ServiceFolders t={t} lang={lang} />
           </div>
         </div>
       </section>

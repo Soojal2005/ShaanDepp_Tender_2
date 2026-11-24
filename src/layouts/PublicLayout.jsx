@@ -102,7 +102,7 @@ export default function PublicLayout() {
             <nav className="site-footer-cols" aria-label="Footer">
               <div>
                 <h4>{t('site.lp.colServices')}</h4>
-                <ul>{GROUPS.map((g) => <li key={g.slug}><Link to={`/services/${g.slug}`}>{g.title[L]}</Link></li>)}</ul>
+                <ul>{GROUPS.filter((g) => !isLanding || g.slug !== 'funding-assistance').map((g) => <li key={g.slug}><Link to={`/services/${g.slug}`}>{g.title[L]}</Link></li>)}</ul>
               </div>
               <div>
                 <h4>{t('site.lp.colCompany')}</h4>
