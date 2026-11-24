@@ -51,7 +51,12 @@ export function matchingKeywords({ keywords, industry }) {
     .split(/[\n,]+/)
     .map((w) => w.trim())
     .filter(Boolean);
-  const all = [...fromText, ...seedKeywordsForIndustry(industry)];
+  // A custom industry typed in the subscriber's own words (not in the catalogue,
+  // and not the catch-all "Other") carries no seed terms, so the typed phrase is
+  // itself used as a keyword — otherwise "their own words" would not match anything.
+  const ind = String(industry ?? '').trim();
+  const customIndustry = ind && ind.toLowerCase() !== 'other' && !BY_VALUE.has(ind.toLowerCase()) ? [ind] : [];
+  const all = [...fromText, ...customIndustry, ...seedKeywordsForIndustry(industry)];
   const seen = new Set();
   const out = [];
   for (const w of all) {

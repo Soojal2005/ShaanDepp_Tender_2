@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { badRequest, conflict, notFound } from '../../errors.js';
 import { audit } from '../audit.js';
 import { matchingKeywords } from '../../content/industries.js';
+import { loadMasterIndex } from '../ingestion/masters.js';
 import { email } from '../../validate.js';
 
 const words = (max = 30) => z.array(z.string().trim().min(1).max(80)).max(max);
@@ -21,6 +22,7 @@ const shape = {
   categoryIds: ids,
   departmentIds: ids,
   stateIds: ids,
+  cityIds: ids,
   tenderTypes: z.array(z.string().trim().min(1).max(50)).max(10),
   valueMin: money,
   valueMax: money,
@@ -42,6 +44,7 @@ export const createProfileSchema = z
     categoryIds: ids.default([]),
     departmentIds: ids.default([]),
     stateIds: ids.default([]),
+    cityIds: ids.default([]),
     tenderTypes: shape.tenderTypes.default([]),
     valueMin: money.default(null),
     valueMax: money.default(null),
@@ -63,6 +66,7 @@ export const profileView = (r) => ({
   categoryIds: r.category_ids,
   departmentIds: r.department_ids,
   stateIds: r.state_ids,
+  cityIds: r.city_ids,
   tenderTypes: r.tender_types,
   valueMin: r.value_min,
   valueMax: r.value_max,
@@ -87,7 +91,7 @@ const LIST_SQL = `
 
 /** Reject ids that do not exist in the master lists (a stale id would silently match nothing). */
 async function assertMasterIds(q, input) {
-  for (const [key, table] of [['categoryIds', 'tender_categories'], ['departmentIds', 'departments'], ['stateIds', 'states']]) {
+  for (const [key, table] of [['categoryIds', 'tender_categories'], ['departmentIds', 'departments'], ['stateIds', 'states'], ['cityIds', 'cities']]) {
     const list = input[key];
     if (!list?.length) continue;
     const found = await q.one(`SELECT count(*)::int AS n FROM ${table} WHERE id = ANY($1::int[])`, [list]);
@@ -120,11 +124,11 @@ export async function createProfile(q, actor, { orgId, userId, userEmail }, inpu
   const recipients = input.recipientEmails.length ? input.recipientEmails : userEmail ? [userEmail] : [];
   const row = await q.one(
     `INSERT INTO alert_profiles
-       (organization_id, user_id, name, keywords, exclude_keywords, category_ids, department_ids, state_ids, tender_types,
+       (organization_id, user_id, name, keywords, exclude_keywords, category_ids, department_ids, state_ids, city_ids, tender_types,
         value_min, value_max, include_unknown_value, recipient_emails, frequency, weekly_day, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
     [orgId, userId ?? null, input.name, input.keywords, input.excludeKeywords, input.categoryIds, input.departmentIds,
-      input.stateIds, input.tenderTypes, input.valueMin, input.valueMax, input.includeUnknownValue, recipients,
+      input.stateIds, input.cityIds, input.tenderTypes, input.valueMin, input.valueMax, input.includeUnknownValue, recipients,
       input.frequency, input.weeklyDay, input.status]
   );
   await audit(q, actor, 'alert_profile.create', 'alert_profile', row.id, { orgId, name: input.name });
@@ -141,6 +145,7 @@ export async function updateProfile(q, actor, orgId, profileId, patch) {
     categoryIds: patch.categoryIds ?? current.category_ids,
     departmentIds: patch.departmentIds ?? current.department_ids,
     stateIds: patch.stateIds ?? current.state_ids,
+    cityIds: patch.cityIds ?? current.city_ids,
     tenderTypes: patch.tenderTypes ?? current.tender_types,
     valueMin: patch.valueMin === undefined ? current.value_min : patch.valueMin,
     valueMax: patch.valueMax === undefined ? current.value_max : patch.valueMax,
@@ -155,10 +160,10 @@ export async function updateProfile(q, actor, orgId, profileId, patch) {
   }
   await q.query(
     `UPDATE alert_profiles SET name=$3, keywords=$4, exclude_keywords=$5, category_ids=$6, department_ids=$7, state_ids=$8,
-       tender_types=$9, value_min=$10, value_max=$11, include_unknown_value=$12, recipient_emails=$13, frequency=$14,
-       weekly_day=$15, status=$16 WHERE organization_id=$1 AND id=$2`,
+       city_ids=$9, tender_types=$10, value_min=$11, value_max=$12, include_unknown_value=$13, recipient_emails=$14, frequency=$15,
+       weekly_day=$16, status=$17 WHERE organization_id=$1 AND id=$2`,
     [orgId, profileId, next.name, next.keywords, next.excludeKeywords, next.categoryIds, next.departmentIds, next.stateIds,
-      next.tenderTypes, next.valueMin, next.valueMax, next.includeUnknownValue, next.recipientEmails, next.frequency,
+      next.cityIds, next.tenderTypes, next.valueMin, next.valueMax, next.includeUnknownValue, next.recipientEmails, next.frequency,
       next.weeklyDay, next.status]
   );
   await audit(q, actor, 'alert_profile.update', 'alert_profile', profileId, { orgId, changed: Object.keys(patch) });
@@ -179,7 +184,7 @@ export async function deleteProfile(q, actor, orgId, profileId) {
  * room, so approval never fails because of it. The subscriber can refine or
  * delete the profile on the Alert Profiles page afterwards.
  */
-export async function seedSubscriberProfile(q, actor, { orgId, userId, userEmail, industry, keywords, name }) {
+export async function seedSubscriberProfile(q, actor, { orgId, userId, userEmail, industry, keywords, name, state, city }) {
   const kw = matchingKeywords({ keywords, industry });
   if (!kw.length) return null; // Nothing specific to match on: a blank profile would match everything.
   const org = await q.maybeOne(
@@ -188,16 +193,35 @@ export async function seedSubscriberProfile(q, actor, { orgId, userId, userEmail
   if (!org) return null;
   const { n } = await q.one('SELECT count(*)::int AS n FROM alert_profiles WHERE organization_id = $1', [orgId]);
   if (n >= org.max_profiles) return null;
+
+  // Narrow the starter profile to the state (and city) the subscriber registered
+  // with, so their first emails are already local. Names are resolved to master
+  // ids exactly as ingestion does; an unknown city is created under its state.
+  // A name we cannot resolve is simply left out rather than guessed.
+  let stateIds = [];
+  let cityIds = [];
+  if (state) {
+    const index = await loadMasterIndex(q);
+    const st = index.state(state);
+    if (st) {
+      stateIds = [st.id];
+      if (city) {
+        const c = await index.city(q, st.id, city);
+        if (c) cityIds = [c.id];
+      }
+    }
+  }
+
   const profileName = (name || (industry && industry !== 'Other' ? `${industry} tenders` : 'My tenders')).slice(0, 150);
   const recipients = userEmail ? [userEmail] : [];
   const row = await q.one(
     `INSERT INTO alert_profiles
-       (organization_id, user_id, name, keywords, exclude_keywords, category_ids, department_ids, state_ids, tender_types,
+       (organization_id, user_id, name, keywords, exclude_keywords, category_ids, department_ids, state_ids, city_ids, tender_types,
         value_min, value_max, include_unknown_value, recipient_emails, frequency, weekly_day, status)
-     VALUES ($1, $2, $3, $4, '{}', '{}', '{}', '{}', '{}', NULL, NULL, true, $5, 'daily', 1, 'active') RETURNING id`,
-    [orgId, userId ?? null, profileName, kw, recipients]
+     VALUES ($1, $2, $3, $4, '{}', '{}', '{}', $5::int[], $6::int[], '{}', NULL, NULL, true, $7, 'daily', 1, 'active') RETURNING id`,
+    [orgId, userId ?? null, profileName, kw, stateIds, cityIds, recipients]
   );
-  await audit(q, actor, 'alert_profile.seed', 'alert_profile', row.id, { orgId, userId, keywords: kw.length });
+  await audit(q, actor, 'alert_profile.seed', 'alert_profile', row.id, { orgId, userId, keywords: kw.length, stateIds: stateIds.length, cityIds: cityIds.length });
   return row.id;
 }
 
@@ -223,6 +247,7 @@ export function profileInputFromFilters(filters, name) {
     categoryIds: filters.categoryIds ?? [],
     departmentIds: filters.departmentIds ?? [],
     stateIds: filters.stateIds ?? [],
+    cityIds: filters.cityIds ?? [],
     tenderTypes: filters.tenderTypes ?? [],
     valueMin: filters.valueMin ? Number(filters.valueMin) : null,
     valueMax: filters.valueMax ? Number(filters.valueMax) : null,

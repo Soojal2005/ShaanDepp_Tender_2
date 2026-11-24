@@ -88,7 +88,27 @@ export function dashboardRoutes() {
              FROM tenders t
             WHERE ${OPEN} AND t.submission_deadline <= now() + interval '72 hours'
             ORDER BY t.submission_deadline LIMIT 8`, [userId]);
-        return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing };
+        // The subscriber's own interest: the states and cities their active alert
+        // profiles cover (seeded from their registered location). Drives the
+        // "closing soon in your area" list so the dashboard leads with what is near them.
+        const interest = await q.one(
+          `SELECT coalesce((SELECT array_agg(DISTINCT s) FROM alert_profiles p, unnest(p.state_ids) s
+                              WHERE p.user_id = $1 AND p.status = 'active'), '{}') AS state_ids,
+                  coalesce((SELECT array_agg(DISTINCT c) FROM alert_profiles p, unnest(p.city_ids) c
+                              WHERE p.user_id = $1 AND p.status = 'active'), '{}') AS city_ids`,
+          [userId]);
+        const hasInterest = interest.state_ids.length > 0 || interest.city_ids.length > 0;
+        const closingForYou = hasInterest ? await q.many(
+          `SELECT t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
+                  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
+                  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
+                  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted
+             FROM tenders t
+            WHERE ${OPEN} AND t.submission_deadline <= now() + interval '7 days'
+              AND (($2::int[] <> '{}' AND t.state_id = ANY($2::int[]))
+                OR ($3::int[] <> '{}' AND t.city_id = ANY($3::int[])))
+            ORDER BY t.submission_deadline LIMIT 8`, [userId, interest.state_ids, interest.city_ids]) : [];
+        return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing, hasInterest, closingForYou };
       });
 
       // Last six calendar months, with zero where nothing was published.
@@ -134,6 +154,9 @@ export function dashboardRoutes() {
           undisclosed: data.bands.undisclosed,
         },
         closingSoon: data.closing.map(listView),
+        // Personalized to the subscriber's interest (their alert-profile locations).
+        hasInterest: data.hasInterest,
+        closingForYou: data.closingForYou.map(listView),
         dataAsOf: k.data_as_of,
       });
     })

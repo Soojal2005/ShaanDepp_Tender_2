@@ -158,10 +158,14 @@ export default function EnquiryForm({ service = '', kind = 'general', idPrefix =
             <IconField label={t('site.f.city')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-city`} aria-label={t('site.f.city')} placeholder={ph('city')} className="input" required maxLength={100} autoComplete="address-level2" value={form.city} onChange={set('city')} />}</IconField>
             <IconField label={t('site.f.state')} required icon={rich ? MapPin : null}>{(p) => <input {...p} id={`${idPrefix}-state`} aria-label={t('site.f.state')} placeholder={ph('state')} className="input" required maxLength={100} autoComplete="address-level1" value={form.state} onChange={set('state')} />}</IconField>
             <IconField label={t('site.f.industry')} required icon={rich ? Briefcase : null}>{(p) => (
-              <select {...p} id={`${idPrefix}-industry`} aria-label={t('site.f.industry')} className="input" required value={form.industry} onChange={set('industry')}>
-                <option value="" disabled>{t('site.f.industrySelect')}</option>
-                {INDUSTRIES.map((it) => <option key={it.value} value={it.value}>{lang === 'HI' ? it.hi : it.value}</option>)}
-              </select>
+              <>
+                {/* Combobox: pick a listed industry or type your own words. The typed text is stored and drives matching. */}
+                <input {...p} id={`${idPrefix}-industry`} aria-label={t('site.f.industry')} className="input" required maxLength={120}
+                  list={`${idPrefix}-industry-list`} placeholder={t('site.f.industrySelect')} value={form.industry} onChange={set('industry')} />
+                <datalist id={`${idPrefix}-industry-list`}>
+                  {INDUSTRIES.map((it) => <option key={it.value} value={it.value}>{lang === 'HI' ? it.hi : it.value}</option>)}
+                </datalist>
+              </>
             )}</IconField>
             <IconField label={t('site.f.gstin')} optional={t('common.optional')} icon={rich ? Hash : null}>{(p) => <input {...p} id={`${idPrefix}-gstin`} aria-label={t('site.f.gstin')} placeholder={ph('gstin')} className="input" maxLength={15} style={{ textTransform: 'uppercase' }} value={form.gstin} onChange={set('gstin')} />}</IconField>
           </div>

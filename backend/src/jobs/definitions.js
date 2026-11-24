@@ -6,6 +6,7 @@
 import { config } from '../config.js';
 import { log } from '../log.js';
 import { runDueDigests } from '../services/alerts/digest.js';
+import { seedProfilesFromSearches } from '../services/alerts/searchSeed.js';
 import { pollBounces } from '../services/mail/bounces.js';
 import { createGraphClient } from '../services/mail/graph.js';
 import { createSmtpClient } from '../services/mail/smtp.js';
@@ -172,6 +173,19 @@ export function createJobs(db, deps = {}) {
         const summary = await runDueDigests(db, { baseUrl, force });
         if (summary.failed) throw new Error(`${summary.failed} alert profile(s) failed: ${summary.errors.join('; ')}`);
         return { ...summary, activity: summary.emailsQueued };
+      },
+    },
+
+    'seed-search-alerts': {
+      label: 'Search-based alerts',
+      description: 'Creates a starter daily alert from each subscriber\'s most frequent portal searches (once per subscriber).',
+      enabled: true,
+      cron: '30 6 * * *',
+      timezone: 'Asia/Kolkata',
+      quiet: true,
+      async run() {
+        const summary = await seedProfilesFromSearches(db);
+        return { ...summary, activity: summary.created };
       },
     },
 

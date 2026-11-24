@@ -62,6 +62,7 @@ export async function findCandidates(q, profile) {
                            WHERE d.profile_id = ${add(profile.id)} AND i.tender_id = t.id AND NOT d.is_test)`);
 
   if (profile.state_ids.length) where.push(`t.state_id = ANY(${add(profile.state_ids)}::int[])`);
+  if (profile.city_ids.length) where.push(`t.city_id = ANY(${add(profile.city_ids)}::int[])`);
   if (profile.department_ids.length) where.push(`t.department_id = ANY(${add(profile.department_ids)}::int[])`);
   if (profile.tender_types.length) where.push(`lower(t.tender_type) = ANY(${add(profile.tender_types.map((s) => s.toLowerCase()))}::text[])`);
 

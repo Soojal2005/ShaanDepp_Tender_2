@@ -81,6 +81,19 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {d.hasInterest && d.closingForYou?.length > 0 && (
+        <Card title={t('dash.forYouClosingTitle')} flush>
+          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {d.closingForYou.map((item) => (
+              <TenderCard key={item.id} compact tender={item} onOpen={(x) => setOpenId(x.id)} onToggleWatch={async (x) => {
+                try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
+              }} />
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <h3 className="dash-market-heading" style={{ margin: '22px 0 2px', fontSize: 15, color: 'var(--slate-700)' }}>{t('dash.marketTitle')}</h3>
       <div className="analytics-cards-row">
         <div className="analytics-widget-card">
           <div className="widget-card-header"><h3>{t('dash.deptTitle')}</h3></div>

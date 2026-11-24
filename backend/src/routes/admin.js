@@ -121,7 +121,7 @@ export function adminRoutes() {
         if (fromEnquiryId && result.admin) {
           await seedSubscriberProfile(q, actorOf(req), {
             orgId: result.organization.id, userId: result.admin.id, userEmail: result.admin.email,
-            industry: orgInput.industry, keywords: orgInput.keywords,
+            industry: orgInput.industry, keywords: orgInput.keywords, state: orgInput.state, city: orgInput.city,
           });
         }
         if (fromEnquiryId) {
@@ -284,7 +284,7 @@ export function adminRoutes() {
           organization = orgView(await getOrganization(q, targetOrgId));
           await seedSubscriberProfile(q, actorOf(req), {
             orgId: targetOrgId, userId: member.id, userEmail: person.email,
-            industry: enquiry.industry, keywords: enquiry.keywords,
+            industry: enquiry.industry, keywords: enquiry.keywords, state: enquiry.state, city: enquiry.city,
           });
         } else {
           if (!input.planCode) throw badRequest('Choose a plan for the new organization');
@@ -301,7 +301,7 @@ export function adminRoutes() {
           targetOrgId = organization.id;
           await seedSubscriberProfile(q, actorOf(req), {
             orgId: targetOrgId, userId: member.id, userEmail: person.email,
-            industry: enquiry.industry, keywords: enquiry.keywords,
+            industry: enquiry.industry, keywords: enquiry.keywords, state: enquiry.state, city: enquiry.city,
           });
         }
 
