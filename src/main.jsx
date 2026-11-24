@@ -24,3 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+import './portal-color-overrides.css';
+import './portal-theme.css';
+

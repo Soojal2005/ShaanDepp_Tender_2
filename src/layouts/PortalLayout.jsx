@@ -63,12 +63,12 @@ function UserMenu() {
   return (
     <div style={{ position: 'relative' }} ref={ref}>
       <button type="button" className="top-user-pill" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <div className="user-avatar-navy" style={user.isStaff ? { background: '#B45309' } : undefined}>{initials(user.name)}</div>
+        <div className="user-avatar-navy">{initials(user.name)}</div>
         <div className="user-text-meta">
           <b>{user.name}</b>
           <span>{user.isStaff ? t(`roles.${user.role}`) : user.orgName}</span>
         </div>
-        <ChevronDown size={14} style={{ color: '#A49E90' }} />
+        <ChevronDown size={14} style={{ color: '#859990' }} />
       </button>
       {open && (
         <div className="user-menu" role="menu">
@@ -77,7 +77,7 @@ function UserMenu() {
             <div>
               <div style={{ fontWeight: 700, color: 'var(--slate-900)' }}>{user.name}</div>
               <div style={{ fontSize: 11.5, color: 'var(--slate-500)' }}>{user.email}</div>
-              <div style={{ fontSize: 11, color: '#1C1B18', fontWeight: 600 }}>{t(`roles.${user.role}`)}</div>
+              <div style={{ fontSize: 11, color: '#075b57', fontWeight: 600 }}>{t(`roles.${user.role}`)}</div>
             </div>
           </div>
           <Link to="/app/profile" role="menuitem" onClick={() => setOpen(false)}><Users size={14} />{t('nav.profile')}</Link>
@@ -169,7 +169,7 @@ export default function PortalLayout() {
             <button type="submit" className="search-submit-btn" aria-label={t('common.search')}><Search size={15} /></button>
           </div>
           <Link to="/app/search" className="advanced-search-btn" style={{ textDecoration: 'none' }}>
-            <SlidersHorizontal size={15} style={{ color: '#1C1B18' }} />
+            <SlidersHorizontal size={15} style={{ color: '#075b57' }} />
             <span>{t('nav.advanced')}</span>
           </Link>
         </form>

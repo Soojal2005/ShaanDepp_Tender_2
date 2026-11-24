@@ -1,0 +1,384 @@
+/* Portal-specific replacements for legacy neutral colours. */
+.app-container {
+    background-color: #f7f9f6
+}
+.app-container .top-navbar {
+    border-bottom: 1px solid #dce7e1
+}
+.app-container .brand-icon-box {
+    background: #075b57
+}
+.app-container .global-header-input {
+    background: #f8fbf8;
+    border: 1px solid #dce7e1
+}
+.app-container .global-header-input:focus {
+    border-color: #075b57
+}
+.app-container .search-submit-btn {
+    background: #075b57
+}
+.app-container .search-submit-btn:hover {
+    background: #064f4b
+}
+.app-container .advanced-search-btn {
+    border: 1px solid #dce7e1
+}
+.app-container .advanced-search-btn:hover {
+    border-color: #075b57;
+    color: #075b57;
+    background: #f8fbf8
+}
+.app-container .lang-pill {
+    background: #edf5ef;
+    border: 1px solid #dce7e1
+}
+.app-container .notification-bell-btn {
+    border: 1px solid #dce7e1
+}
+.app-container .notification-bell-btn:hover {
+    background: #f8fbf8
+}
+.app-container .top-user-pill:hover {
+    background: #f8fbf8
+}
+.app-container .dark-navy-sidebar {
+    background: linear-gradient(180deg, #075b57 0%, #104f4e 100%)
+}
+.app-container .sidebar-link-btn {
+    color: #859990
+}
+.app-container .sidebar-link-btn.active .sidebar-link-left svg {
+    color: #4ba996
+}
+.app-container .sidebar-item-badge {
+    color: #bfd0c9
+}
+.app-container .sidebar-link-btn.active .sidebar-item-badge {
+    background: #075b57
+}
+.app-container .plan-info-line {
+    color: #859990
+}
+.app-container .plan-progress-fill {
+    background: #075b57
+}
+.app-container .plan-progress-label {
+    color: #bfd0c9
+}
+.app-container .plan-link-btn:hover {
+    color: #c6ded1
+}
+.app-container .btn-create-alert-filters {
+    border: 1px solid #075b57;
+    color: #075b57
+}
+.app-container .btn-create-alert-filters:hover {
+    background: #e4f4ed
+}
+.app-container .btn-export-excel-primary {
+    background: #075b57
+}
+.app-container .btn-export-excel-primary:hover {
+    background: #064f4b
+}
+.app-container .kpi-metric-card {
+    border: 1px solid #dce7e1
+}
+.app-container .kpi-metric-card:hover {
+    border-color: #9fcdbb
+}
+.app-container .kpi-icon-square, .app-container .kpi-icon-square.blue, .app-container .kpi-icon-square.green, .app-container .kpi-icon-square.amber, .app-container .kpi-icon-square.purple {
+    background: #ddf3e8;
+    color: #075b57
+}
+.app-container .kpi-numbers-wrap .kpi-big-value {
+    color: var(--ink, #075b57)
+}
+.app-container .spark-bar.blue {
+    background: #4ba996
+}
+.app-container .analytics-widget-card {
+    border: 1px solid #dce7e1
+}
+.app-container .analytics-widget-card:hover {
+    border-color: #9fcdbb
+}
+.app-container .widget-card-header h3 {
+    color: var(--ink, #075b57)
+}
+.app-container .dept-bar-track {
+    background: #edf5ef
+}
+.app-container .dept-bar-fill {
+    background: #4ba996
+}
+.app-container .facet-filters-card {
+    border: 1px solid #dce7e1
+}
+.app-container .facet-card-title-row {
+    border-bottom: 1px solid #edf5ef
+}
+.app-container .facet-reset-link {
+    color: #075b57
+}
+.app-container .facet-input-box {
+    border: 1px solid #dce7e1;
+    background: #f8fbf8
+}
+.app-container .facet-input-box:focus {
+    border-color: #075b57
+}
+.app-container .scope-pill-chip {
+    border: 1px solid #dce7e1;
+    background: #edf5ef
+}
+.app-container .scope-pill-chip.selected {
+    background: #e4f4ed;
+    border-color: #c6ded1;
+    color: #075b57
+}
+.app-container .exclude-filter-input {
+    border: 1px solid #dce7e1;
+    background: #f8fbf8
+}
+.app-container .facet-checkbox-row input {
+    accent-color: #075b57
+}
+.app-container .facet-show-more-link {
+    color: #075b57
+}
+.app-container .range-slider-input {
+    accent-color: #075b57
+}
+.app-container .deadline-picker-box {
+    border: 1px solid #dce7e1;
+    background: #f8fbf8
+}
+.app-container .feed-main-tab:hover {
+    background: #dce7e1
+}
+.app-container .feed-main-tab.active {
+    background: #075b57
+}
+.app-container .feed-sort-select {
+    border: 1px solid #dce7e1
+}
+.app-container .view-mode-buttons {
+    border: 1px solid #dce7e1
+}
+.app-container .view-mode-btn.active {
+    background: #075b57
+}
+.app-container .tender-item-card {
+    border: 1px solid #dce7e1
+}
+.app-container .card-checkbox {
+    accent-color: #075b57
+}
+.app-container .card-star-btn {
+    color: #bfd0c9
+}
+.app-container .dept-badge-pill {
+    background: #e4f4ed;
+    color: #075b57;
+    border: 1px solid #dce7e1
+}
+.app-container .tender-card-headline:hover {
+    color: #075b57
+}
+.app-container .tender-category-tag.procure {
+    background: #e4f4ed;
+    color: #075b57
+}
+.app-container .tender-category-tag.govt {
+    background: #edf5ef
+}
+.app-container .not-disclosed-fallback {
+    background: #edf5ef
+}
+.app-container .btn-view-details-blue {
+    background: #075b57
+}
+.app-container .btn-view-details-blue:hover {
+    background: #064f4b
+}
+.app-container .btn-pill-action {
+    border: 1px solid #dce7e1
+}
+.app-container .btn-pill-action:hover {
+    border-color: #075b57;
+    color: #075b57;
+    background: #f8fbf8
+}
+.app-container .btn-more-dots:hover {
+    background: #edf5ef
+}
+.app-container :focus-visible {
+    outline: 2px solid #075b57
+}
+.app-container .btn-primary {
+    background: #075b57
+}
+.app-container .btn-primary:hover:not(:disabled) {
+    background: #064f4b
+}
+.app-container .btn-outline {
+    border-color: #bfd0c9
+}
+.app-container .btn-outline:hover:not(:disabled) {
+    border-color: #075b57;
+    color: #075b57
+}
+.app-container .btn-ghost:hover:not(:disabled) {
+    background: #edf5ef
+}
+.app-container .link-btn {
+    color: #075b57
+}
+.app-container .input, .app-container .select, .app-container .textarea {
+    border: 1px solid #bfd0c9
+}
+.app-container .input:focus, .app-container .select:focus, .app-container .textarea:focus {
+    border-color: #075b57
+}
+.app-container .input:disabled, .app-container .select:disabled {
+    background: #edf5ef
+}
+.app-container .check-row input {
+    accent-color: #075b57
+}
+.app-container .card {
+    border: 1px solid #dce7e1
+}
+.app-container .card-header {
+    border-bottom: 1px solid #edf5ef
+}
+.app-container .note-info {
+    background: #e4f4ed;
+    border: 1px solid #c6ded1
+}
+.app-container .badge-blue {
+    background: #e4f4ed
+}
+.app-container .badge-slate {
+    background: #edf5ef
+}
+.app-container .table th {
+    background: #f8fbf8;
+    border-bottom: 1px solid #dce7e1
+}
+.app-container .table td {
+    border-bottom: 1px solid #edf5ef
+}
+.app-container .table tbody tr.clickable:hover td {
+    background: #f8fbf8
+}
+.app-container .tabs {
+    border-bottom: 1px solid #dce7e1
+}
+.app-container .tab.active {
+    color: #075b57;
+    border-bottom-color: #075b57
+}
+.app-container .meter {
+    background: #dce7e1
+}
+.app-container .meter > span {
+    background: #075b57
+}
+.app-container .modal-header {
+    border-bottom: 1px solid #edf5ef
+}
+.app-container .modal-close:hover {
+    background: #edf5ef
+}
+.app-container .modal-footer {
+    border-top: 1px solid #edf5ef;
+    background: #f8fbf8
+}
+.app-container .drawer-header {
+    border-bottom: 1px solid #dce7e1;
+    background: #f8fbf8
+}
+.app-container .doc-list li {
+    border: 1px solid #dce7e1
+}
+.app-container .urgency-badge.slate {
+    background: #edf5ef;
+    border: 1px solid #dce7e1
+}
+.app-container .tag-box {
+    border: 1px solid #bfd0c9
+}
+.app-container .tag-box:focus-within {
+    border-color: #075b57
+}
+.app-container .tag-chip {
+    background: #e4f4ed
+}
+.app-container .tag-chip button:hover {
+    background: #dce7e1
+}
+.app-container .preview-item {
+    border-bottom: 1px solid #edf5ef
+}
+.app-container .score-pill {
+    color: #075b57
+}
+.app-container .mail-preview {
+    border: 1px solid #dce7e1
+}
+.app-container .stage-bar span {
+    background: #dce7e1
+}
+.app-container .stage-bar span.on {
+    background: #075b57
+}
+.app-container .stage-count {
+    border: 1px solid var(--slate-200, #dce7e1)
+}
+.app-container .stage-count b {
+    color: #075b57
+}
+.app-container .stage-count span {
+    color: #4b625a
+}
+.app-container .stage-count.active {
+    border-color: #075b57
+}
+.app-container .stepper li {
+    color: #647970
+}
+.app-container .stepper li::before {
+    background: #dce7e1
+}
+.app-container .stepper li.done::before, .app-container .stepper li.current::before {
+    background: #075b57
+}
+.app-container .stepper .dot {
+    background: #dce7e1;
+    color: #4b625a
+}
+.app-container .stepper li.done .dot {
+    background: #075b57
+}
+.app-container .stepper li.current .dot {
+    color: #075b57;
+    box-shadow: 0 0 0 2px #075b57
+}
+.app-container .stepper li.current .name {
+    color: #075b57
+}
+.app-container .nav-toggle {
+    border: 1px solid #dce7e1
+}
+.app-container .sidebar-section {
+    color: #647970
+}
+.app-container .user-menu {
+    border: 1px solid #dce7e1
+}
+.app-container .user-menu-head {
+    border-bottom: 1px solid #edf5ef
+}

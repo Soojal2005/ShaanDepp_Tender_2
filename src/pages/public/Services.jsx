@@ -59,7 +59,7 @@ export function ServicesIndex() {
 
   return (
     <div className="svb">
-      <div className="landing-container svb-frame">
+      <div className="svb-frame">
         <div className="svb-head">
           <h1>{t('site.servicesPageTitle')}</h1>
           <label className="svb-search">
