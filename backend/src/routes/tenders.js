@@ -132,7 +132,9 @@ export function tendersRoutes({ limiters } = {}) {
         const found = await getTender(q, tenderId, { userId: req.auth.user.id, orgId: req.auth.user.orgId });
         // Record the view for the dashboard's "recently viewed" list. Best-effort:
         // a logging failure (e.g. a staff user with no org) must never break the read.
-        if (req.auth.user.orgId) {
+        // Guarded by a table-exists check so the read still works if migration 020
+        // has not been applied yet (migrations are manual here, DB_MIGRATE_ON_START=off).
+        if (req.auth.user.orgId && (await q.one(`SELECT to_regclass('public.tender_views') AS t`)).t) {
           await q.query(
             `INSERT INTO tender_views (organization_id, user_id, tender_id) VALUES ($1, $2, $3)
              ON CONFLICT (user_id, tender_id) DO UPDATE SET viewed_at = now()`,

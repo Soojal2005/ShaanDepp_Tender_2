@@ -139,11 +139,14 @@ export function dashboardRoutes() {
               AND t.submission_deadline <= now() + interval '14 days'
             ORDER BY t.submission_deadline LIMIT 8`, [userId]);
 
-        // Recently viewed tenders (per-user, from tender_views).
-        const recentlyViewed = await q.many(
+        // Recently viewed tenders (per-user, from tender_views). Guarded by a
+        // table-exists check so the dashboard still loads if migration 020 has not
+        // been applied yet (migrations are manual here, DB_MIGRATE_ON_START=off).
+        const hasViews = (await q.one(`SELECT to_regclass('public.tender_views') AS t`)).t;
+        const recentlyViewed = hasViews ? await q.many(
           `SELECT ${TENDER_COLS} FROM tenders t
              JOIN tender_views v ON v.tender_id = t.id AND v.user_id = $1
-            ORDER BY v.viewed_at DESC LIMIT 6`, [userId]);
+            ORDER BY v.viewed_at DESC LIMIT 6`, [userId]) : [];
 
         // Submission-help (desk) cases for this subscriber's organization, newest first, open before closed.
         const myCases = await q.many(
