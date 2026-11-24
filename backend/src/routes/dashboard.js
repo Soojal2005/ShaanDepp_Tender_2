@@ -8,11 +8,14 @@
  * active alert profiles plus their saved value-range preference (see userInterest.js).
  */
 import { Router } from 'express';
-import { requireAuth, withSystemDb, withUserDb } from '../auth/middleware.js';
-import { asyncHandler, badRequest } from '../errors.js';
+import { requireAuth, withUserDb } from '../auth/middleware.js';
+import { asyncHandler } from '../errors.js';
 import { listView } from '../services/tenderSearch.js';
 import { interestWhere, loadUserInterest } from '../services/userInterest.js';
-import { parse, z } from '../validate.js';
+import { STAGES } from '../services/cases.js';
+import { caseRef } from '../util.js';
+
+const CASE_STAGE_LABEL = Object.fromEntries(STAGES.map((s) => [s.key, s.label]));
 
 const OPEN = `(t.status = 'Open' AND (t.submission_deadline IS NULL OR t.submission_deadline > now()))`;
 const pct = (now, before) => (before > 0 ? Math.round(((now - before) / before) * 100) : null);
@@ -120,7 +123,8 @@ export function dashboardRoutes() {
         if (interest.hasInterest) {
           const params = [];
           const add = (v) => { params.push(v); return `$${params.length}`; };
-          add(userId);
+          // NB: this count query must not reserve an unused parameter — an unused $1
+          // makes Postgres fail with "could not determine data type of parameter $1".
           const { where } = interestWhere(add, interest);
           newInterest = (await q.one(
             `SELECT count(*)::int AS n FROM tenders t WHERE ${[...where, "t.publish_date >= now() - interval '7 days'"].join(' AND ')}`,
@@ -135,8 +139,20 @@ export function dashboardRoutes() {
               AND t.submission_deadline <= now() + interval '14 days'
             ORDER BY t.submission_deadline LIMIT 8`, [userId]);
 
+        // Recently viewed tenders (per-user, from tender_views).
+        const recentlyViewed = await q.many(
+          `SELECT ${TENDER_COLS} FROM tenders t
+             JOIN tender_views v ON v.tender_id = t.id AND v.user_id = $1
+            ORDER BY v.viewed_at DESC LIMIT 6`, [userId]);
+
+        // Submission-help (desk) cases for this subscriber's organization, newest first, open before closed.
+        const myCases = await q.many(
+          `SELECT c.id, c.tender_title, c.stage, c.outcome, c.deadline, c.updated_at, c.assigned_name
+             FROM submission_cases c
+            ORDER BY (c.stage = 'closed'), c.updated_at DESC LIMIT 5`);
+
         return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing,
-          interest, newInterest, bestMatches, latestInterest, closingInterest, savedClosing };
+          interest, newInterest, bestMatches, latestInterest, closingInterest, savedClosing, recentlyViewed, myCases };
       });
 
       // Last six calendar months, with zero where nothing was published.
@@ -194,23 +210,14 @@ export function dashboardRoutes() {
         latestInterest: data.latestInterest.map(listView),
         closingInterest: data.closingInterest.map(listView),
         savedClosing: data.savedClosing.map(listView),
+        recentlyViewed: data.recentlyViewed.map(listView),
+        myCases: data.myCases.map((c) => ({
+          id: c.id, ref: caseRef(c.id), title: c.tender_title, stage: c.stage,
+          stageLabel: CASE_STAGE_LABEL[c.stage] ?? c.stage, outcome: c.outcome,
+          deadline: c.deadline, updatedAt: c.updated_at, assignedName: c.assigned_name,
+        })),
         dataAsOf: k.data_as_of,
       });
-    })
-  );
-
-  // Save the subscriber's preferred tender value range (drives the "for you" sections).
-  // Only the signed-in user's own row is touched; the id comes from the session, not the body.
-  r.put(
-    '/preferences',
-    requireAuth,
-    asyncHandler(async (req, res) => {
-      const money = z.coerce.number().min(0).max(1e13);
-      const { valueMin, valueMax } = parse(z.object({ valueMin: money.nullish(), valueMax: money.nullish() }), req.body);
-      if (valueMin != null && valueMax != null && valueMin > valueMax) throw badRequest('Minimum value cannot be above the maximum');
-      await withSystemDb(req, (q) =>
-        q.query('UPDATE users SET pref_value_min = $2, pref_value_max = $3 WHERE id = $1', [req.auth.user.id, valueMin ?? null, valueMax ?? null]));
-      res.status(204).end();
     })
   );
 

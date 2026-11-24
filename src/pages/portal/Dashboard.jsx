@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Clock, FileText, IndianRupee, Sparkles, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ClipboardList, Clock, Eye, FileText, IndianRupee, Sparkles, Star } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, ComposedChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import TenderCard from '../../components/tender/TenderCard.jsx';
 import TenderDrawer from '../../components/tender/TenderDrawer.jsx';
-import { Button, Card, Empty, ErrorNote, Loading, PageHeader } from '../../components/ui.jsx';
-import { useToast } from '../../components/Toast.jsx';
+import { Card, Empty, ErrorNote, Loading, PageHeader } from '../../components/ui.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 import { api } from '../../lib/api.js';
-import { lakhToRupees, rupeesToLakh } from '../../lib/filters.js';
-import { formatDateTime, formatInr, formatNumber } from '../../lib/format.js';
+import { formatDate, formatDateTime, formatInr, formatNumber } from '../../lib/format.js';
 import { useAsync } from '../../lib/hooks.js';
 
 const PALETTE = ['#08726B', '#35A28B', '#71BD9D', '#A3D3B0', '#5F9E85', '#C5DCD0'];
@@ -41,43 +40,6 @@ function TenderList({ title, icon: Icon, items, onOpen, onToggleWatch }) {
         {items.map((item) => <TenderCard key={item.id} compact tender={item} onOpen={onOpen} onToggleWatch={onToggleWatch} />)}
       </div>
     </Card>
-  );
-}
-
-/** Editor for the subscriber's preferred value range (in ₹ lakh), which filters the "for you" sections. */
-function ValueRangePref({ interest, onSaved }) {
-  const { t } = useI18n();
-  const toast = useToast();
-  const [min, setMin] = useState(rupeesToLakh(interest.valueMin) ?? '');
-  const [max, setMax] = useState(rupeesToLakh(interest.valueMax) ?? '');
-  const [pending, setPending] = useState(false);
-  // lakhToRupees returns '' for an empty box; send null so the bound is cleared, not saved as 0.
-  const toRupees = (v) => { const r = lakhToRupees(v); return r === '' ? null : Number(r); };
-  const save = async () => {
-    setPending(true);
-    try {
-      await api.put('/dashboard/preferences', { valueMin: toRupees(min), valueMax: toRupees(max) });
-      toast.success(t('dash.prefSaved'));
-      onSaved();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setPending(false);
-    }
-  };
-  return (
-    <div className="pref-range-row" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap', margin: '4px 0 2px' }}>
-      <div>
-        <label className="cell-sub" htmlFor="pref-min">{t('dash.prefRangeTitle')}</label>
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          <input id="pref-min" className="input" type="number" min="0" style={{ width: 120 }} placeholder={t('search.min')}
-            value={min} onChange={(e) => setMin(e.target.value)} aria-label={`${t('dash.prefRangeTitle')} ${t('search.min')}`} />
-          <input className="input" type="number" min="0" style={{ width: 120 }} placeholder={t('search.max')}
-            value={max} onChange={(e) => setMax(e.target.value)} aria-label={`${t('dash.prefRangeTitle')} ${t('search.max')}`} />
-          <Button size="sm" pending={pending} onClick={save}>{t('common.save')}</Button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -135,13 +97,31 @@ export default function Dashboard() {
           </p>
         : <div className="note note-info" style={{ marginBottom: 10 }}>{t('dash.noInterest')}</div>}
 
-      <ValueRangePref interest={interest} onSaved={data.reload} />
-
       <TenderList title={t('dash.bestMatchesTitle')} icon={Sparkles} items={d.bestMatches} onOpen={openTender} onToggleWatch={toggleWatch} />
       <TenderList title={t('dash.myMatchesTitle')} items={d.matchedTenders} onOpen={openTender} onToggleWatch={toggleWatch} />
       <TenderList title={t('dash.latestInterestTitle')} items={d.latestInterest} onOpen={openTender} onToggleWatch={toggleWatch} />
+      <TenderList title={t('dash.recentlyViewedTitle')} icon={Eye} items={d.recentlyViewed} onOpen={openTender} onToggleWatch={toggleWatch} />
       <TenderList title={t('dash.closingInterestTitle')} icon={Clock} items={d.closingInterest} onOpen={openTender} onToggleWatch={toggleWatch} />
       <TenderList title={t('dash.savedClosingTitle')} icon={Star} items={d.savedClosing} onOpen={openTender} onToggleWatch={toggleWatch} />
+
+      {d.myCases?.length > 0 && (
+        <Card title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ClipboardList size={16} />{t('dash.casesTitle')}</span>} flush>
+          <ul className="doc-list" style={{ padding: 14, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {d.myCases.map((c) => (
+              <li key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <Link to={`/app/desk/${c.id}`}>{c.title}</Link>
+                  <span className="cell-sub"> · {c.ref}</span>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap' }}>
+                  {c.deadline && <span className="cell-sub">{formatDate(c.deadline, lang)}</span>}
+                  <span style={{ fontSize: 12, padding: '2px 10px', borderRadius: 12, background: '#eef2f7', color: 'var(--slate-700)' }}>{c.stageLabel}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {/* ---------------- Market overview ---------------- */}
       <h3 className="dash-section-heading" style={{ margin: '22px 0 6px', fontSize: 16, color: 'var(--slate-800)' }}>{t('dash.marketTitle')}</h3>

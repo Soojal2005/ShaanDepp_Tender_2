@@ -128,7 +128,20 @@ export function tendersRoutes({ limiters } = {}) {
     '/:tenderId',
     asyncHandler(async (req, res) => {
       const { tenderId } = parse(z.object({ tenderId: idSchema }), req.params);
-      res.json({ tender: await withUserDb(req, (q) => getTender(q, tenderId, { userId: req.auth.user.id, orgId: req.auth.user.orgId })) });
+      const tender = await withUserDb(req, async (q) => {
+        const found = await getTender(q, tenderId, { userId: req.auth.user.id, orgId: req.auth.user.orgId });
+        // Record the view for the dashboard's "recently viewed" list. Best-effort:
+        // a logging failure (e.g. a staff user with no org) must never break the read.
+        if (req.auth.user.orgId) {
+          await q.query(
+            `INSERT INTO tender_views (organization_id, user_id, tender_id) VALUES ($1, $2, $3)
+             ON CONFLICT (user_id, tender_id) DO UPDATE SET viewed_at = now()`,
+            [req.auth.user.orgId, req.auth.user.id, tenderId]
+          ).catch(() => {});
+        }
+        return found;
+      });
+      res.json({ tender });
     })
   );
 

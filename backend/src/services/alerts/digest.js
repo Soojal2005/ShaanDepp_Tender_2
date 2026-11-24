@@ -45,9 +45,13 @@ export function isDue(profile, now = new Date()) {
   }
 }
 
-/** A user's keyword as a tsquery: every word must appear, as a prefix ("meter" finds "meters"). */
+/**
+ * A user's keyword as a tsquery: every word must appear, as a prefix ("meter" finds
+ * "meters"). Only alphanumeric tokens are kept, so a keyword with punctuation
+ * ("A/C", "c++") can never build an invalid tsquery that errors the digest query.
+ */
 function keywordQuery(add, keyword) {
-  const parts = String(keyword).replace(/[\\']/g, ' ').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).slice(0, 6);
+  const parts = (String(keyword).toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).slice(0, 6);
   if (!parts.length) return null;
   return parts.map((w) => `to_tsquery('simple', quote_literal(${add(w.slice(0, 60))}::text) || ':*')`).join(' && ');
 }

@@ -302,21 +302,37 @@ describe('tender search', () => {
       assert.ok(res.body.dataAsOf);
     });
 
-    it('returns personalized "for you" blocks and stores a value-range preference', async () => {
+    it('returns personalized "for you" blocks and observes the value range from the user\'s searches', async () => {
       const base = await user.get('/dashboard');
       assert.equal(base.status, 200);
       assert.ok(base.body.interest, 'has an interest block');
       for (const key of ['bestMatches', 'latestInterest', 'closingInterest', 'savedClosing']) {
         assert.ok(Array.isArray(base.body[key]), `${key} is an array`);
       }
-      // Save a preferred value range, then read it back.
-      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: 1_000_000, valueMax: 50_000_000 })).status, 204);
+      // The value band is never asked for — it is observed from the value filters the
+      // user actually searches with. Run one such search (with a text term so it is
+      // logged), then it shows up on the dashboard.
+      await user.get('/tenders?q=hospital&valueMin=1000000&valueMax=50000000&page=1');
       const after = await user.get('/dashboard');
       assert.equal(after.body.interest.valueMin, 1_000_000);
       assert.equal(after.body.interest.valueMax, 50_000_000);
-      // Clearing is allowed; an inverted range is rejected.
-      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: null, valueMax: null })).status, 204);
-      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: 9, valueMax: 1 })).status, 400);
+    });
+
+    it('does not error when an alert keyword contains punctuation (tsquery safety)', async () => {
+      const created = await user.post('/alert-profiles').send({ name: 'Punny', keywords: ['a/c', 'r.c.c.', 'c++ & steel', '(x'] });
+      assert.equal(created.status, 201);
+      const res = await user.get('/dashboard');
+      assert.equal(res.status, 200, `dashboard must not 500 on punctuation keywords: ${JSON.stringify(res.body)}`);
+      assert.ok(Array.isArray(res.body.bestMatches));
+    });
+
+    it('records a recently viewed tender and surfaces it on the dashboard', async () => {
+      const list = await user.get('/tenders');
+      const id = list.body.items[0]?.id;
+      assert.ok(id, 'there is a tender to open');
+      await user.get(`/tenders/${id}`); // opening the detail records the view
+      const res = await user.get('/dashboard');
+      assert.ok(res.body.recentlyViewed.some((t) => t.id === id), 'recently viewed includes the opened tender');
     });
 
     it('requires sign-in', async () => {
