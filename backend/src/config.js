@@ -13,10 +13,19 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const BACKEND_ROOT = path.resolve(here, '..');
 export const REPO_ROOT = path.resolve(BACKEND_ROOT, '..');
 
-// Node >= 20.12. Missing files are fine; real environment variables always win.
-// Tests never read .env files, so a developer's local settings cannot leak into them.
+// Node >= 20.12. Missing files are fine; real environment variables always win
+// (loadEnvFile never overrides an already-defined variable, and among files the
+// first one loaded wins). Tests never read .env files, so a developer's local
+// settings cannot leak into them.
 if (process.env.NODE_ENV !== 'test') {
-  for (const file of [path.join(BACKEND_ROOT, '.env'), path.join(REPO_ROOT, '.env')]) {
+  const files = [path.join(BACKEND_ROOT, '.env'), path.join(REPO_ROOT, '.env')];
+  // In production the live values (e.g. PUBLIC_BASE_URL=https://www.procure-brain.in)
+  // live in .env.production. Load it FIRST so it wins over any dev `.env` left on
+  // the box; real environment variables (e.g. the Render dashboard) still win.
+  if (process.env.NODE_ENV === 'production') {
+    files.unshift(path.join(REPO_ROOT, '.env.production'), path.join(BACKEND_ROOT, '.env.production'));
+  }
+  for (const file of files) {
     try {
       process.loadEnvFile(file);
     } catch {
@@ -217,8 +226,11 @@ function load(env) {
   // Password-reset and invitation emails embed PUBLIC_BASE_URL. If live mail goes
   // out while it still points at localhost, every "set your password" link is dead
   // for the recipient, so refuse to start rather than send broken links.
-  if (c.MAIL_MODE === 'live' && /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/|$)/i.test(c.PUBLIC_BASE_URL)) {
-    throw new Error('MAIL_MODE=live requires PUBLIC_BASE_URL to be the public site URL (e.g. https://www.procure-brain.in). It still points at localhost, so password-reset and invitation links in emails would not work for recipients.');
+  const baseIsLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/|$)/i.test(c.PUBLIC_BASE_URL);
+  // procure-brain.com is a dead placeholder from old templates; the live domain is .in.
+  const baseWrongDomain = /procure-brain\.com\b/i.test(c.PUBLIC_BASE_URL);
+  if (c.MAIL_MODE === 'live' && (baseIsLocal || baseWrongDomain)) {
+    throw new Error(`MAIL_MODE=live requires PUBLIC_BASE_URL to be the live site URL https://www.procure-brain.in. It is "${c.PUBLIC_BASE_URL}", so password-reset and invitation links in emails would be dead for recipients.`);
   }
   if (c.TENDERBOOK_SYNC && !c.TENDERBOOK_API_KEY) {
     throw new Error('TENDERBOOK_SYNC=on needs TENDERBOOK_API_KEY.');

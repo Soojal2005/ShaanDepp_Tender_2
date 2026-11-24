@@ -17,12 +17,12 @@ import { enqueueEmail } from './mail/queue.js';
 
 const PURPOSE_COPY = {
   register: {
-    subject: 'Your procure-brain.com verification code',
+    subject: 'Your procure-brain.in verification code',
     intro: 'Use this code to verify your email and complete your registration with Shan-Deep.',
   },
   password_reset: {
-    subject: 'Your procure-brain.com password reset code',
-    intro: 'Use this code to reset the password for your procure-brain.com account.',
+    subject: 'Your procure-brain.in password reset code',
+    intro: 'Use this code to reset the password for your procure-brain.in account.',
   },
 };
 

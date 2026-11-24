@@ -20,7 +20,7 @@ export function emailShell({ title, preheader = '', bodyHtml, footerHtml = '' })
     <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#ffffff;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">
       <tr><td style="background:#0B2545;padding:22px 24px;color:#ffffff;">
         <div style="font-size:18px;font-weight:700;">Shan-Deep Tender Intelligence</div>
-        <div style="font-size:12px;color:#94A3B8;margin-top:4px;">procure-brain.com</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:4px;">www.procure-brain.in</div>
       </td></tr>
       <tr><td style="padding:24px;">${bodyHtml}</td></tr>
       <tr><td style="padding:16px 24px;background:#F8FAFC;font-size:11px;color:#94A3B8;text-align:center;">

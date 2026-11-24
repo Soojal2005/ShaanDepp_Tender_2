@@ -198,7 +198,7 @@ async function alertOps(q, message) {
   const hour = new Date().toISOString().slice(0, 13);
   const html = emailShell({
     title: 'Email sending is paused',
-    bodyHtml: `<p style="font-size:15px;"><b>procure-brain.com cannot send email through Microsoft 365.</b></p>
+    bodyHtml: `<p style="font-size:15px;"><b>procure-brain.in cannot send email through Microsoft 365.</b></p>
       <p style="font-size:13px;">${esc(message)}</p>
       <p style="font-size:13px;">Messages are kept and will be sent automatically once access is restored. Sending retries every 15 minutes.</p>
       <p>${button('Open mail queue', `${config.publicBaseUrl}/app/admin/mail`)}</p>`,

@@ -10,7 +10,7 @@ COPY index.html vite.config.js ./
 COPY public ./public
 COPY scripts ./scripts
 COPY src ./src
-ARG SITE_URL=https://procure-brain.com
+ARG SITE_URL=https://www.procure-brain.in
 ENV SITE_URL=$SITE_URL
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_PUBLISHABLE_KEY
