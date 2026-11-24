@@ -130,3 +130,28 @@ export const isGepnicProvider = (id) => {
   const p = portalById(id);
   return Boolean(p && !p.adapter);
 };
+
+/**
+ * A public portal URL to show the user for a tender, derived from its provider
+ * id. Used as the "original portal link" in the tender detail so EVERY crawled
+ * tender links back to its source — independent of `source_url`, which the
+ * detail back-fill uses as its "already detailed" marker and is only set for
+ * the subset of tenders whose detail page was fetched.
+ *
+ * GePNIC portals have no stable per-tender public URL (their detail links are
+ * session-scoped and captcha-gated), so this points at the portal's
+ * captcha-free "Tenders by Closing Date" listing, where the tender is findable
+ * by its id. Custom-adapter portals point at their public landing page.
+ *
+ * Returns null for a provider that is not a crawled portal (e.g. the vendor API
+ * or an Excel import); those carry their own `source_url` instead.
+ */
+export const portalPublicUrl = (id) => {
+  const p = portalById(id);
+  if (!p) return null;
+  try {
+    return new URL(p.adapter ? p.appPath : `${p.appPath}${listQuery}`, p.baseUrl).toString();
+  } catch {
+    return null;
+  }
+};

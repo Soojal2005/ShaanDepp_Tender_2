@@ -4,7 +4,7 @@ import { applyTenderDetail, parseDetailPage, parseListPage, createCpppClient } f
 import { normalizeCpppTender, toCpppDate } from '../src/services/ingestion/sources/cppp/normalize.js';
 import { runIngestion } from '../src/services/ingestion/runner.js';
 import { SourceError } from '../src/services/ingestion/tenderbook.js';
-import { GEPNIC_PORTALS, enabledPortals, portalClientOptions } from '../src/services/ingestion/sources/cppp/portals.js';
+import { GEPNIC_PORTALS, enabledPortals, portalClientOptions, portalPublicUrl } from '../src/services/ingestion/sources/cppp/portals.js';
 import { seedCrawlerProviders } from '../src/db/seed.js';
 import { createJobs } from '../src/jobs/definitions.js';
 import { SYSTEM, makeContext } from './helpers.js';
@@ -352,6 +352,24 @@ describe('GePNIC portal registry', () => {
     assert.match(o.listPath, /\/nicgep\/app\?page=FrontEndListTendersbyDate/);
     assert.equal(o.tableSelector, '#table');
     assert.equal(o.state, 'Madhya Pradesh');
+  });
+
+  it('derives a public portal link for every portal (shown on every tender)', () => {
+    // GePNIC portal → the captcha-free "Tenders by Closing Date" public listing.
+    assert.equal(
+      portalPublicUrl('cppp'),
+      'https://eprocure.gov.in/eprocure/app?page=FrontEndListTendersbyDate&service=page'
+    );
+    assert.match(portalPublicUrl('mp'), /^https:\/\/mptenders\.gov\.in\/nicgep\/app\?page=FrontEndListTendersbyDate/);
+    // Custom-adapter portal → its public landing page, not the GePNIC listing.
+    assert.equal(portalPublicUrl('bpcl'), 'https://bpcltenders.eproc.in/Product/publicDash');
+    // Every registry entry yields a usable https URL.
+    for (const p of GEPNIC_PORTALS) {
+      assert.match(portalPublicUrl(p.id), /^https:\/\//, `${p.id} has a public link`);
+    }
+    // Non-portal providers (vendor API, Excel import, seed) have no derived link.
+    assert.equal(portalPublicUrl('tenderbook'), null);
+    assert.equal(portalPublicUrl('sample'), null);
   });
 });
 

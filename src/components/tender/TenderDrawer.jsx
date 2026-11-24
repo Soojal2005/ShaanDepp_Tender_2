@@ -113,8 +113,8 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
               {isClient && (
                 <Button variant="outline" onClick={() => setAskDesk(true)}><ClipboardCheck size={15} />{t('desk.request')}</Button>
               )}
-              {tender.sourceUrl && (
-                <a className="btn btn-outline" href={tender.sourceUrl} target="_blank" rel="noopener noreferrer">
+              {(tender.portalUrl ?? tender.sourceUrl) && (
+                <a className="btn btn-outline" href={tender.portalUrl ?? tender.sourceUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink size={15} />{t('tender.sourceLink')}
                 </a>
               )}

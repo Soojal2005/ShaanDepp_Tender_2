@@ -11,7 +11,7 @@
 import { z } from 'zod';
 import { config } from '../config.js';
 import { notFound } from '../errors.js';
-import { isGepnicProvider } from './ingestion/sources/cppp/portals.js';
+import { isGepnicProvider, portalPublicUrl } from './ingestion/sources/cppp/portals.js';
 import { tenderRef } from '../util.js';
 
 const list = (inner, max = 100) =>
@@ -181,6 +181,10 @@ export const listView = (r) => ({
   hasBoq: r.has_boq,
   hasDocuments: r.has_documents,
   sourceUrl: r.source_url,
+  // The link back to the source portal shown on every tender. Prefer a stored
+  // per-tender/source URL; otherwise derive the portal's public listing from
+  // the provider id so a crawled tender always links out (see portalPublicUrl).
+  portalUrl: r.source_url ?? portalPublicUrl(r.provider_id),
   watchlisted: Boolean(r.watchlisted),
   inDigest: r.in_digest ?? null,
 });
