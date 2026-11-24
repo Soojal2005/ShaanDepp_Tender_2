@@ -7,13 +7,13 @@ const TILE = 52;
 const GAP = 4;
 const COLUMNS = 9;
 const ROWS = 8;
-const LINE_COLORS = ['#1C1B18', '#0B8F6B', '#D97706', '#7C3AED', '#DB2777', '#5E584E'];
+const LINE_COLORS = ['#086C65', '#168E78', '#4BA996', '#79BE9E', '#A1CEAA', '#4B7062'];
 
 const pctText = (v) => (v === null || v === undefined ? null : `${v > 0 ? '+' : ''}${v}%`);
 
 function Change({ value, label }) {
   if (value === null || value === undefined) return null;
-  const tone = value > 0 ? '#047857' : value < 0 ? '#B91C1C' : '#86827A';
+  const tone = value > 0 ? '#047857' : value < 0 ? '#B91C1C' : '#647970';
   return <span style={{ color: tone, fontWeight: 600 }}>{label.replace('{pct}', `${value > 0 ? '+' : ''}${value}`)}</span>;
 }
 
@@ -40,14 +40,14 @@ function TileMap({ states, label }) {
       {states.filter((s) => s.tile).map((s) => {
         const [x, y] = s.tile;
         const level = s.inScope ? s.count / max : 0;
-        const fill = !s.inScope ? '#EFEBE2' : s.count === 0 ? '#E8F0FE' : `rgba(28, 27, 24, ${0.25 + level * 0.75})`;
+        const fill = !s.inScope ? '#edf5ef' : s.count === 0 ? '#e4f4ed' : `rgba(8, 108, 101, ${0.25 + level * 0.75})`;
         const dark = s.inScope && level > 0.5;
         return (
           <g key={s.code} transform={`translate(${x * (TILE + GAP)}, ${y * (TILE + GAP)})`}>
             <title>{`${s.name}: ${s.count}`}</title>
-            <rect width={TILE} height={TILE} rx={6} fill={fill} stroke={s.inScope ? '#BFD4FF' : '#E4E0D6'} />
-            <text x={TILE / 2} y={TILE / 2 - 2} textAnchor="middle" fontSize="12" fontWeight="700" fill={dark ? '#FFFFFF' : '#1C1B18'}>{s.code}</text>
-            <text x={TILE / 2} y={TILE / 2 + 14} textAnchor="middle" fontSize="11" fill={dark ? '#E0EAFF' : '#5E584E'}>{s.inScope ? s.count : ''}</text>
+            <rect width={TILE} height={TILE} rx={6} fill={fill} stroke={s.inScope ? '#b6ddcd' : '#dce7e1'} />
+            <text x={TILE / 2} y={TILE / 2 - 2} textAnchor="middle" fontSize="12" fontWeight="700" fill={dark ? '#FFFFFF' : '#086C65'}>{s.code}</text>
+            <text x={TILE / 2} y={TILE / 2 + 14} textAnchor="middle" fontSize="11" fill={dark ? '#E1F4E9' : '#4b625a'}>{s.inScope ? s.count : ''}</text>
           </g>
         );
       })}
@@ -100,12 +100,12 @@ export default function BundleView({ snapshot: s }) {
         <div className="chart-box" role="img" aria-label={t('reports.s1')}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={volume} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E0D6" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dce7e1" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip formatter={(v, _n, p) => [v, `${t('reports.count')} (${formatInr(p.payload.value, t('reports.notPublished'))})`]} />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {volume.map((w) => <Cell key={w.weekStart} fill={w.current ? '#1C1B18' : '#9DBFFF'} />)}
+                {volume.map((w) => <Cell key={w.weekStart} fill={w.current ? '#086C65' : '#B6DDCD'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -125,7 +125,7 @@ export default function BundleView({ snapshot: s }) {
               <tr key={d.department}>
                 <td>{d.rank}</td><td className="cell-title">{d.department}</td><td className="num">{d.count}</td>
                 <td className="num">{d.value > 0 ? formatInr(d.value) : <span className="not-disclosed-fallback">{t('reports.notPublished')}</span>}</td>
-                <td className="num"><span style={{ color: d.change > 0 ? '#047857' : d.change < 0 ? '#B91C1C' : '#86827A', fontWeight: 600 }}>{d.change > 0 ? '+' : ''}{d.change}</span></td>
+                <td className="num"><span style={{ color: d.change > 0 ? '#047857' : d.change < 0 ? '#B91C1C' : '#647970', fontWeight: 600 }}>{d.change > 0 ? '+' : ''}{d.change}</span></td>
               </tr>))}</tbody>
           </table></div>
         )}
@@ -139,7 +139,7 @@ export default function BundleView({ snapshot: s }) {
               <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip />
               <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                {s.valueBands.map((b) => <Cell key={b.key} fill={b.key === 'undisclosed' ? '#D4CDBE' : '#1C1B18'} />)}
+                {s.valueBands.map((b) => <Cell key={b.key} fill={b.key === 'undisclosed' ? '#BCD8CB' : '#086C65'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -152,7 +152,7 @@ export default function BundleView({ snapshot: s }) {
             <div className="chart-box" role="img" aria-label={t('reports.s5')}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={topWeeks} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E0D6" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dce7e1" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip />

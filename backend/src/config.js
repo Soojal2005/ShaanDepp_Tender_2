@@ -190,8 +190,8 @@ const schema = z.object({
 
   // Website
   WHATSAPP_NUMBER: z.string().default('918269868808'),
-  CONTACT_PHONE: z.string().default('+91 82698 68808'),
-  CONTACT_EMAIL: z.string().default('info@synquic.com'),
+  CONTACT_PHONE: z.string().default('+91 79743 92235'),
+  CONTACT_EMAIL: z.string().default('shantanu.trivedi@procure-brain.com'),
 });
 
 function load(env) {

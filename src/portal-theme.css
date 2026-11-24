@@ -43,3 +43,25 @@
   .app-container .brand-titles h1 { color: #104f4e; font-size: 20px; }
   .app-container .brand-titles span { color: #55766b; }
 }
+
+/* Consistent green accents across every portal role and page. */
+.app-container { --ink: #173c36; }
+.app-container .breadcrumbs-nav { display: none; }
+.app-container .kpi-icon-square, .app-container .kpi-icon-square.blue, .app-container .kpi-icon-square.green, .app-container .kpi-icon-square.amber, .app-container .kpi-icon-square.purple { background: #ddf3e8; color: #086c65; }
+.app-container .analytics-widget-card { border-color: #d9e6df; }
+.app-container .analytics-widget-card:hover { border-color: #9fcdbb; }
+.app-container .dept-bar-track { background: #e2f0e8; }
+.app-container .dept-bar-fill, .app-container .spark-bar.blue, .app-container .meter > span, .app-container .stage-bar span.on { background: #4ba996; }
+.app-container .widget-card-header a, .app-container .link-btn, .app-container .score-pill, .app-container .stage-count b { color: #086c65; }
+.app-container .btn-view-details-blue { background: #086c65; border-color: #086c65; color: #fff; }
+.app-container .btn-view-details-blue:hover { background: #064f4b; }
+.app-container .tag-chip, .app-container .badge-slate { background: #e3f3e9; color: #28594a; }
+.app-container .stepper li.done::before, .app-container .stepper li.current::before, .app-container .stepper li.done .dot { background: #086c65; }
+.app-container .stepper li.current .dot { color: #086c65; box-shadow: 0 0 0 2px #086c65; }
+.app-container .stepper li.current .name { color: #086c65; }
+.app-container input::placeholder, .app-container textarea::placeholder { color: #778f84; opacity: 1; }
+.app-container .input, .app-container .select, .app-container .textarea, .app-container .tag-box { border-color: #bfd0c9; }
+.app-container .input:disabled, .app-container .select:disabled { background: #edf5ef; color: #647970; }
+.app-container .tag-box:focus-within { border-color: #08726b; box-shadow: 0 0 0 3px rgba(8, 114, 107, .13); }
+.app-container .stage-count.active { border-color: #08726b; background: #e4f4ed; }
+.app-container input[type='checkbox'], .app-container input[type='radio'] { accent-color: #08726b; }

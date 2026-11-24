@@ -1,8 +1,8 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Award, BadgeCheck, Bell, Building2, Check, ChevronDown, ClipboardCheck, ClipboardList, Database, FileSearch, FileSignature,
-  Landmark, Lightbulb, Mail, MapPin, MessageCircle, Phone, ScrollText, Search, ShieldCheck,
+  Landmark, Lightbulb, Mail, MapPin, Phone, ScrollText, Search, ShieldCheck,
   ShoppingBag, SlidersHorizontal, Tag, TrendingUp, Trophy,
 } from 'lucide-react';
 import { DEPARTMENTS, GROUPS, SERVICE_COUNT, itemsOf } from '../../content/services.js';
@@ -11,7 +11,7 @@ import { formatInr } from '../../lib/format.js';
 import EnquiryForm, { ACCESS_SERVICE } from '../../site/EnquiryForm.jsx';
 import FlowChart from '../../site/FlowChart.jsx';
 import PortalPreview from '../../site/PortalPreview.jsx';
-import { telHref, useSeo, useSiteConfig, whatsappHref } from '../../site/hooks.js';
+import { telHref, useSeo, useSiteConfig } from '../../site/hooks.js';
 
 // The services index looks these up by each group's `icon` key, so the names must match content/services.js.
 export const GROUP_ICONS = { FileSearch, ShoppingBag, Building2, ClipboardList, BadgeCheck, Landmark, ScrollText, Lightbulb, TrendingUp, Award };
@@ -339,7 +339,6 @@ export default function Home() {
     return () => io.disconnect();
   }, []);
   const tenders = (samples.length ? samples : t('site.lp.samples')).slice(0, 3);
-  const waHref = useMemo(() => whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') })), [site.whatsappNumber, t]);
   useSeo({ title: t('site.seo.homeTitle'), description: t('site.seo.homeDesc'), path: '/' });
 
   return (
@@ -424,9 +423,8 @@ export default function Home() {
             <li>
               <span className="lp-touch-ico">
                 <a href={telHref(site.phone)} aria-label={t('site.lp.callUs')}><Phone size={30} strokeWidth={1.6} /></a>
-                <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label={t('site.lp.whatsapp')}><MessageCircle size={30} strokeWidth={1.6} /></a>
               </span>
-              <div><b>{t('site.lp.cCallWa')}</b><a href={telHref(site.phone)}>{site.phone}</a></div>
+              <div><b>{t('site.lp.cPhone')}</b><a href={telHref(site.phone)}>{site.phone}</a></div>
             </li>
             <li>
               <span className="lp-touch-ico"><Mail size={32} strokeWidth={1.6} aria-hidden="true" /></span>

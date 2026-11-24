@@ -37,9 +37,9 @@ export default function Help() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {portals.map((p) => (
             <a key={p.url} href={p.url} target="_blank" rel="noopener noreferrer"
-              style={{ textDecoration: 'none', padding: 14, border: '1px solid #E4E0D6', borderRadius: 10, background: '#fff', display: 'block' }}>
+              style={{ textDecoration: 'none', padding: 14, border: '1px solid #dce7e1', borderRadius: 10, background: '#fff', display: 'block' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: 'var(--slate-900)' }}>
-                {p.name}<ExternalLink size={14} style={{ color: '#1C1B18' }} />
+                {p.name}<ExternalLink size={14} style={{ color: '#086C65' }} />
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--slate-500)', marginTop: 2 }}>{p.sub}</div>
             </a>
@@ -49,7 +49,7 @@ export default function Help() {
 
       <Card title={t('help.faqTitle')}>
         {faq.map((item, i) => (
-          <details key={i} style={{ padding: '12px 0', borderBottom: i < faq.length - 1 ? '1px solid #EFEBE2' : 'none' }}>
+          <details key={i} style={{ padding: '12px 0', borderBottom: i < faq.length - 1 ? '1px solid #edf5ef' : 'none' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--slate-900)' }}>{item.q}</summary>
             <p style={{ marginTop: 8, color: 'var(--slate-600)', lineHeight: 1.6 }}>{item.a}</p>
           </details>

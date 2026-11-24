@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 
-const FALLBACK = { phone: '+91 82698 68808', email: 'info@synquic.com', whatsappNumber: '918269868808', registration: { business: 'BHOP260407SE000586', gst: '23APSPT2592R1ZR' } };
+const FALLBACK = { phone: '+91 79743 92235', email: 'shantanu.trivedi@procure-brain.com', whatsappNumber: '918269868808', registration: { business: 'BHOP260407SE000586', gst: '23APSPT2592R1ZR' } };
 let cached = null;
 let inflight = null;
 
