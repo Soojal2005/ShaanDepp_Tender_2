@@ -302,6 +302,23 @@ describe('tender search', () => {
       assert.ok(res.body.dataAsOf);
     });
 
+    it('returns personalized "for you" blocks and stores a value-range preference', async () => {
+      const base = await user.get('/dashboard');
+      assert.equal(base.status, 200);
+      assert.ok(base.body.interest, 'has an interest block');
+      for (const key of ['bestMatches', 'latestInterest', 'closingInterest', 'savedClosing']) {
+        assert.ok(Array.isArray(base.body[key]), `${key} is an array`);
+      }
+      // Save a preferred value range, then read it back.
+      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: 1_000_000, valueMax: 50_000_000 })).status, 204);
+      const after = await user.get('/dashboard');
+      assert.equal(after.body.interest.valueMin, 1_000_000);
+      assert.equal(after.body.interest.valueMax, 50_000_000);
+      // Clearing is allowed; an inverted range is rejected.
+      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: null, valueMax: null })).status, 204);
+      assert.equal((await user.put('/dashboard/preferences').send({ valueMin: 9, valueMax: 1 })).status, 400);
+    });
+
     it('requires sign-in', async () => {
       assert.equal((await anon(ctx.app).get('/dashboard')).status, 401);
     });

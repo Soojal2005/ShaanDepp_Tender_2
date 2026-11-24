@@ -2,14 +2,26 @@
  * Dashboard figures, all computed from the tender table on request. Nothing is
  * hard-coded and nothing is estimated: tenders without a published value are
  * counted separately instead of being treated as zero.
+ *
+ * The "for you" sections (best matches, latest, closing soon, weekly new count)
+ * are personalized to the subscriber's interest — the keywords/locations of their
+ * active alert profiles plus their saved value-range preference (see userInterest.js).
  */
 import { Router } from 'express';
-import { requireAuth, withUserDb } from '../auth/middleware.js';
-import { asyncHandler } from '../errors.js';
+import { requireAuth, withSystemDb, withUserDb } from '../auth/middleware.js';
+import { asyncHandler, badRequest } from '../errors.js';
 import { listView } from '../services/tenderSearch.js';
+import { interestWhere, loadUserInterest } from '../services/userInterest.js';
+import { parse, z } from '../validate.js';
 
 const OPEN = `(t.status = 'Open' AND (t.submission_deadline IS NULL OR t.submission_deadline > now()))`;
 const pct = (now, before) => (before > 0 ? Math.round(((now - before) / before) * 100) : null);
+
+// The columns listView() reads, plus a per-user watchlist flag. $1 must be the userId.
+const TENDER_COLS = `t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
+  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
+  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
+  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted`;
 
 export function dashboardRoutes() {
   const r = Router();
@@ -34,7 +46,7 @@ export function dashboardRoutes() {
           `SELECT count(DISTINCT i.tender_id)::int AS n
              FROM alert_digest_items i JOIN alert_digests d ON d.id = i.digest_id
             WHERE i.in_digest AND NOT d.is_test AND d.generated_at >= now() - interval '7 days'`);
-        // Matches for THIS subscriber's own alert profiles (keywords + industry they registered with).
+        // Matches for THIS subscriber's own alert profiles (keywords + industry + searches).
         const myMatched = await q.one(
           `SELECT count(DISTINCT i.tender_id)::int AS n
              FROM alert_digest_items i
@@ -43,11 +55,7 @@ export function dashboardRoutes() {
             WHERE i.in_digest AND NOT d.is_test AND p.user_id = $1
               AND d.generated_at >= now() - interval '7 days'`, [userId]);
         const myMatchTenders = await q.many(
-          `SELECT t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
-                  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
-                  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
-                  true AS in_digest,
-                  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted
+          `SELECT ${TENDER_COLS}, true AS in_digest
              FROM tenders t
              JOIN (SELECT i.tender_id, max(d.generated_at) AS matched_at
                      FROM alert_digest_items i
@@ -81,34 +89,54 @@ export function dashboardRoutes() {
                  count(*) FILTER (WHERE t.estimated_value IS NULL)::int AS undisclosed
             FROM tenders t WHERE ${OPEN}`);
         const closing = await q.many(
-          `SELECT t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
-                  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
-                  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
-                  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted
-             FROM tenders t
+          `SELECT ${TENDER_COLS} FROM tenders t
             WHERE ${OPEN} AND t.submission_deadline <= now() + interval '72 hours'
             ORDER BY t.submission_deadline LIMIT 8`, [userId]);
-        // The subscriber's own interest: the states and cities their active alert
-        // profiles cover (seeded from their registered location). Drives the
-        // "closing soon in your area" list so the dashboard leads with what is near them.
-        const interest = await q.one(
-          `SELECT coalesce((SELECT array_agg(DISTINCT s) FROM alert_profiles p, unnest(p.state_ids) s
-                              WHERE p.user_id = $1 AND p.status = 'active'), '{}') AS state_ids,
-                  coalesce((SELECT array_agg(DISTINCT c) FROM alert_profiles p, unnest(p.city_ids) c
-                              WHERE p.user_id = $1 AND p.status = 'active'), '{}') AS city_ids`,
-          [userId]);
-        const hasInterest = interest.state_ids.length > 0 || interest.city_ids.length > 0;
-        const closingForYou = hasInterest ? await q.many(
-          `SELECT t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
-                  t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
-                  t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
-                  EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted
-             FROM tenders t
-            WHERE ${OPEN} AND t.submission_deadline <= now() + interval '7 days'
-              AND (($2::int[] <> '{}' AND t.state_id = ANY($2::int[]))
-                OR ($3::int[] <> '{}' AND t.city_id = ANY($3::int[])))
-            ORDER BY t.submission_deadline LIMIT 8`, [userId, interest.state_ids, interest.city_ids]) : [];
-        return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing, hasInterest, closingForYou };
+
+        // ---- Personalized "for you" ------------------------------------------------
+        const interest = await loadUserInterest(q, userId);
+        // Run an interest-filtered tender query with a given ORDER BY (+ optional extra WHERE).
+        // '{TITLEHIT}' in orderBy is replaced by the best-fit (keyword-in-title) expression.
+        const interestQuery = (orderBy, extra = [], limit = 6) => {
+          if (!interest.hasInterest) return Promise.resolve([]);
+          const params = [];
+          const add = (v) => { params.push(v); return `$${params.length}`; };
+          add(userId); // $1 for the watchlist flag in TENDER_COLS
+          const { where, titleHit } = interestWhere(add, interest);
+          const whereSql = [...where, ...extra].join(' AND ');
+          return q.many(
+            `SELECT ${TENDER_COLS} FROM tenders t WHERE ${whereSql} ORDER BY ${orderBy.replaceAll('{TITLEHIT}', titleHit)} LIMIT ${Number(limit)}`,
+            params);
+        };
+        const bestMatches = await interestQuery(
+          `({TITLEHIT}) DESC, t.publish_date DESC NULLS LAST, (t.submission_deadline IS NULL), t.submission_deadline ASC, t.id DESC`);
+        const latestInterest = await interestQuery(`t.publish_date DESC NULLS LAST, t.id DESC`);
+        const closingInterest = await interestQuery(
+          `t.submission_deadline ASC, t.id DESC`, ['t.submission_deadline IS NOT NULL', 't.submission_deadline > now()']);
+
+        // How many new tenders of their interest were published in the last 7 days
+        // (their preferred state is already part of the interest filter).
+        let newInterest = 0;
+        if (interest.hasInterest) {
+          const params = [];
+          const add = (v) => { params.push(v); return `$${params.length}`; };
+          add(userId);
+          const { where } = interestWhere(add, interest);
+          newInterest = (await q.one(
+            `SELECT count(*)::int AS n FROM tenders t WHERE ${[...where, "t.publish_date >= now() - interval '7 days'"].join(' AND ')}`,
+            params)).n;
+        }
+
+        // Alert box: tenders the subscriber SAVED (watchlisted) that are closing soon.
+        const savedClosing = await q.many(
+          `SELECT ${TENDER_COLS} FROM tenders t
+             JOIN watchlist_items wl ON wl.tender_id = t.id AND wl.user_id = $1
+            WHERE t.status = 'Open' AND t.submission_deadline IS NOT NULL AND t.submission_deadline > now()
+              AND t.submission_deadline <= now() + interval '14 days'
+            ORDER BY t.submission_deadline LIMIT 8`, [userId]);
+
+        return { kpi, watch, matched, myMatched, myMatchTenders, byDepartment, stateRows, monthly, bands, closing,
+          interest, newInterest, bestMatches, latestInterest, closingInterest, savedClosing };
       });
 
       // Last six calendar months, with zero where nothing was published.
@@ -154,14 +182,37 @@ export function dashboardRoutes() {
           undisclosed: data.bands.undisclosed,
         },
         closingSoon: data.closing.map(listView),
-        // Personalized to the subscriber's interest (their alert-profile locations).
-        hasInterest: data.hasInterest,
-        closingForYou: data.closingForYou.map(listView),
+        // ---- personalized to the subscriber's interest ----
+        interest: {
+          hasInterest: data.interest.hasInterest,
+          preferredState: data.interest.preferredState,
+          valueMin: data.interest.valueMin,
+          valueMax: data.interest.valueMax,
+          newThisWeek: data.newInterest,
+        },
+        bestMatches: data.bestMatches.map(listView),
+        latestInterest: data.latestInterest.map(listView),
+        closingInterest: data.closingInterest.map(listView),
+        savedClosing: data.savedClosing.map(listView),
         dataAsOf: k.data_as_of,
       });
     })
   );
 
+  // Save the subscriber's preferred tender value range (drives the "for you" sections).
+  // Only the signed-in user's own row is touched; the id comes from the session, not the body.
+  r.put(
+    '/preferences',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const money = z.coerce.number().min(0).max(1e13);
+      const { valueMin, valueMax } = parse(z.object({ valueMin: money.nullish(), valueMax: money.nullish() }), req.body);
+      if (valueMin != null && valueMax != null && valueMin > valueMax) throw badRequest('Minimum value cannot be above the maximum');
+      await withSystemDb(req, (q) =>
+        q.query('UPDATE users SET pref_value_min = $2, pref_value_max = $3 WHERE id = $1', [req.auth.user.id, valueMin ?? null, valueMax ?? null]));
+      res.status(204).end();
+    })
+  );
+
   return r;
 }
-

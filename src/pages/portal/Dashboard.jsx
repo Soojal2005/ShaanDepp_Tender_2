@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Bookmark, Clock, FileText, IndianRupee } from 'lucide-react';
+import { Clock, FileText, IndianRupee, Sparkles, Star } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, ComposedChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import TenderCard from '../../components/tender/TenderCard.jsx';
 import TenderDrawer from '../../components/tender/TenderDrawer.jsx';
-import { Card, Empty, ErrorNote, Loading, PageHeader } from '../../components/ui.jsx';
+import { Button, Card, Empty, ErrorNote, Loading, PageHeader } from '../../components/ui.jsx';
+import { useToast } from '../../components/Toast.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 import { api } from '../../lib/api.js';
+import { lakhToRupees, rupeesToLakh } from '../../lib/filters.js';
 import { formatDateTime, formatInr, formatNumber } from '../../lib/format.js';
 import { useAsync } from '../../lib/hooks.js';
 
@@ -30,6 +32,55 @@ function Kpi({ icon: Icon, tone, value, label, note }) {
   );
 }
 
+/** A titled card listing tenders; renders nothing when empty (so personal boxes stay out of the way). */
+function TenderList({ title, icon: Icon, items, onOpen, onToggleWatch }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <Card title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{Icon && <Icon size={16} />}{title}</span>} flush>
+      <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {items.map((item) => <TenderCard key={item.id} compact tender={item} onOpen={onOpen} onToggleWatch={onToggleWatch} />)}
+      </div>
+    </Card>
+  );
+}
+
+/** Editor for the subscriber's preferred value range (in ₹ lakh), which filters the "for you" sections. */
+function ValueRangePref({ interest, onSaved }) {
+  const { t } = useI18n();
+  const toast = useToast();
+  const [min, setMin] = useState(rupeesToLakh(interest.valueMin) ?? '');
+  const [max, setMax] = useState(rupeesToLakh(interest.valueMax) ?? '');
+  const [pending, setPending] = useState(false);
+  // lakhToRupees returns '' for an empty box; send null so the bound is cleared, not saved as 0.
+  const toRupees = (v) => { const r = lakhToRupees(v); return r === '' ? null : Number(r); };
+  const save = async () => {
+    setPending(true);
+    try {
+      await api.put('/dashboard/preferences', { valueMin: toRupees(min), valueMax: toRupees(max) });
+      toast.success(t('dash.prefSaved'));
+      onSaved();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <div className="pref-range-row" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap', margin: '4px 0 2px' }}>
+      <div>
+        <label className="cell-sub" htmlFor="pref-min">{t('dash.prefRangeTitle')}</label>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <input id="pref-min" className="input" type="number" min="0" style={{ width: 120 }} placeholder={t('search.min')}
+            value={min} onChange={(e) => setMin(e.target.value)} aria-label={`${t('dash.prefRangeTitle')} ${t('search.min')}`} />
+          <input className="input" type="number" min="0" style={{ width: 120 }} placeholder={t('search.max')}
+            value={max} onChange={(e) => setMax(e.target.value)} aria-label={`${t('dash.prefRangeTitle')} ${t('search.max')}`} />
+          <Button size="sm" pending={pending} onClick={save}>{t('common.save')}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { t, lang } = useI18n();
   const data = useAsync(() => api.get('/dashboard'), []);
@@ -39,6 +90,7 @@ export default function Dashboard() {
   if (data.error && !data.data) return <ErrorNote error={data.error} onRetry={data.reload} retryLabel={t('common.retry')} />;
   const d = data.data;
   const k = d.kpis;
+  const interest = d.interest ?? { hasInterest: false };
   const maxDept = Math.max(1, ...d.byDepartment.map((x) => x.count));
   const bands = [
     [t('dash.band10l'), d.valueBands.under10Lakh], [t('dash.band1cr'), d.valueBands.tenLakhTo1Crore],
@@ -47,6 +99,12 @@ export default function Dashboard() {
   const trend = d.monthly.map((m) => ({ ...m, name: monthLabel(m.month, lang), crore: Math.round((m.value / 1e7) * 100) / 100 }));
   const statesLabeled = d.byState.map((s) => ({ ...s, name: s.label === 'Other' ? t('dash.other') : s.label }));
   const change = k.newWeekChangePct;
+
+  // Toggle watch from any of the lists, then refresh the figures.
+  const toggleWatch = async (x) => {
+    try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
+  };
+  const openTender = (x) => setOpenId(x.id);
 
   return (
     <>
@@ -65,35 +123,28 @@ export default function Dashboard() {
         <Kpi icon={IndianRupee} tone="green" value={formatInr(k.openValueKnown, '-')} label={t('dash.kpiValue')}
           note={k.openValueUndisclosed > 0 ? t('dash.kpiValueNote', { n: k.openValueUndisclosed }) : null} />
         <Kpi icon={Clock} tone="amber" value={formatNumber(k.closingSoon, lang)} label={t('dash.kpiClosing')} />
-        <Kpi icon={Bookmark} tone="purple" value={formatNumber(k.watchlisted, lang)} label={t('dash.kpiWatch')}
-          note={`${t('dash.kpiMatched')}: ${k.myMatchesThisWeek ?? k.matchedToAlertsThisWeek}`} />
+        <Kpi icon={Sparkles} tone="purple" value={formatNumber(interest.newThisWeek ?? 0, lang)} label={t('dash.kpiNewForYou')}
+          note={interest.preferredState ? t('dash.inState', { state: interest.preferredState }) : (k.myMatchesThisWeek ? `${t('dash.kpiMatched')}: ${k.myMatchesThisWeek}` : null)} />
       </div>
 
-      {d.matchedTenders?.length > 0 && (
-        <Card title={t('dash.myMatchesTitle')} flush>
-          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {d.matchedTenders.map((item) => (
-              <TenderCard key={item.id} compact tender={item} onOpen={(x) => setOpenId(x.id)} onToggleWatch={async (x) => {
-                try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
-              }} />
-            ))}
-          </div>
-        </Card>
-      )}
+      {/* ---------------- For you ---------------- */}
+      <h3 className="dash-section-heading" style={{ margin: '22px 0 6px', fontSize: 16, color: 'var(--slate-800)' }}>{t('dash.forYouTitle')}</h3>
+      {interest.hasInterest
+        ? <p className="cell-sub" style={{ margin: '0 0 10px' }}>
+            {t('dash.newInterestWeek', { n: interest.newThisWeek ?? 0 })}{interest.preferredState ? ` ${t('dash.inState', { state: interest.preferredState })}` : ''}.
+          </p>
+        : <div className="note note-info" style={{ marginBottom: 10 }}>{t('dash.noInterest')}</div>}
 
-      {d.hasInterest && d.closingForYou?.length > 0 && (
-        <Card title={t('dash.forYouClosingTitle')} flush>
-          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {d.closingForYou.map((item) => (
-              <TenderCard key={item.id} compact tender={item} onOpen={(x) => setOpenId(x.id)} onToggleWatch={async (x) => {
-                try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
-              }} />
-            ))}
-          </div>
-        </Card>
-      )}
+      <ValueRangePref interest={interest} onSaved={data.reload} />
 
-      <h3 className="dash-market-heading" style={{ margin: '22px 0 2px', fontSize: 15, color: 'var(--slate-700)' }}>{t('dash.marketTitle')}</h3>
+      <TenderList title={t('dash.bestMatchesTitle')} icon={Sparkles} items={d.bestMatches} onOpen={openTender} onToggleWatch={toggleWatch} />
+      <TenderList title={t('dash.myMatchesTitle')} items={d.matchedTenders} onOpen={openTender} onToggleWatch={toggleWatch} />
+      <TenderList title={t('dash.latestInterestTitle')} items={d.latestInterest} onOpen={openTender} onToggleWatch={toggleWatch} />
+      <TenderList title={t('dash.closingInterestTitle')} icon={Clock} items={d.closingInterest} onOpen={openTender} onToggleWatch={toggleWatch} />
+      <TenderList title={t('dash.savedClosingTitle')} icon={Star} items={d.savedClosing} onOpen={openTender} onToggleWatch={toggleWatch} />
+
+      {/* ---------------- Market overview ---------------- */}
+      <h3 className="dash-section-heading" style={{ margin: '22px 0 6px', fontSize: 16, color: 'var(--slate-800)' }}>{t('dash.marketTitle')}</h3>
       <div className="analytics-cards-row">
         <div className="analytics-widget-card">
           <div className="widget-card-header"><h3>{t('dash.deptTitle')}</h3></div>
@@ -175,9 +226,7 @@ export default function Dashboard() {
           {d.closingSoon.length === 0 ? <Empty title={t('dash.closingEmpty')} /> : (
             <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {d.closingSoon.map((item) => (
-                <TenderCard key={item.id} compact tender={item} onOpen={(x) => setOpenId(x.id)} onToggleWatch={async (x) => {
-                  try { await (x.watchlisted ? api.delete(`/tenders/${x.id}/watch`) : api.put(`/tenders/${x.id}/watch`, {})); data.reload(); } catch { /* shown on next load */ }
-                }} />
+                <TenderCard key={item.id} compact tender={item} onOpen={openTender} onToggleWatch={toggleWatch} />
               ))}
             </div>
           )}
@@ -188,4 +237,3 @@ export default function Dashboard() {
     </>
   );
 }
-
