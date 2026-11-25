@@ -1255,3 +1255,25 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
   .site .site-header.is-over-hero .site-brand b { font-size: 28px; }
   .site .site-header.is-over-hero .site-brand small { font-size: 10px; }
 }
+
+/* White enquiry cards keep labels and form controls legible against teal pages. */
+.site:not(.site-landing) .site-page .site-side-card {
+  --ink: #173f3d; --text: #263d38; --muted: #596b64; --line: #d7e0d8; --surface: #fff;
+  background: #fff; border-color: #d7e0d8; color: #263d38;
+}
+.site:not(.site-landing) .site-page .site-side-card h2,
+.site:not(.site-landing) .site-page .site-side-card h3 { color: #173f3d; }
+.site:not(.site-landing) .site-page .site-side-card .cell-sub,
+.site:not(.site-landing) .site-page .site-side-card .field-optional { color: #596b64; }
+.site:not(.site-landing) .site-page .site-side-card .field label,
+.site:not(.site-landing) .site-page .site-side-card .site-consent,
+.site:not(.site-landing) .site-page .site-side-card .site-form-feedback { color: #263d38; }
+.site:not(.site-landing) .site-page .site-side-card .input,
+.site:not(.site-landing) .site-page .site-side-card .select,
+.site:not(.site-landing) .site-page .site-side-card .textarea { background: #fff; border-color: #aebfb5; color: #173f3d; }
+.site:not(.site-landing) .site-page .site-side-card .btn-outline { background: #fff; border-color: #aebfb5; color: #173f3d !important; }
+.site:not(.site-landing) .site-page .site-side-card a:not(.btn) { color: #176050; }
+.site.site-services-index .site-header .site-header-row { width: 100%; max-width: 1440px; padding-inline: clamp(22px, 3.5vw, 56px); }
+@media (max-width: 1080px) {
+  .site .site-header.is-over-hero .site-nav { --ink: #173f3d; --text: #263d38; --surface: #fff; --line: #d7e0d8; }
+}
