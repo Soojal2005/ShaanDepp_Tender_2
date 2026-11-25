@@ -1281,7 +1281,7 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 /* Match the landing header spacing on interior pages and lift the enquiry card. */
 .site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 22px; }
 @media (min-width: 1081px) {
-  .site:not(.site-landing) .site-page .site-two-col > .site-side-card { transform: translate(52px, -60px); }
+  .site:not(.site-landing) .site-page .site-two-col > .site-side-card { transform: translate(52px, 0); }
 }
 @media (max-width: 720px) {
   .site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 14px; }
@@ -1345,3 +1345,4 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 .site:not(.site-landing) .site-page .site-contact-list svg { color: #bde8bd; flex: none; }
 
 .lp-touch-list .lp-touch-address { max-width: 430px; }
+

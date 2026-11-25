@@ -118,10 +118,8 @@ export default function PublicLayout() {
                 <h4>{t('site.lp.colContact')}</h4>
                 <ul className="site-footer-contact">
                   <li><MapPin size={20} aria-hidden="true" /><span>{t('site.officeAddress')}</span></li>
-                  <li>
-                    <Phone size={20} aria-hidden="true" /><a href={telHref(site.phone)}>{site.phone}</a>
-                    <a className="site-footer-wa" href={waHref} target="_blank" rel="noopener noreferrer" aria-label={t('site.lp.whatsapp')}><MessageCircle size={18} /></a>
-                  </li>
+                  <li><Phone size={20} aria-hidden="true" /><a href={telHref(site.phone)}>{site.phone}</a></li>
+                  <li><MessageCircle size={20} aria-hidden="true" /><a href={waHref} target="_blank" rel="noopener noreferrer">WhatsApp: {String(site.whatsappNumber).replace(/^(\d{2})(\d{5})(\d{5})$/, '+$1 $2 $3')}</a></li>
                   <li><Mail size={20} aria-hidden="true" /><a href={`mailto:${site.email}`}>{site.email}</a></li>
                 </ul>
               </div>
