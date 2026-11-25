@@ -1277,3 +1277,67 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 @media (max-width: 1080px) {
   .site .site-header.is-over-hero .site-nav { --ink: #173f3d; --text: #263d38; --surface: #fff; --line: #d7e0d8; }
 }
+
+/* Match the landing header spacing on interior pages and lift the enquiry card. */
+.site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 22px; }
+@media (min-width: 1081px) {
+  .site:not(.site-landing) .site-page .site-two-col > .site-side-card { transform: translate(52px, -60px); }
+}
+@media (max-width: 720px) {
+  .site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 14px; }
+}
+
+/* Blend the inner-page header into the teal content below. */
+.site:not(.site-landing):not(.site-services-index) .site-header.is-over-hero.is-scrolled { background: #104b4c; box-shadow: none; }
+
+.site:not(.site-landing) .site-header.is-over-hero { border-bottom: 1px solid rgba(255, 255, 255, .85); }
+
+.about-team { margin-top: 42px; }
+.about-team h2 { margin-bottom: 18px; }
+.about-team-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.about-team-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%; border: 1px solid rgba(189, 232, 189, .35); border-radius: 12px; }
+.about-team-photos img:first-child { object-position: center 37%; }
+@media (max-width: 480px) { .about-team-photos { gap: 10px; } .about-team-photos img { aspect-ratio: 3 / 4; } }
+
+/* The supplied trademarked artwork is used intact for the public wordmark. */
+.site .site-header.is-over-hero .site-brand-image { display: block; width: 118px; height: 76px; object-fit: contain; }
+.site .site-footer-logo img { display: block; width: min(240px, 100%); height: auto; }
+.site .site-header.is-over-hero { background: #06172c; }
+.site .site-header.is-over-hero.is-scrolled,
+.site:not(.site-landing):not(.site-services-index) .site-header.is-over-hero.is-scrolled,
+.site-services-index .site-header.is-over-hero.is-scrolled { background: #06172c; }
+.site .site-header.is-over-hero .btn-dark { background: #d8b15c; border-color: #d8b15c; color: #07182b !important; }
+.site .site-header.is-over-hero .btn-dark:hover { background: #eacb81; border-color: #eacb81; }
+.site .site-header.is-over-hero .site-nav-links a.active { border-bottom-color: #d8b15c; }
+.site .site-header.is-over-hero .site-nav-links a:hover { color: #eacb81; }
+@media (max-width: 720px) { .site .site-header.is-over-hero .site-brand-image { width: 92px; height: 59px; } }
+
+/* Horizontal treatment uses the supplied mark and name at a readable size. */
+.site .site-header.is-over-hero .site-brand { gap: 10px; }
+.site .site-header.is-over-hero .site-brand-mark { width: 58px; height: 64px; object-fit: contain; }
+.site .site-header.is-over-hero .site-brand-name { width: 165px; height: 63px; object-fit: contain; }
+.site .site-header.is-over-hero { padding-block: 12px; }
+.site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 12px; }
+@media (max-width: 720px) {
+  .site .site-header.is-over-hero .site-brand { gap: 5px; }
+  .site .site-header.is-over-hero .site-brand-mark { width: 40px; height: 44px; }
+  .site .site-header.is-over-hero .site-brand-name { width: 120px; height: 44px; }
+  .site:not(.site-landing) .site-header.is-over-hero.is-scrolled { padding-block: 10px; }
+}
+
+/* Blend the gold artwork into the site's teal header. */
+.site .site-header.is-over-hero,
+.site .site-header.is-over-hero.is-scrolled,
+.site:not(.site-landing):not(.site-services-index) .site-header.is-over-hero.is-scrolled,
+.site-services-index .site-header.is-over-hero.is-scrolled { background: #104b4c; }
+.site .site-header.is-over-hero .site-brand-mark,
+.site .site-header.is-over-hero .site-brand-name { mix-blend-mode: normal; }
+.about-team-member h3 { margin: 14px 0 3px; font-family: var(--sd-serif); font-size: 23px; }
+.about-team-member p { margin: 8px 0 0; color: #d4e4dc; line-height: 1.5; }
+.about-team-member .about-team-role { margin-top: 0; color: #bde8bd; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Let the landing hero show through the header at the top of the page. */
+.site.site-landing .site-header.is-over-hero:not(.is-scrolled) { background: transparent; box-shadow: none; }
+
+/* The sticky header slides out of view on scroll; match its underlying surface. */
+.site:not(.site-landing) { background-color: #104b4c; }

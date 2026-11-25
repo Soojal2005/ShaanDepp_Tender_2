@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ChevronRight, Search } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import { describe } from '../../content/serviceDescriptions.js';
 import { GROUPS, findGroup, findItem, itemsOf, leadFor } from '../../content/services.js';
 import { useI18n } from '../../i18n/index.jsx';
@@ -8,14 +8,6 @@ import EnquiryForm, { ContactButtons } from '../../site/EnquiryForm.jsx';
 import { useSeo } from '../../site/hooks.js';
 import { GROUP_ICONS } from './Home.jsx';
 import { SiteNotFound } from './Info.jsx';
-
-const Crumbs = ({ items }) => (
-  <nav className="site-crumbs" aria-label="Breadcrumb">
-    {items.map((c, i) => (
-      <span key={i}>{i > 0 && <ChevronRight size={12} />}{c.to ? <Link to={c.to}>{c.label}</Link> : <span aria-current="page">{c.label}</span>}</span>
-    ))}
-  </nav>
-);
 
 /** One service in the two-column list: name, one-line description, arrow. */
 function ServiceRow({ g, i, L, lang, showGroup }) {
@@ -111,7 +103,6 @@ export function GroupPage() {
   if (!g) return <SiteNotFound />;
   return (
     <div className="site-wrap site-page">
-      <Crumbs items={[{ label: t('site.nav.home'), to: '/' }, { label: t('site.servicesPageTitle'), to: '/services' }, { label: g.title[L] }]} />
       <h1>{g.title[L]}</h1>
       <p className="site-sub">{g.summary[L]}</p>
       <div className="site-two-col">
@@ -151,7 +142,6 @@ export function ServicePage() {
   const others = itemsOf(group).filter((i) => i.slug !== item.slug).slice(0, 8);
   return (
     <div className="site-wrap site-page">
-      <Crumbs items={[{ label: t('site.nav.home'), to: '/' }, { label: t('site.servicesPageTitle'), to: '/services' }, { label: group.title[L], to: `/services/${group.slug}` }, { label: item[L] }]} />
       <h1>{item[L]}</h1>
       <p className="site-sub">{t('site.serviceFor', { group: group.title[L] })}</p>
       <div className="site-two-col">

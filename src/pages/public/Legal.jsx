@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n/index.jsx';
 import { LEGAL, LEGAL_UPDATED, NOTICE_VERSION } from '../../content/legal.js';
 import { useSeo, useSiteConfig } from '../../site/hooks.js';
@@ -15,7 +14,6 @@ function LegalPage({ doc, path }) {
 
   return (
     <div className="site-wrap site-page legal-page">
-      <nav className="site-crumbs" aria-label="Breadcrumb"><Link to="/">{t('site.nav.home')}</Link><span>/</span><span>{page.title}</span></nav>
       <h1>{page.title}</h1>
       <p className="legal-meta">{doc === 'privacy' ? `Notice ${NOTICE_VERSION} · ` : ''}Last updated {LEGAL_UPDATED}</p>
       {lang === 'HI' && <p className="note note-info">This page is available in English only.</p>}

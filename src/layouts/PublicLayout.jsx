@@ -65,7 +65,7 @@ export default function PublicLayout() {
       <header className={`site-header is-over-hero ${!isLanding || !atTop ? 'is-scrolled' : ''} ${hidden && !open ? 'is-hidden' : ''}`}>
         <div className="site-wrap site-header-row landing-container">
           <Link to="/" className="site-brand" aria-label={t('site.brand')}>
-            <span><b>{t('brand.name')}</b><small>{t('site.lp.footerSub')}</small></span>
+            <img src="/images/shandeep-mark-transparent.png" alt="" className="site-brand-mark" /><img src="/images/shandeep-name-transparent.png" alt="" className="site-brand-name" />
           </Link>
           <button type="button" className="site-menu-btn" aria-label={t('site.nav.menu')} aria-expanded={open} aria-controls="public-navigation" onClick={() => setOpen(!open)}>{open ? <X size={22} /> : <Menu size={22} />}</button>
           <nav id="public-navigation" className={`site-nav ${open ? 'open' : ''}`} aria-label="Main" onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}>
@@ -92,7 +92,7 @@ export default function PublicLayout() {
         <div className="site-footer-sky">
           <div className="site-wrap landing-container site-footer-main">
             <div className="site-footer-brand">
-              <Link to="/" className="site-footer-logo"><b>{t('brand.name')}</b><span>{t('site.lp.footerSub')}</span></Link>
+              <Link to="/" className="site-footer-logo" aria-label={t('site.brand')}><img src="/images/shandeep-logo-transparent.png" alt="" /></Link>
               {/* Registration details stay on every page. */}
               <dl className="site-footer-reg">
                 <div><dt>{t('site.trustBusiness')}</dt><dd>{site.registration.business}</dd></div>

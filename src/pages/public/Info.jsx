@@ -5,7 +5,7 @@ import EnquiryForm, { ACCESS_SERVICE, ContactButtons } from '../../site/EnquiryF
 import { telHref, useSeo, useSiteConfig } from '../../site/hooks.js';
 
 export function About() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const site = useSiteConfig();
   useSeo({ title: t('site.seo.aboutTitle'), description: t('site.aboutBody')[0], path: '/about' });
   return (
@@ -17,6 +17,23 @@ export function About() {
           <ul className="site-points">{t('site.aboutPoints').map((p) => <li key={p}><CheckCircle2 size={16} />{p}</li>)}</ul>
           <p className="site-reg-line">{t('site.trustBusiness')}: <b>{site.registration.business}</b> · {t('site.trustGst')}: <b>{site.registration.gst}</b></p>
           <Link className="btn btn-primary" to="/services">{t('site.ctaServices')}</Link>
+          <section className="about-team" aria-labelledby="about-team-title">
+            <h2 id="about-team-title">{lang === 'HI' ? '????? ???' : 'Our team'}</h2>
+            <div className="about-team-photos">
+              <article className="about-team-member">
+                <img src="/images/team-portrait-1.jpeg" alt={lang === 'HI' ? '?????? ????????' : 'Shantanu Trivedi'} loading="lazy" />
+                <h3>{lang === 'HI' ? '?????? ????????' : 'Shantanu Trivedi'}</h3>
+                <p className="about-team-role">{lang === 'HI' ? '??????' : 'Director'}</p>
+                <p>{lang === 'HI' ? '?????? ????? ??????, ?????? ?????? ?? ????????? ?? ??? ?????? ??????? ?? ????? ???????? ???? ????' : 'Focuses on digital tender services, bidding support and actionable information for businesses.'}</p>
+              </article>
+              <article className="about-team-member">
+                <img src="/images/team-portrait-2.jpeg" alt={lang === 'HI' ? '?????? ??????' : 'Abhishek Shivhare'} loading="lazy" />
+                <h3>{lang === 'HI' ? '?????? ??????' : 'Abhishek Shivhare'}</h3>
+                <p className="about-team-role">{lang === 'HI' ? '??????????' : 'Mentor'}</p>
+                <p>{lang === 'HI' ? '????????? ?? ??????? ???????, ??????? ?? ????? ??? ?????????? ???? ????' : 'Guides entrepreneurs on business setup, compliance and growth.'}</p>
+              </article>
+            </div>
+          </section>
         </div>
         <aside className="site-side-card">
           <h2>{t('site.enquireGeneral')}</h2>
