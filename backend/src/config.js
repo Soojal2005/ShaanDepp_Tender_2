@@ -198,7 +198,7 @@ const schema = z.object({
   SERVE_FRONTEND: bool,
 
   // Website
-  WHATSAPP_NUMBER: z.string().default('918269868808'),
+  WHATSAPP_NUMBER: z.string().default('919301039191'),
   CONTACT_PHONE: z.string().default('+91 79743 92235'),
   CONTACT_EMAIL: z.string().default('shantanu.trivedi@procure-brain.com'),
 });

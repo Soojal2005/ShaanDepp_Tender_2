@@ -40,7 +40,7 @@ export function Contact() {
           <ul className="site-contact-list">
             <li><Phone size={18} /><a href={telHref(site.phone)}>{site.phone}</a></li>
             <li><Mail size={18} /><a href={`mailto:${site.email}`}>{site.email}</a></li>
-            <li><MapPin size={18} /><span>{t('site.city')}</span></li>
+            <li><MapPin size={18} /><span>{t('site.officeAddress')}</span></li>
           </ul>
           <ContactButtons />
         </div>

@@ -119,7 +119,7 @@ export default function PublicLayout() {
               <div>
                 <h4>{t('site.lp.colContact')}</h4>
                 <ul className="site-footer-contact">
-                  <li><MapPin size={20} aria-hidden="true" /><span>{t('site.city')}</span></li>
+                  <li><MapPin size={20} aria-hidden="true" /><span>{t('site.officeAddress')}</span></li>
                   <li>
                     <Phone size={20} aria-hidden="true" /><a href={telHref(site.phone)}>{site.phone}</a>
                     <a className="site-footer-wa" href={waHref} target="_blank" rel="noopener noreferrer" aria-label={t('site.lp.whatsapp')}><MessageCircle size={18} /></a>

@@ -196,6 +196,7 @@ export default {
       rights: 'All rights reserved.', sitemap: 'Sitemap',
     },
     nav: { home: 'Home', services: 'Services', about: 'About', contact: 'Contact', portal: 'Tender Portal', requestAccess: 'Request access', getStarted: 'Get started', dashboard: 'Dashboard', signIn: 'Sign in', call: 'Call', whatsapp: 'WhatsApp', menu: 'Menu' },
+    officeAddress: 'Willow B302, Spring Valley Dew, Katara Hills, Bhopal, Madhya Pradesh 462043',
     brand: 'Shan-Deep Management Advisory', city: 'Bhopal, Madhya Pradesh',
     heroKicker: 'Tenders, registrations and compliance, under one roof',
     heroTitle: 'Win government tenders with the right information and a team beside you',

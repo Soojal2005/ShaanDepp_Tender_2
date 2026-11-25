@@ -1226,3 +1226,32 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
     mask-image: var(--edge-mask);
   }
 }
+
+/* Public inner pages follow the same teal and mint palette as the home page. */
+.site:not(.site-landing) > main { background: #104b4c; color: #f5f1e7; }
+.site:not(.site-landing) .site-page { --ink: #f5f1e7; --text: #f5f1e7; --muted: #c3d8cf; --line: rgba(189,232,189,.3); --surface: #195c5b; color: #f5f1e7; }
+.site:not(.site-landing) .site-page h1, .site:not(.site-landing) .site-page h2, .site:not(.site-landing) .site-page h3 { color: #f5f1e7; }
+.site:not(.site-landing) .site-page a { color: #c2eac2; }
+.site:not(.site-landing) .site-page .site-sub, .site:not(.site-landing) .site-page .cell-sub, .site:not(.site-landing) .site-page .site-crumbs { color: #c3d8cf; }
+.site:not(.site-landing) .site-side-card, .site:not(.site-landing) .site-item-grid a, .site:not(.site-landing) .site-chip-list a, .site:not(.site-landing) .site-portal-list li { background: #195c5b; border-color: rgba(189,232,189,.3); color: #f5f1e7; }
+.site:not(.site-landing) .site-page .input, .site:not(.site-landing) .site-page .select, .site:not(.site-landing) .site-page .textarea { background: #104b4c; border-color: #6c9c91; color: #f5f1e7; }
+.site:not(.site-landing) .site-page .btn-outline { background: transparent; border-color: #a8d5bd; color: #f5f1e7 !important; }
+.site:not(.site-landing) .site-page .btn-primary { background: #bde8bd; border-color: #bde8bd; color: #103f40 !important; }
+.site:not(.site-landing) .site-points li:not(:has(svg))::before { background: #bde8bd; }
+.site-services-index .svb, .site-services-index .svb-body { background: #104b4c; color: #f5f1e7; }
+.site-services-index .svb-head { background: linear-gradient(#79ae9e, #79ae9e) 48px 100% / calc(100% - 96px) 2px no-repeat, #104b4c; }
+.site.site-services-index .svb-head h1, .site.site-services-index .svb-body h2, .site-services-index .svb-item b, .site-services-index .svb-item svg { color: #f5f1e7; }
+.site-services-index .svb-item small, .site-services-index .svb-empty { color: #c3d8cf; }
+.site.site-services-index .svb-item { border-color: rgba(189,232,189,.25); }
+.site.site-services-index .svb-item:hover, .site.site-services-index .svb-item:focus-visible { background: #236666; }
+.site-services-index .svb-search { background: #195c5b; border-color: #79ae9e; color: #d6eedb; }
+.site-services-index .svb-search input { color: #f5f1e7; }
+.site-services-index .svb-search input::placeholder { color: #c3d8cf; }
+
+/* Keep the brand prominent and consistent on every public page. */
+.site .site-header.is-over-hero .site-brand b { font-size: 38px; text-transform: uppercase; }
+.site .site-header.is-over-hero .site-brand small { font-size: 13px; }
+@media (max-width: 1080px) {
+  .site .site-header.is-over-hero .site-brand b { font-size: 28px; }
+  .site .site-header.is-over-hero .site-brand small { font-size: 10px; }
+}
