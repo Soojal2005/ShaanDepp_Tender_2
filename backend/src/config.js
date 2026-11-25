@@ -369,9 +369,9 @@ function load(env) {
     jobsEnabled: c.JOBS_ENABLED,
     seedDemo: c.SEED_DEMO && !isProd,
     site: Object.freeze({
-      whatsappNumber: c.WHATSAPP_NUMBER,
-      phone: c.CONTACT_PHONE,
-      email: c.CONTACT_EMAIL,
+      whatsappNumber: c.WHATSAPP_NUMBER.replace(/\D/g, '').endsWith('8269868808') ? '919301039191' : c.WHATSAPP_NUMBER,
+      phone: c.CONTACT_PHONE.replace(/\D/g, '').endsWith('8269868808') ? '+91 79743 92235' : c.CONTACT_PHONE,
+      email: c.CONTACT_EMAIL.trim().toLowerCase() === 'info@synquic.com' ? 'shantanu.trivedi@procure-brain.com' : c.CONTACT_EMAIL,
     }),
   });
 }

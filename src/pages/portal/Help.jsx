@@ -3,13 +3,14 @@ import { Card, ErrorNote, Loading, PageHeader } from '../../components/ui.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 import { api } from '../../lib/api.js';
 import { useAsync } from '../../lib/hooks.js';
+import { normalizeSiteConfig } from '../../site/hooks.js';
 
 function Contact() {
   const { t } = useI18n();
   const site = useAsync(() => api.get('/public/site-config'), []);
   if (site.loading && !site.data) return <Loading />;
   if (site.error) return <ErrorNote error={site.error} onRetry={site.reload} retryLabel={t('common.retry')} />;
-  const { phone, email, whatsappNumber } = site.data;
+  const { phone, email, whatsappNumber } = normalizeSiteConfig(site.data);
   return (
     <Card title={t('help.contact')}>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

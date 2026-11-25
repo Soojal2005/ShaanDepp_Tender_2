@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 
 const FALLBACK = { phone: '+91 79743 92235', email: 'shantanu.trivedi@procure-brain.com', whatsappNumber: '919301039191', registration: { business: 'BHOP260407SE000586', gst: '23APSPT2592R1ZR' } };
+export function normalizeSiteConfig(config = {}) {
+  const phone = String(config.phone || '').replace(/\D/g, '');
+  const whatsapp = String(config.whatsappNumber || '').replace(/\D/g, '');
+  return {
+    ...FALLBACK, ...config,
+    phone: !phone || phone.endsWith('8269868808') ? FALLBACK.phone : config.phone,
+    email: !config.email || config.email.trim().toLowerCase() === 'info@synquic.com' ? FALLBACK.email : config.email,
+    whatsappNumber: !whatsapp || whatsapp.endsWith('8269868808') ? FALLBACK.whatsappNumber : config.whatsappNumber,
+  };
+}
 let cached = null;
 let inflight = null;
 
@@ -10,7 +20,7 @@ export function useSiteConfig() {
   const [config, setConfig] = useState(cached ?? FALLBACK);
   useEffect(() => {
     if (cached) return;
-    inflight ??= api.get('/public/site-config').then((c) => { cached = { ...FALLBACK, ...c }; return cached; }).catch(() => FALLBACK);
+    inflight ??= api.get('/public/site-config').then((c) => { cached = normalizeSiteConfig(c); return cached; }).catch(() => FALLBACK);
     let live = true;
     inflight.then((c) => { if (live) setConfig(c); });
     return () => { live = false; };
