@@ -432,7 +432,7 @@ export default function Home() {
             </li>
             <li>
               <span className="lp-touch-ico"><MapPin size={32} strokeWidth={1.6} aria-hidden="true" /></span>
-              <div><b>{t('site.lp.cOffice')}</b><span>{t('site.officeAddress')}</span></div>
+              <div><b>{t('site.lp.cOffice')}</b><span className="lp-touch-address">{t('site.officeAddress')}</span></div>
             </li>
           </ul>
           <a className="lp-touch-btn" href="#access">{t('site.lp.cCallback')}</a>

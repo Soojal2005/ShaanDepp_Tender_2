@@ -54,9 +54,7 @@ export default function PublicLayout() {
     }
   }, [pathname, hash]);
 
-  // Services/About/Contact scroll to the matching section on the home page.
-  // Services opens the services page; About and Contact scroll to their home sections.
-  const links = [['/', 'home'], ['/services', 'services'], ['/#about', 'about'], ['/#contact', 'contact']];
+  const links = [['/', 'home'], ['/services', 'services'], ['/about', 'about'], ['/contact', 'contact']];
   const waHref = whatsappHref(site.whatsappNumber, t('site.waText', { service: t('site.brand') }));
   return (
     <div className={`site ${isLanding ? 'site-landing site-is-home' : ''} ${pathname === '/services' ? 'site-services-index' : ''}`}>
@@ -71,7 +69,7 @@ export default function PublicLayout() {
           <nav id="public-navigation" className={`site-nav ${open ? 'open' : ''}`} aria-label="Main" onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}>
             <div className="site-nav-links">
               {links.map(([to, key]) => {
-                const active = (pathname === '/' && (to === '/' ? !hash : hash === to.slice(1))) || (key === 'services' && pathname.startsWith('/services'));
+                const active = to === '/' ? pathname === '/' : key === 'services' ? pathname.startsWith('/services') : pathname === to;
                 return <Link key={to} to={to} className={active ? 'active' : undefined}>{t(`site.nav.${key}`)}</Link>;
               })}
             </div>

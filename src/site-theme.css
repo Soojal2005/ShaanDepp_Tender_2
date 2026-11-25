@@ -1341,3 +1341,7 @@ select.lp-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://
 
 /* The sticky header slides out of view on scroll; match its underlying surface. */
 .site:not(.site-landing) { background-color: #104b4c; }
+
+.site:not(.site-landing) .site-page .site-contact-list svg { color: #bde8bd; flex: none; }
+
+.lp-touch-list .lp-touch-address { max-width: 430px; }
