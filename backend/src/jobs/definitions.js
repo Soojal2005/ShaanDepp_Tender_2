@@ -19,7 +19,9 @@ import { createTenderbookClient } from '../services/ingestion/tenderbook.js';
 import { createCpppClient } from '../services/ingestion/sources/cppp/cppp.js';
 import { createCpppBrowserClient } from '../services/ingestion/sources/cppp/browser.js';
 import { normalizeCpppTender } from '../services/ingestion/sources/cppp/normalize.js';
-import { enabledPortals, portalClientOptions } from '../services/ingestion/sources/cppp/portals.js';
+import { portalById, portalClientOptions, sweepPortals } from '../services/ingestion/sources/cppp/portals.js';
+import { GEM_BASE_URL, createGemClient } from '../services/ingestion/sources/gem/gem.js';
+import { normalizeGemTender } from '../services/ingestion/sources/gem/normalize.js';
 import { createNprocureClient } from '../services/ingestion/sources/nprocure/nprocure.js';
 import { createBiharClient } from '../services/ingestion/sources/bihar/bihar.js';
 import { createVupadhiClient } from '../services/ingestion/sources/vupadhi/vupadhi.js';
@@ -34,6 +36,7 @@ import { queueCaseReminders } from '../services/caseReminders.js';
 import { queueWatchlistReminders } from '../services/reminders.js';
 
 const SYSTEM = { scope: 'system' };
+const GEM_PROVIDER_ID = 'gem';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -51,6 +54,10 @@ export function createJobs(db, deps = {}) {
     crawler = config.crawler,
     enrichment = config.enrichment,
     prune = config.prune,
+    gem = config.gem,
+    makeGemClient = createGemClient,
+    // PDF enrichment step of the GeM job (tests inject a fake).
+    enrichGem = (opts) => runEnrichment(db, opts),
     // Build a crawler client for one portal. Most portals are GePNIC; some run
     // their own software and get a dedicated adapter (selected by portal.adapter).
     makeCrawlerClient = (portal, extra = {}) => {
@@ -65,7 +72,9 @@ export function createJobs(db, deps = {}) {
       const opts = { ...portalClientOptions(portal), ...extra };
       return crawler.engine === 'http' ? createCpppClient(opts) : createCpppBrowserClient(opts);
     },
-    portals = enabledPortals(),
+    // GeM is in the registry (provider row, document proxy, portal link) but has
+    // its own job, so the shared sweep leaves it out.
+    portals = sweepPortals(),
   } = deps;
 
   return {
@@ -132,6 +141,60 @@ export function createJobs(db, deps = {}) {
         }
         const failed = results.filter((r) => r.status === 'failed').length;
         return { portals: targets.length, failed, inserted, updated, activity: inserted + updated, results };
+      },
+    },
+
+    'crawl-gem': {
+      label: 'GeM bid crawl',
+      description: 'Reads the live bids on GeM (bidplus.gem.gov.in) one closing day at a time, resuming where the last run stopped, so every bid is picked up and refreshed (new bids, extended deadlines) every few hours; then reads EMD and estimated value from bid PDFs.',
+      enabled: Boolean(crawler.enabled && gem.enabled),
+      // Recover a missed crawl after a cold start (see scheduler catch-up).
+      catchUp: true,
+      intervalMinutes: gem.intervalMinutes,
+      cron: gem.intervalMinutes >= 60 ? `0 */${Math.max(1, Math.round(gem.intervalMinutes / 60))} * * *` : `*/${gem.intervalMinutes} * * * *`,
+      timezone: 'Asia/Kolkata',
+      async run({ maxPages, enrichMaxDocs } = {}) {
+        const portal = portalById(GEM_PROVIDER_ID);
+        // Resume the sweep from the cursor the previous run reported (kept in its
+        // ingestion_runs.health). No cursor yet = start at today's closing bids.
+        const last = await db.withContext(SYSTEM, (q) => q.maybeOne(
+          `SELECT health->'source'->'cursor' AS cursor FROM ingestion_runs
+            WHERE provider_id = $1 AND kind = 'tenders' AND status <> 'running'
+              AND health->'source'->'cursor' IS NOT NULL
+            ORDER BY id DESC LIMIT 1`, [GEM_PROVIDER_ID]));
+        const client = makeGemClient({
+          baseUrl: portal?.baseUrl ?? GEM_BASE_URL,
+          cursor: last?.cursor ?? null,
+          maxPages: maxPages ?? gem.maxPages,
+          requestDelayMs: gem.requestDelayMs,
+          userAgent: crawler.userAgent,
+          timeoutMs: crawler.timeoutMs,
+        });
+        const r = await runIngestion(db, {
+          providerId: GEM_PROVIDER_ID, kind: 'tenders', trigger: 'schedule', client, normalize: normalizeGemTender,
+          // The client paces its own requests and ends the run with a short batch.
+          pageSize: 100, maxPages: 100_000, pageDelayMs: 0,
+        });
+        const sweep = client.report?.() ?? {};
+        if (r.status === 'failed') throw new Error(`GeM crawl failed: ${r.error ?? r.warnings?.[0] ?? 'no bids were read'}`);
+
+        // The listing publishes no money; each bid's public PDF carries the EMD and,
+        // when the buyer discloses it, the estimated bid value. Fill those for the
+        // GeM bids still missing them (bounded per run; failures never sink the crawl).
+        const docs = enrichMaxDocs ?? gem.enrichMaxDocs;
+        let enrichment = null;
+        if (docs > 0) {
+          try { enrichment = await enrichGem({ providerId: GEM_PROVIDER_ID, maxDocs: docs }); }
+          catch (err) { log.warn('gem enrichment failed', { error: err.message }); enrichment = { error: err.message }; }
+        }
+        return {
+          status: r.status, inserted: r.inserted, updated: r.updated, skipped: r.skipped, errors: r.errors,
+          requests: sweep.requests, liveBids: sweep.total, bidsSeen: sweep.bidsSeen,
+          skippedReverseAuctions: sweep.skippedReverseAuctions, daysVisited: sweep.daysVisited,
+          cycleComplete: sweep.cycleComplete, stoppedBy: sweep.stoppedBy, cursor: sweep.cursor,
+          enrichment,
+          activity: r.inserted + r.updated + (enrichment?.filled ?? 0),
+        };
       },
     },
 

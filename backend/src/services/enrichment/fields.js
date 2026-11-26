@@ -41,6 +41,22 @@ const LABELS = {
   ],
 };
 
+// GeM bid documents (bidplus.gem.gov.in) are one fixed template that labels its
+// figures exactly: "Estimated Bid Value in INR (Inclusive of all taxes) 6137280"
+// and "EMD Amount 122800". Its eligibility boilerplate is full of value-ish prose
+// — "turnover at least 400% of the bid estimated value", "Estimated Bid Value
+// indicated above is being declared solely for guidance", "advertised bid value"
+// — that the broad patterns above would misread (400 as the value, which then
+// also makes the real EMD look implausible). So in a GeM document only GeM's own
+// value label is trusted, and its EMD field is tried before the general ones.
+// A GeM bid PDF always carries its bid number ("Bid Number : GEM/2026/B/8153983").
+const GEM_DOCUMENT = /\bGEM\/\d{4}\/[A-Z]\/\d+\b/;
+const GEM_LABELS = {
+  estimatedValue: [/Estimated\s+Bid\s+Value\s+in\s+INR(?:\s*\(\s*Inclusive\s+of\s+all\s+taxes\s*\))?/i],
+  emdAmount: [/\bEMD\s+Amount\b/i, ...LABELS.emdAmount],
+  tenderFee: LABELS.tenderFee,
+};
+
 /** Find the money value attached to one label within the given text. */
 function findField(text, patterns) {
   for (const label of patterns) {
@@ -75,9 +91,10 @@ function findField(text, patterns) {
  */
 export function extractTenderFields(text) {
   if (!text || typeof text !== 'string') return { estimatedValue: null, emdAmount: null, tenderFee: null, matched: 0 };
-  const estimatedValue = findField(text, LABELS.estimatedValue);
-  const emdAmount = findField(text, LABELS.emdAmount);
-  const tenderFee = findField(text, LABELS.tenderFee);
+  const labels = GEM_DOCUMENT.test(text) ? GEM_LABELS : LABELS;
+  const estimatedValue = findField(text, labels.estimatedValue);
+  const emdAmount = findField(text, labels.emdAmount);
+  const tenderFee = findField(text, labels.tenderFee);
   const matched = [estimatedValue, emdAmount, tenderFee].filter(Boolean).length;
   return { estimatedValue, emdAmount, tenderFee, matched };
 }

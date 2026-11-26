@@ -102,7 +102,18 @@ export const GEPNIC_PORTALS = [
   // (newest-first). The browser-driven adapter (sources/cpwd) opens it and walks
   // the first pages. CPWD publishes estimated value + EMD, so those are captured.
   { id: 'cpwd', name: 'CPWD (Central Public Works)', state: null, type: 'central_portal', baseUrl: 'https://etender.cpwd.gov.in', appPath: '/', adapter: 'cpwd', enabled: true },
+
+  // GeM (Government e-Marketplace): the public "All Bids" page loads its bids with
+  // a CSRF-guarded JSON POST that every visitor's browser makes, and robots.txt
+  // allows it (re-checked 2026-11-26; the earlier "active WAF" note does not apply
+  // to this listing). ~44k live bids, so it is crawled by its OWN job (`crawl-gem`,
+  // sources/gem) as a resumable closing-day sweep — never by crawl-gepnic. Bid PDFs
+  // are public, so every GeM bid carries a downloadable document.
+  { id: 'gem', name: 'GeM (Government e-Marketplace)', state: null, type: 'gem', baseUrl: 'https://bidplus.gem.gov.in', appPath: '/all-bids', adapter: 'gem', enabled: true },
 ];
+
+/** Adapters crawled by a dedicated job of their own, so crawl-gepnic skips them. */
+export const OWN_JOB_ADAPTERS = new Set(['gem']);
 
 /** Build the per-portal options the browser client / runner need. */
 export function portalClientOptions(portal) {
@@ -116,6 +127,9 @@ export function portalClientOptions(portal) {
 }
 
 export const enabledPortals = () => GEPNIC_PORTALS.filter((p) => p.enabled);
+
+/** The enabled portals the shared crawl-gepnic job walks (not those with their own job). */
+export const sweepPortals = () => enabledPortals().filter((p) => !OWN_JOB_ADAPTERS.has(p.adapter));
 
 /** The portal registry entry for a provider id, or null. */
 export const portalById = (id) => GEPNIC_PORTALS.find((p) => p.id === id) ?? null;

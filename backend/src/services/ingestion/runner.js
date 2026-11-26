@@ -119,11 +119,22 @@ export async function runIngestion(db, opts = {}) {
     running.delete(lockKey);
   }
 
-  return finish(db, { runId, providerId, kind, trigger, filter, from, to, totals, samples, outOfWindow, pages, available, fatal });
+  return finish(db, { runId, providerId, kind, trigger, filter, from, to, totals, samples, outOfWindow, pages, available, fatal, source: sourceReport(client) });
+}
+
+// A client may describe its own progress (e.g. the GeM sweep's resume cursor);
+// it is kept with the run so the next run can pick up where this one stopped.
+function sourceReport(client) {
+  try {
+    const report = typeof client?.report === 'function' ? client.report() : null;
+    return report && typeof report === 'object' ? report : null;
+  } catch {
+    return null;
+  }
 }
 
 async function finish(db, ctx) {
-  const { runId, providerId, kind, trigger, filter, from, to, totals, samples, outOfWindow, pages, available, fatal } = ctx;
+  const { runId, providerId, kind, trigger, filter, from, to, totals, samples, outOfWindow, pages, available, fatal, source } = ctx;
   const warnings = [];
   let status = 'success';
   let errorMessage = null;
@@ -156,7 +167,7 @@ async function finish(db, ctx) {
               error_message = $8, warnings = $9::jsonb, finished_at = now(), health = $10::jsonb
         WHERE id = $1`,
       [runId, status, totals.fetched, totals.inserted, totals.updated, totals.skipped, totals.errors, errorMessage,
-        JSON.stringify(warnings), JSON.stringify({ pages, available, outOfWindow })]
+        JSON.stringify(warnings), JSON.stringify({ pages, available, outOfWindow, ...(source ? { source } : {}) })]
     );
     if (totals.fetched > 0 && status !== 'failed') {
       await q.query('UPDATE providers SET last_success_at = now() WHERE id = $1', [providerId]);

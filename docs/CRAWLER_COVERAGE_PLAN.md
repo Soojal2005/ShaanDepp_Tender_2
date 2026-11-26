@@ -9,7 +9,7 @@ This is a living plan. Phase A is **implemented in this session**; Phases B–C 
 ---
 
 ## Guardrails (apply to all phases)
-- **Public data only.** No login/DSC/captcha circumvention, no robots.txt violation, no scraping of GeM or competitor aggregators.
+- **Public data only.** No login/DSC/captcha circumvention, no robots.txt violation, no scraping of competitor aggregators. (GeM: crawled since 26 Nov 2026 by a business decision — see [GeM](#gem--crawled-by-business-decision-26-nov-2026) below.)
 - **Data honesty.** A figure the source did not publish stays `NULL` and shows as "Not Disclosed by Department" — never zero, never estimated. (See the placeholder note in §4.)
 - **Shared production DB.** The backend points at the production Supabase project, and crawling writes to it. Enabling `CRAWLER_ENABLED` is an operational decision — first runs should target one portal via `run({ only: '<id>' })` to sanity-check before full enablement.
 
@@ -73,14 +73,24 @@ Each target was **investigated against the live site on 21 Nov 2026** (raw-HTML 
 
 | Target | Reason | Class |
 |---|---|---|
-| **GeM** `gem.gov.in` / `bidplus.gem.gov.in` | ToS prohibits automated extraction; anti-bot/JS-rendered | Legal (ToS) + technical |
 | **IREPS** (Railways) | `robots.txt: Disallow: /` | Legal (robots) |
 | **Maharashtra** `mahatenders.gov.in` | `robots.txt: Disallow: /` | Legal (robots) |
 | **Karnataka KPPP** | Keycloak login on listing | Technical (auth) |
 | **Chhattisgarh** `eproc.cgstate.gov.in` | Text captcha on listing | Technical (captcha) |
 | GePNIC document files / terms / BOQ | Login + DSC gated | Technical (auth) |
 
-**Compliant path for the blocked buyers:** their notices often also appear on CPPP/eTenders (crawled) or on GeM. The only strategic answer for GeM/Railways/Maharashtra/Karnataka common-goods tenders is an **official GeM data partnership**, not scraping — a business decision, not an engineering one.
+**Compliant path for the blocked buyers:** their notices often also appear on CPPP/eTenders (crawled) or on GeM. For Railways/Maharashtra/Karnataka common-goods tenders an **official data partnership** remains the strategic answer — a business decision, not an engineering one.
+
+### GeM — crawled by business decision (26 Nov 2026)
+
+This table used to list GeM as "Never crawl — ToS prohibits automated extraction; anti-bot/JS-rendered". Re-checked on 26 Nov 2026 before building the adapter:
+
+- **robots.txt allows it.** `bidplus.gem.gov.in/robots.txt` disallows only `/resources/` and three bank-guarantee endpoints; the crawler fetches none of them.
+- **No anti-bot barrier on the listing.** `/all-bids` is a server-rendered page that gives every visitor a session cookie + CSRF token; it loads bids with a plain JSON POST to `/all-bids-data`. The crawler sends exactly that request under its honest User-Agent (`ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)`) — no login, captcha, stealth or fingerprint tricks. Bid PDFs (`/showbidDocument/{id}`) are public.
+- **Terms of Use: not settled.** The public pages that could be read contain no clause on automated access; GeM's General T&C pages redirect and could not be read. GeM's T&C bind registered buyers/sellers; whether they cover reading the public listing is a legal question.
+- **Decision:** the product owner chose to crawl GeM, accepting the terms risk (and ~165 MB for the first full sweep, ~9 MB/day after while `PRUNE_EXPIRED_ENABLED` is off). `GEM_ENABLED=off` stops it without a code change.
+
+Adapter: `sources/gem/` · job `crawl-gem` (own schedule, every 30 min) · ~44k live bids, Reverse Auctions skipped · polite pacing (1 request/s, ≤300 requests/run) · details in the module header of `sources/gem/gem.js`.
 
 ---
 
@@ -88,7 +98,7 @@ Each target was **investigated against the live site on 21 Nov 2026** (raw-HTML 
 
 Legend: ✅ live · 🟢 added this session · ⏳ Phase B · 🟡 via gateway · ⛔ blocked
 
-- **National:** CPPP ✅ · eTenders ✅ · Defence ✅ · ePublish ⏳(B1) · GeM ⛔ · IREPS ⛔
+- **National:** CPPP ✅ · eTenders ✅ · Defence ✅ · ePublish ⏳(B1) · GeM 🟢(adapter, own job; EMD + value from bid PDFs) · IREPS ⛔
 - **Specialised:** PMGSY 🟢 · ISRO 🟢(adapter) · CPWD 🟢(adapter, value+EMD) · DAE/DRDO/NHAI/AAI 🟡(via CPPP/eTenders)
 - **States (28):** 25 ✅ · Maharashtra ⛔ · Karnataka ⛔ · Chhattisgarh ⛔ · (Gujarat/Bihar/Telangana/AP via custom adapters ✅, Telangana+AP full-list ⏳ B7)
 - **UTs (8):** 8 ✅ · DNH 2nd endpoint 🟢

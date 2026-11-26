@@ -131,6 +131,19 @@ const schema = z.object({
   CRAWLER_FETCH_DETAILS: boolDefaultOn,
   CRAWLER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
 
+  // GeM (Government e-Marketplace, bidplus.gem.gov.in) bid crawler. Runs as its
+  // own job whenever the crawler is on; GEM_ENABLED=off skips GeM only.
+  GEM_ENABLED: boolDefaultOn,
+  GEM_INTERVAL_MINUTES: z.coerce.number().int().min(10).default(30),
+  // Listing requests per run (10 bids each). Each run resumes the sweep where the
+  // last one stopped, so one full pass over GeM's ~45k live bids takes about
+  // 4,500 / GEM_MAX_PAGES runs (~15 runs = ~7.5 hours at the defaults).
+  GEM_MAX_PAGES: z.coerce.number().int().min(1).max(1500).default(300),
+  GEM_REQUEST_DELAY_MS: z.coerce.number().int().min(250).default(1000),
+  // After each sweep, read EMD and the estimated bid value from up to this many
+  // GeM bid PDFs (public; the listing omits money). 0 = leave it to enrich-tenders.
+  GEM_ENRICH_MAX_DOCS: z.coerce.number().int().min(0).max(1000).default(100),
+
   // On-demand GePNIC document download. A warm, anonymous Playwright context per
   // portal is kept alive and lends pooled pages to re-walk the live listing and
   // stream a tender's PDF when a user asks — nothing is stored. Only works for
@@ -307,6 +320,13 @@ function load(env) {
         closingWindowLink: c.CRAWLER_CPPP_CLOSING_WINDOW,
         tableSelector: c.CRAWLER_CPPP_TABLE_SELECTOR,
       }),
+    }),
+    gem: Object.freeze({
+      enabled: c.GEM_ENABLED,
+      intervalMinutes: c.GEM_INTERVAL_MINUTES,
+      maxPages: c.GEM_MAX_PAGES,
+      requestDelayMs: c.GEM_REQUEST_DELAY_MS,
+      enrichMaxDocs: c.GEM_ENRICH_MAX_DOCS,
     }),
     gepnic: Object.freeze({
       enabled: c.GEPNIC_SESSION_ENABLED,

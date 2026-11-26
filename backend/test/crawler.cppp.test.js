@@ -339,7 +339,8 @@ describe('GePNIC portal registry', () => {
     for (const p of GEPNIC_PORTALS) {
       assert.ok(p.id && p.name && p.baseUrl && p.appPath, `${p.id} has required fields`);
       assert.match(p.baseUrl, /^https:\/\//, `${p.id} baseUrl is https`);
-      assert.ok(['central_portal', 'state_portal', 'psu_direct'].includes(p.type), `${p.id} has a valid provider type`);
+      // The provider types the providers table accepts ('gem' is GeM's own type).
+      assert.ok(['central_portal', 'state_portal', 'psu_direct', 'gem'].includes(p.type), `${p.id} has a valid provider type`);
     }
     assert.ok(enabledPortals().some((p) => p.id === 'cppp'), 'CPPP is enabled');
     assert.ok(enabledPortals().some((p) => p.id === 'mp'), 'Madhya Pradesh is enabled');
