@@ -11,7 +11,7 @@
 import { z } from 'zod';
 import { config } from '../config.js';
 import { notFound } from '../errors.js';
-import { isGepnicProvider, portalPublicUrl, portalTenderId } from './ingestion/sources/cppp/portals.js';
+import { isGepnicProvider, portalTenderId, sourceUrlIsDocument, tenderPortalUrl } from './ingestion/sources/cppp/portals.js';
 import { tenderRef } from '../util.js';
 
 const list = (inner, max = 100) =>
@@ -184,15 +184,22 @@ export const listView = (r) => ({
   hasBoq: r.has_boq,
   hasDocuments: r.has_documents,
   sourceUrl: r.source_url,
-  // The link back to the source portal shown on every tender. Prefer a stored
-  // per-tender/source URL; otherwise derive the portal's public listing from
-  // the provider id so a crawled tender always links out (see portalPublicUrl).
-  portalUrl: r.source_url ?? portalPublicUrl(r.provider_id),
+  // The link back to the source portal shown on every tender: a stored
+  // per-tender page when there is one, else the portal's public page derived
+  // from the provider id — never a document download (see tenderPortalUrl).
+  portalUrl: tenderPortalUrl(r.provider_id, r.source_url),
   watchlisted: Boolean(r.watchlisted),
   inDigest: r.in_digest ?? null,
 });
 
 const WATCH = (p) => `EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = ${p}) AS watchlisted`;
+
+const PDF_RE = /.pdf(?:$|[?#])/i;
+/** Whether a stored tender document is a PDF (by its name or URL, or a PDF-only portal). */
+export function isPdfDocument(doc, providerId) {
+  return PDF_RE.test(String(doc.name ?? '').trim()) || PDF_RE.test(String(doc.url ?? '').trim())
+    || (Boolean(doc.url) && sourceUrlIsDocument(providerId));
+}
 
 export async function searchTenders(q, filters, paging, { userId = null, orgId = null } = {}) {
   const { params, where, rank } = buildWhere(filters, { userId, orgId });
@@ -305,6 +312,9 @@ export async function getTender(q, id, { userId = null, orgId = null } = {}) {
     documents: documents.map((d) => ({
       id: d.id, name: d.name, type: d.doc_type, sizeLabel: d.size_label,
       downloadable: Boolean(d.url) || (config.gepnic?.enabled && isGepnicProvider(row.provider_id)),
+      // Drives the drawer's "Download PDF" button. GeM bid documents are PDFs
+      // served from extension-less paths (/showbidDocument/{id}).
+      pdf: isPdfDocument(d, row.provider_id),
     })),
     boqItems: boq.map((b) => ({ code: b.item_code, name: b.item_name, quantity: b.quantity, unit: b.unit, rate: b.estimated_rate, total: b.total_amount })),
     corrigenda: [...corrigendaById.values()],

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { canonicalBaseUrl } from '../src/config.js';
 import { portalTenderId } from '../src/services/ingestion/sources/cppp/portals.js';
-import { listView } from '../src/services/tenderSearch.js';
+import { isPdfDocument, listView } from '../src/services/tenderSearch.js';
 import { renderDigestEmail } from '../src/services/alerts/email.js';
 
 describe('emailed links use a host that resolves', () => {
@@ -51,6 +51,28 @@ describe("the portal's own tender / bid ID", () => {
     assert.equal(view.tenderNo, 'PWD/BHOPAL/2026/42');
     assert.equal(view.tenderId, '2026_PWD_123456_1');
     assert.match(view.portalUrl, /^https:\/\/mptenders\.gov\.in\//);
+  });
+
+  it('opens the GeM portal, not the bid PDF, from "Open on source portal"', () => {
+    const view = listView({
+      id: 8, provider_id: 'gem', source_id: 'GEM/2026/B/8153983', tender_no: 'GEM/2026/B/8153983', title: 'Laptops', status: 'Open',
+      source_url: 'https://bidplus.gem.gov.in/showbidDocument/8153983',
+    });
+    assert.equal(view.portalUrl, 'https://bidplus.gem.gov.in/all-bids');
+    assert.equal(view.sourceUrl, 'https://bidplus.gem.gov.in/showbidDocument/8153983', 'PDF still available');
+  });
+
+  it('flags PDF documents for the "Download PDF" button', () => {
+    assert.equal(isPdfDocument({ name: 'Bid document GEM/2026/B/1', url: 'https://bidplus.gem.gov.in/showbidDocument/1' }, 'gem'), true, 'GeM bid PDF');
+    assert.equal(isPdfDocument({ name: 'Bid document GEM/2026/B/1', url: null }, 'gem'), false, 'no URL, nothing to download');
+    assert.equal(isPdfDocument({ name: 'Tendernotice_1.pdf', url: null }, 'cppp'), true, 'by file name');
+    assert.equal(isPdfDocument({ name: 'NIT', url: 'https://eproc.isro.gov.in/doc/nit.PDF?x=1' }, 'isro'), true, 'by URL');
+    assert.equal(isPdfDocument({ name: 'BOQ_123.xls', url: 'https://eproc.isro.gov.in/doc/boq.xls' }, 'isro'), false);
+  });
+
+  it('keeps a stored per-tender page link for other portals', () => {
+    const view = listView({ id: 9, provider_id: 'isro', source_id: 'LE1', tender_no: 'LE1', title: 'X', status: 'Open', source_url: 'https://eproc.isro.gov.in/t/LE1' });
+    assert.equal(view.portalUrl, 'https://eproc.isro.gov.in/t/LE1');
   });
 
   it('appears in the daily alert email', () => {

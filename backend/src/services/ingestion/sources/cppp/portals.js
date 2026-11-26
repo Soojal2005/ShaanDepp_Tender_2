@@ -108,8 +108,10 @@ export const GEPNIC_PORTALS = [
   // allows it (re-checked 2026-11-26; the earlier "active WAF" note does not apply
   // to this listing). ~44k live bids, so it is crawled by its OWN job (`crawl-gem`,
   // sources/gem) as a resumable closing-day sweep — never by crawl-gepnic. Bid PDFs
-  // are public, so every GeM bid carries a downloadable document.
-  { id: 'gem', name: 'GeM (Government e-Marketplace)', state: null, type: 'gem', baseUrl: 'https://bidplus.gem.gov.in', appPath: '/all-bids', adapter: 'gem', enabled: true },
+  // are public, so every GeM bid carries a downloadable document. Its source_url
+  // IS that PDF (`sourceUrlIsDocument`), so the "Open on source portal" link uses
+  // the All Bids page instead (see tenderPortalUrl).
+  { id: 'gem', name: 'GeM (Government e-Marketplace)', state: null, type: 'gem', baseUrl: 'https://bidplus.gem.gov.in', appPath: '/all-bids', adapter: 'gem', sourceUrlIsDocument: true, enabled: true },
 ];
 
 /** Adapters crawled by a dedicated job of their own, so crawl-gepnic skips them. */
@@ -189,3 +191,19 @@ export const portalPublicUrl = (id) => {
     return null;
   }
 };
+
+/**
+ * The "Open on source portal" link for a tender: its stored per-tender URL when
+ * that is a web page (ISRO/POWERGRID deep links, detail-fetched GePNIC links),
+ * else the portal's public page. For a portal whose source_url is the tender's
+ * document file (GeM's bid PDF), the stored URL would download a PDF instead of
+ * opening the portal, so the portal page wins there; the PDF stays reachable
+ * from the tender's Documents tab.
+ */
+export const sourceUrlIsDocument = (providerId) => Boolean(portalById(providerId)?.sourceUrlIsDocument);
+
+export function tenderPortalUrl(providerId, sourceUrl) {
+  const portal = portalPublicUrl(providerId);
+  if (portal && sourceUrlIsDocument(providerId)) return portal;
+  return sourceUrl ?? portal;
+}

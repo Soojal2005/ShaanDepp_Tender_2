@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClipboardCheck, ExternalLink, Star, X } from 'lucide-react';
+import { ClipboardCheck, Download, ExternalLink, Star, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { Button, ErrorNote, Loading } from '../ui.jsx';
 import RequestHelp from '../desk/RequestHelp.jsx';
@@ -50,6 +50,8 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
   }, [onClose]);
 
   const tender = detail.data;
+  // The tender's own PDF (e.g. a GeM bid document), downloaded through our proxy.
+  const pdfDoc = tender?.documents?.find((d) => d.downloadable && d.pdf) ?? null;
 
   const toggleWatch = async () => {
     const result = await run(() => (tender.watchlisted ? api.delete(`/tenders/${tenderId}/watch`) : api.put(`/tenders/${tenderId}/watch`, { notes: notes.trim() || null })));
@@ -117,6 +119,11 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
               {(tender.portalUrl ?? tender.sourceUrl) && (
                 <a className="btn btn-outline" href={tender.portalUrl ?? tender.sourceUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink size={15} />{t('tender.sourceLink')}
+                </a>
+              )}
+              {pdfDoc && (
+                <a className="btn btn-outline" href={api.url(`/tenders/${tender.id}/documents/${pdfDoc.id}/file`)} target="_blank" rel="noopener noreferrer" download>
+                  <Download size={15} />{t('tender.downloadPdf')}
                 </a>
               )}
             </div>
