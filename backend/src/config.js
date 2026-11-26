@@ -113,7 +113,7 @@ const schema = z.object({
   // a high value means "effectively everything" for large portals like CPPP.
   CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(2000).default(100),
   CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(120),
-  CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
+  CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)'),
   // Path to a system Chromium for the browser engine (set in the Docker image).
   // Empty = use Playwright's own downloaded browser (local development).
   CRAWLER_CHROMIUM_PATH: optionalString,
@@ -159,7 +159,7 @@ const schema = z.object({
   ENRICH_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
   ENRICH_MAX_BYTES: z.coerce.number().int().min(100000).default(15728640),
   ENRICH_MAX_PAGES: z.coerce.number().int().min(1).max(100).default(15),
-  ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)'),
+  ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)'),
 
   // Mail. MAIL_MODE=live is required to actually send; dry_run writes to the outbox.
   MAIL_MODE: z.enum(['dry_run', 'live']).default('dry_run'),
@@ -200,7 +200,7 @@ const schema = z.object({
   // Website
   WHATSAPP_NUMBER: z.string().default('919301039191'),
   CONTACT_PHONE: z.string().default('+91 79743 92235'),
-  CONTACT_EMAIL: z.string().default('shantanu.trivedi@procure-brain.com'),
+  CONTACT_EMAIL: z.string().default('shantanu.trivedi@procure-brain.in'),
 });
 
 function load(env) {
@@ -227,7 +227,7 @@ function load(env) {
   // out while it still points at localhost, every "set your password" link is dead
   // for the recipient, so refuse to start rather than send broken links.
   const baseIsLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/|$)/i.test(c.PUBLIC_BASE_URL);
-  // procure-brain.com is a dead placeholder from old templates; the live domain is .in.
+  // Reject the obsolete .com domain in live email links.
   const baseWrongDomain = /procure-brain\.com\b/i.test(c.PUBLIC_BASE_URL);
   if (c.MAIL_MODE === 'live' && (baseIsLocal || baseWrongDomain)) {
     throw new Error(`MAIL_MODE=live requires PUBLIC_BASE_URL to be the live site URL https://www.procure-brain.in. It is "${c.PUBLIC_BASE_URL}", so password-reset and invitation links in emails would be dead for recipients.`);
@@ -371,7 +371,7 @@ function load(env) {
     site: Object.freeze({
       whatsappNumber: c.WHATSAPP_NUMBER.replace(/\D/g, '').endsWith('8269868808') ? '919301039191' : c.WHATSAPP_NUMBER,
       phone: c.CONTACT_PHONE.replace(/\D/g, '').endsWith('8269868808') ? '+91 79743 92235' : c.CONTACT_PHONE,
-      email: c.CONTACT_EMAIL.trim().toLowerCase() === 'info@synquic.com' ? 'shantanu.trivedi@procure-brain.com' : c.CONTACT_EMAIL,
+      email: c.CONTACT_EMAIL.trim().toLowerCase() === 'info@synquic.com' ? 'shantanu.trivedi@procure-brain.in' : c.CONTACT_EMAIL,
     }),
   });
 }

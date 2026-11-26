@@ -143,7 +143,7 @@ export function bundlePdf(s) {
 
     // Cover band
     doc.rect(0, 0, PAGE_W, 96).fill(C.navy);
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#93C5FD').text('SHAN-DEEP TENDER INTELLIGENCE  ·  procure-brain.com', M, 24);
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#93C5FD').text('SHAN-DEEP TENDER INTELLIGENCE  ·  procure-brain.in', M, 24);
     doc.font('Helvetica-Bold').fontSize(21).fillColor('#FFFFFF').text('Weekly Tender Intelligence', M, 40);
     doc.font('Helvetica').fontSize(11).fillColor('#BFDBFE').text(`${latin(s.organization.name)}  ·  Week of ${s.period.label}`, M, 68);
     doc.y = 112;
@@ -236,7 +236,7 @@ export function bundlePdf(s) {
       // Footer text sits inside the bottom margin; without this pdfkit would add a blank page after every page.
       doc.page.margins.bottom = 0;
       doc.font('Helvetica').fontSize(7.5).fillColor(C.mute)
-        .text(`Shan-Deep Management Advisory, Bhopal  ·  procure-brain.com  ·  Generated ${new Date(s.generatedAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}`, M, PAGE_H - 32, { width: W - 60, lineBreak: false })
+        .text(`Shan-Deep Management Advisory, Bhopal  ·  procure-brain.in  ·  Generated ${new Date(s.generatedAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}`, M, PAGE_H - 32, { width: W - 60, lineBreak: false })
         .text(`Page ${i + 1} of ${range.count}`, PAGE_W - M - 60, PAGE_H - 32, { width: 60, align: 'right', lineBreak: false });
     }
     doc.end();

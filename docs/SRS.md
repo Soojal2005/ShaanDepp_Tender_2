@@ -1,6 +1,6 @@
 # Software Requirements Specification
 
-**Product:** Shan-Deep Tender Portal and company website (`procure-brain.com`)
+**Product:** Shan-Deep Tender Portal and company website (`procure-brain.in`)
 **Client:** Shan-Deep Management Advisory, Bhopal
 **Developer:** Synquic
 **Basis:** the signed proposal (modules A to G, 8 weeks, "Internal, No Pricing" copy)

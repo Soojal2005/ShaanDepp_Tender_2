@@ -1,7 +1,7 @@
 // English strings. Keys are grouped by area; Hindi (hi.js) mirrors this shape and
 // any missing Hindi key falls back to the English text here.
 export default {
-  brand: { name: 'Shan-Deep', subtitle: 'Tender Intelligence Platform', domain: 'procure-brain.com' },
+  brand: { name: 'Shan-Deep', subtitle: 'Tender Intelligence Platform', domain: 'procure-brain.in' },
 
   common: {
     save: 'Save', saving: 'Saving...', cancel: 'Cancel', close: 'Close', edit: 'Edit', add: 'Add', remove: 'Remove',

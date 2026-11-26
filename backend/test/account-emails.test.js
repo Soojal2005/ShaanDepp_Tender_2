@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { RESET_PATH, resetLink } from '../src/services/accountEmails.js';
 
 // These links are what a customer clicks in a "reset password" / "set your password"
-// (invite) email. The bug was a wrong base domain (procure-brain.com / localhost);
+// (invite) email. The bug was a wrong base domain (procure-brain.in / localhost);
 // the path itself must stay '/reset-password' to match the SPA route in src/App.jsx.
 describe('password-reset / invite link', () => {
   it('builds the live link on the correct domain and path', () => {

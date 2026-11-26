@@ -8,7 +8,7 @@ You need a Microsoft 365 administrator (Global Administrator or Application Admi
 
 ## 1. Choose the sending mailbox
 
-Use a dedicated mailbox such as `alerts@procure-brain.com`. A **shared mailbox** is enough and needs no licence; it must exist before step 4. Replies go to this mailbox, so decide who reads it.
+Use a dedicated mailbox such as `alerts@procure-brain.in`. A **shared mailbox** is enough and needs no licence; it must exist before step 4. Replies go to this mailbox, so decide who reads it.
 
 ## 2. Register the application (Microsoft Entra admin centre)
 
@@ -32,18 +32,18 @@ By default an application with `Mail.Send` can send as **any** mailbox in the or
 Connect-ExchangeOnline
 
 # a mail-enabled security group that contains only the sending mailbox
-New-DistributionGroup -Name "procure-brain-senders" -Type Security -Members "alerts@procure-brain.com"
+New-DistributionGroup -Name "procure-brain-senders" -Type Security -Members "alerts@procure-brain.in"
 
 New-ApplicationAccessPolicy `
   -AppId <Application (client) ID> `
-  -PolicyScopeGroupId procure-brain-senders@procure-brain.com `
+  -PolicyScopeGroupId procure-brain-senders@procure-brain.in `
   -AccessRight RestrictAccess `
   -Description "procure-brain may use only the alerts mailbox"
 
 # should report: AccessCheckResult : Granted
-Test-ApplicationAccessPolicy -Identity alerts@procure-brain.com -AppId <Application (client) ID>
+Test-ApplicationAccessPolicy -Identity alerts@procure-brain.in -AppId <Application (client) ID>
 # should report: AccessCheckResult : Denied
-Test-ApplicationAccessPolicy -Identity someone.else@procure-brain.com -AppId <Application (client) ID>
+Test-ApplicationAccessPolicy -Identity someone.else@procure-brain.in -AppId <Application (client) ID>
 ```
 
 Policy changes can take up to an hour to take effect. Microsoft is moving this control to "RBAC for Applications" in Exchange Online; if your tenant already uses it, create the equivalent role assignment scoped to the one mailbox. Check Microsoft's current guidance when you do this step.
@@ -56,7 +56,7 @@ Put these in the server's `.env` (see `deploy/production.env.example`):
 AZURE_TENANT_ID=<Directory (tenant) ID>
 AZURE_CLIENT_ID=<Application (client) ID>
 AZURE_CLIENT_SECRET=<secret value>
-GRAPH_SENDER_MAILBOX=alerts@procure-brain.com
+GRAPH_SENDER_MAILBOX=alerts@procure-brain.in
 OPS_ALERT_EMAIL=<the person who should hear about failures>
 MAIL_MODE=live
 ```

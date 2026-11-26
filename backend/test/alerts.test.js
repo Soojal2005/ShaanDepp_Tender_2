@@ -278,13 +278,13 @@ describe('building a digest', () => {
     it('queues one email per recipient with a stable idempotency key, and never twice', async () => {
       await seedTenders(ctx.db, [tenderDto({ tender_summary: 'Zebra crossing paint', authority: 'Municipal Corporation', state: 'Madhya Pradesh' })]);
       const profile = await newProfile(orgStandard, { keywords: ['zebra crossing'], recipientEmails: ['a@client.test', 'B@client.test'] });
-      const first = await run((q) => sendDigestForProfile(q, profile, { baseUrl: 'https://procure-brain.com' }));
+      const first = await run((q) => sendDigestForProfile(q, profile, { baseUrl: 'https://procure-brain.in' }));
       assert.equal(first.sent, 2);
       const mails = await run((q) => q.many(`SELECT recipient, kind, subject, tenders_count, digest_id FROM email_queue WHERE digest_id = $1 ORDER BY recipient`, [first.digestId]));
       assert.deepEqual(mails.map((m) => m.recipient), ['a@client.test', 'b@client.test']);
       assert.match(mails[0].subject, /Tender alert: Test alert · 1 tender/);
 
-      const second = await run((q) => sendDigestForProfile(q, profile, { baseUrl: 'https://procure-brain.com' }));
+      const second = await run((q) => sendDigestForProfile(q, profile, { baseUrl: 'https://procure-brain.in' }));
       assert.equal(second.sent, 0, 'same-day re-run sends nothing');
       assert.equal((await run((q) => q.one(`SELECT count(*)::int AS n FROM email_queue WHERE digest_id = $1`, [first.digestId]))).n, 2);
     });
@@ -355,7 +355,7 @@ describe('the digest email', () => {
 
   it('escapes every piece of third-party text', () => {
     const digest = { cap: 100, notInDigest: 0, closing: [], included: [base({ title: '<script>alert(1)</script> & "quotes"', department: '<img src=x onerror=alert(1)>' })] };
-    const { html, subject } = renderDigestEmail({ profile, orgName: 'Org <i>', digest, baseUrl: 'https://procure-brain.com', now: NOW });
+    const { html, subject } = renderDigestEmail({ profile, orgName: 'Org <i>', digest, baseUrl: 'https://procure-brain.in', now: NOW });
     assert.ok(!html.includes('<script>'));
     assert.ok(!html.includes('<img src=x'));
     assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));

@@ -15,7 +15,7 @@ const response = (status, body = {}, headers = {}) => ({
 });
 
 describe('Microsoft Graph client', () => {
-  const settings = { tenantId: 'tenant-1', clientId: 'client-1', clientSecret: 'S3CRET-VALUE', mailbox: 'alerts@procure-brain.com' };
+  const settings = { tenantId: 'tenant-1', clientId: 'client-1', clientSecret: 'S3CRET-VALUE', mailbox: 'alerts@procure-brain.in' };
 
   function harness(script) {
     const calls = [];
@@ -43,14 +43,14 @@ describe('Microsoft Graph client', () => {
     assert.equal(form.get('scope'), 'https://graph.microsoft.com/.default');
     assert.equal(form.get('client_id'), 'client-1');
 
-    assert.equal(sendCall.url, 'https://graph.microsoft.com/v1.0/users/alerts%40procure-brain.com/sendMail');
+    assert.equal(sendCall.url, 'https://graph.microsoft.com/v1.0/users/alerts%40procure-brain.in/sendMail');
     assert.match(sendCall.init.headers.Authorization, /^Bearer tok-/);
     const body = JSON.parse(sendCall.init.body);
     assert.equal(body.saveToSentItems, true);
     assert.equal(body.message.subject, 'Hello');
     assert.deepEqual(body.message.body, { contentType: 'HTML', content: '<p>Hi</p>' });
     assert.equal(body.message.toRecipients[0].emailAddress.address, 'ravi@client.test');
-    assert.equal(body.message.replyTo[0].emailAddress.address, 'alerts@procure-brain.com', 'replies come back to the shared mailbox');
+    assert.equal(body.message.replyTo[0].emailAddress.address, 'alerts@procure-brain.in', 'replies come back to the shared mailbox');
   });
 
   it('reuses the access token until it nears expiry, then fetches a new one', async () => {
@@ -307,7 +307,7 @@ describe('sending the queue', () => {
 });
 
 describe('delivery-failure notices', () => {
-  const own = 'alerts@procure-brain.com';
+  const own = 'alerts@procure-brain.in';
   const ndr = (o = {}) => ({
     id: 'm1', subject: 'Undeliverable: Tender alert', from: { emailAddress: { address: 'postmaster@outlook.com' } },
     body: { content: `<p>Your message to <b>Ghost@Client.test</b> couldn't be delivered. 550 5.1.1 user unknown. Original sender: ${own}</p>` }, ...o,

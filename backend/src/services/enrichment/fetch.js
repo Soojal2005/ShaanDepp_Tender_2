@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
  *   { ok: false, reason: string, status?: number, contentType?: string, error?: string }>}
  */
 export async function downloadPdf(url, opts = {}) {
-  const { maxBytes = 15 * 1024 * 1024, timeoutMs = 20_000, userAgent = 'ShanDeepTenderCrawler/1.0 (+https://procure-brain.com; respectful crawler)' } = opts;
+  const { maxBytes = 15 * 1024 * 1024, timeoutMs = 20_000, userAgent = 'ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)' } = opts;
   if (!url || !/^https?:\/\//i.test(url)) return { ok: false, reason: 'bad_url' };
 
   const controller = new AbortController();

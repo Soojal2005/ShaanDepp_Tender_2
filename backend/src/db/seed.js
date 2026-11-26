@@ -75,7 +75,7 @@ export async function ensureStaffOrganization(q) {
   if (existing) return existing.id;
   const row = await q.one(
     `INSERT INTO organizations (name, domain, is_staff_org, status)
-     VALUES ('Shan-Deep Management Advisory', 'procure-brain.com', true, 'Active') RETURNING id`
+     VALUES ('Shan-Deep Management Advisory', 'procure-brain.in', true, 'Active') RETURNING id`
   );
   return row.id;
 }

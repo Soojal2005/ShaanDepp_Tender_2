@@ -1,4 +1,4 @@
-# DNS records for procure-brain.com
+# DNS records for procure-brain.in
 
 You need access to wherever the domain's DNS is managed (the registrar or a DNS provider). Make the changes during a quiet hour and keep a copy of the existing records first.
 
@@ -28,7 +28,7 @@ If SPF already lists other senders (a website form service, a marketing tool), k
 ### DKIM (a signature proving the message was not altered)
 
 1. Microsoft Defender portal → **Email & collaboration → Policies & rules → Threat policies → Email authentication settings → DKIM**.
-2. Select `procure-brain.com`. It shows two CNAME records; create them at your DNS provider:
+2. Select `procure-brain.in`. It shows two CNAME records; create them at your DNS provider:
 
 | Type | Name | Value |
 |---|---|---|
@@ -43,7 +43,7 @@ Start in monitoring mode:
 
 | Type | Name | Value |
 |---|---|---|
-| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc-reports@procure-brain.com; fo=1` |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc-reports@procure-brain.in; fo=1` |
 
 Read the reports for two to four weeks. When legitimate mail is passing, tighten the policy to `p=quarantine`, and later `p=reject`.
 
