@@ -1,5 +1,5 @@
 -- ============================================================================
--- Shan-Deep Tender Intelligence Platform (procure-brain.in)
+-- Shan-Deep Tender Intelligence Platform (procure-brain.com)
 -- 001 - Core schema (PostgreSQL 15+, also runs on PGlite for dev/test)
 --
 -- Conventions
