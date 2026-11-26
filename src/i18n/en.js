@@ -128,7 +128,7 @@ export default {
     item: 'Item', qty: 'Qty', unit: 'Unit', rate: 'Rate', amount: 'Amount',
     noDocs: 'No documents were listed by the source.', docNote: 'Documents come from the source feed. A download link appears when the source provides one.',
     noCorrigenda: 'No corrigenda have been recorded.', myNotes: 'My notes', saveNotes: 'Save notes', notesSaved: 'Notes saved.',
-    sourceLink: 'Open on source portal', lastUpdated: 'Last updated {when}', tenderNo: 'Tender no.', city: 'City',
+    sourceLink: 'Open on source portal', lastUpdated: 'Last updated {when}', tenderNo: 'Tender no.', tenderId: 'Tender / bid ID', city: 'City',
     addedWatch: 'Added to your watchlist.', removedWatch: 'Removed from your watchlist.', department: 'Department', category: 'Category',
     hasBoq: 'BOQ', hasDocs: 'Documents',
   },

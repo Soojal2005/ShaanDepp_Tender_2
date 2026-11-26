@@ -19,7 +19,7 @@ const SYSTEM_ACTOR = { user: null, ip: null };
 const MAX_CANDIDATES = 5000;
 const OPEN = `(t.status = 'Open' AND (t.submission_deadline IS NULL OR t.submission_deadline > now()))`;
 
-const COLUMNS = `t.id, t.tender_no, t.title, t.department, t.category, t.state, t.city, t.tender_type, t.estimated_value,
+const COLUMNS = `t.id, t.provider_id, t.source_id, t.tender_no, t.title, t.department, t.category, t.state, t.city, t.tender_type, t.estimated_value,
   t.emd_amount, t.emd_status, t.submission_deadline, t.publish_date, t.source_url`;
 
 const IST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });

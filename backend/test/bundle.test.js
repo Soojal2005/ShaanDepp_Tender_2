@@ -293,9 +293,12 @@ describe('weekly bundle', () => {
       const prior = (await platform.get(`/admin/reports/bundles?period=${addDays(WEEK, -7)}`)).body.bundles[0];
       await platform.post('/admin/reports/release').send({ bundleId: prior.id, notify: true });
       assert.equal(second.generated, 1);
-      const mail = await run((q) => q.one(`SELECT recipient, subject FROM email_queue WHERE kind = 'bundle_notice'`));
+      const mail = await run((q) => q.one(`SELECT recipient, subject, html_body FROM email_queue WHERE kind = 'bundle_notice'`));
       assert.equal(mail.recipient, 'boss@all.test');
       assert.match(mail.subject, /weekly report is ready/);
+      // The email opens that week's report directly, on the configured site.
+      assert.ok(mail.html_body.includes(`/app/reports/${prior.id}"`), 'links straight to the released report');
+      assert.ok(!/https?:\/\/procure-brain\.in/.test(mail.html_body), 'never the bare domain, which has no DNS record');
     });
 
     it('is for authorised staff only', async () => {

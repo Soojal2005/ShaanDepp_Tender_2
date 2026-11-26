@@ -11,7 +11,7 @@
 import { z } from 'zod';
 import { config } from '../config.js';
 import { notFound } from '../errors.js';
-import { isGepnicProvider, portalPublicUrl } from './ingestion/sources/cppp/portals.js';
+import { isGepnicProvider, portalPublicUrl, portalTenderId } from './ingestion/sources/cppp/portals.js';
 import { tenderRef } from '../util.js';
 
 const list = (inner, max = 100) =>
@@ -151,7 +151,7 @@ const SORTS = {
 };
 
 const COLUMNS = `
-  t.id, t.provider_id, t.source_url, t.tender_no, t.title, t.description, t.department, t.department_id,
+  t.id, t.provider_id, t.source_id, t.source_url, t.tender_no, t.title, t.description, t.department, t.department_id,
   t.category, t.category_id, t.state, t.state_id, t.city, t.city_id, t.org_type, t.tender_type,
   t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date, t.prebid_date,
   t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents`;
@@ -160,6 +160,9 @@ export const listView = (r) => ({
   id: r.id,
   ref: tenderRef(r.id),
   tenderNo: r.tender_no,
+  // The portal's own Tender / Bid ID (what bidders search the portal by), when it
+  // differs from the reference number above. See portalTenderId.
+  tenderId: portalTenderId(r.provider_id, r.source_id, r.tender_no),
   title: r.title,
   snippet: r.description && r.description !== r.title ? r.description.slice(0, 260) : null,
   department: r.department,

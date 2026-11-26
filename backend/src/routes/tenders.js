@@ -9,7 +9,7 @@ import { asyncHandler, conflict, HttpError, notFound } from '../errors.js';
 import { proxyDocument, pdfFileName } from '../services/documentProxy.js';
 import { getGepnicManager } from '../services/gepnic/index.js';
 import { DocumentUnavailableError, fetchTenderDocumentWithRetry } from '../services/gepnic/download.js';
-import { isGepnicProvider } from '../services/ingestion/sources/cppp/portals.js';
+import { isGepnicProvider, portalTenderId } from '../services/ingestion/sources/cppp/portals.js';
 import { exportTenders, filtersSchema, getTender, pagingSchema, searchTenders, tenderFacets } from '../services/tenderSearch.js';
 import { tenderRef } from '../util.js';
 import { id as idSchema, parse, z } from '../validate.js';
@@ -92,6 +92,7 @@ export function tendersRoutes({ limiters } = {}) {
       const ws = wb.addWorksheet('Tenders', { views: [{ state: 'frozen', ySplit: 1 }] });
       ws.columns = [
         { header: 'Ref', key: 'ref', width: 12 }, { header: 'Tender number', key: 'tenderNo', width: 22 },
+        { header: 'Tender / bid ID', key: 'tenderId', width: 24 },
         { header: 'Title', key: 'title', width: 60 }, { header: 'Department', key: 'department', width: 34 },
         { header: 'State', key: 'state', width: 18 }, { header: 'City', key: 'city', width: 18 },
         { header: 'Category', key: 'category', width: 26 }, { header: 'Type', key: 'type', width: 12 },
@@ -111,7 +112,8 @@ export function tendersRoutes({ limiters } = {}) {
       const figure = (v, note = 'Not disclosed') => (v === null || v === undefined ? note : Number(v));
       for (const t of rows) {
         ws.addRow({
-          ref: tenderRef(t.id), tenderNo: t.tender_no ?? '', title: t.title, department: t.department ?? '',
+          ref: tenderRef(t.id), tenderNo: t.tender_no ?? '', tenderId: portalTenderId(t.provider_id, t.source_id, t.tender_no) ?? '',
+          title: t.title, department: t.department ?? '',
           state: t.state ?? '', city: t.city ?? '', category: t.category ?? '', type: t.tender_type ?? '',
           value: figure(t.estimated_value),
           emd: t.emd_status === 'exempted' ? 'Exempted' : figure(t.emd_amount),

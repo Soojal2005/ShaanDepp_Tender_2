@@ -102,6 +102,7 @@ export default function TenderDrawer({ tenderId, onClose, onWatchChange }) {
               <Fact label={t('tender.prebid')}>{formatDate(tender.prebidDate, lang)}</Fact>
               <Fact label={t('tender.type')}>{tender.tenderType ?? '-'}</Fact>
               <Fact label={t('tender.tenderNo')}>{tender.tenderNo ?? '-'}</Fact>
+              {tender.tenderId && <Fact label={t('tender.tenderId')}>{tender.tenderId}</Fact>}
               <Fact label={t('tender.category')}>{tender.category ?? '-'}</Fact>
             </div>
 

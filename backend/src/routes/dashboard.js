@@ -21,7 +21,7 @@ const OPEN = `(t.status = 'Open' AND (t.submission_deadline IS NULL OR t.submiss
 const pct = (now, before) => (before > 0 ? Math.round(((now - before) / before) * 100) : null);
 
 // The columns listView() reads, plus a per-user watchlist flag. $1 must be the userId.
-const TENDER_COLS = `t.id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
+const TENDER_COLS = `t.id, t.provider_id, t.source_id, t.tender_no, t.title, t.description, t.department, t.department_id, t.category, t.state, t.city,
   t.org_type, t.tender_type, t.estimated_value, t.emd_amount, t.emd_status, t.tender_fee, t.publish_date,
   t.prebid_date, t.submission_deadline, t.opening_date, t.status, t.has_boq, t.has_documents, t.source_url,
   EXISTS (SELECT 1 FROM watchlist_items w WHERE w.tender_id = t.id AND w.user_id = $1) AS watchlisted`;

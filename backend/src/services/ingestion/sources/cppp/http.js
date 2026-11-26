@@ -28,7 +28,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function fetchHtml(url, {
   fetchImpl = globalThis.fetch,
-  userAgent = 'ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)',
+  userAgent = 'ShanDeepTenderCrawler/1.0 (+https://www.procure-brain.in; respectful crawler)',
   timeoutMs = 30_000,
   retries = 2,
   retryDelayMs = 1_000,

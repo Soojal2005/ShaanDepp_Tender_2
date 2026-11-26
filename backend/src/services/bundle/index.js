@@ -48,14 +48,17 @@ export async function generateForOrganizations(db, { periodStart = previousWeekS
   return result;
 }
 
-async function notifyAdmins(q, { orgId, snapshot, baseUrl }) {
+async function notifyAdmins(q, { orgId, bundleId, snapshot, baseUrl }) {
   const admins = await q.many(`SELECT email, name FROM users WHERE organization_id = $1 AND is_active AND role = 'tenant_admin'`, [orgId]);
+  // Open this week's report directly (after sign-in the portal returns to it).
+  const reportUrl = bundleId ? `${baseUrl}/app/reports/${bundleId}` : `${baseUrl}/app/reports`;
   for (const a of admins) {
     const html = emailShell({
       title: 'Your weekly report is ready',
       bodyHtml: `<p style="font-size:15px;">Hello ${esc(a.name)},</p>
         <p style="font-size:13.5px;color:#475569;">Your tender intelligence report for <b>${esc(snapshot.period.label)}</b> is now in your Reports locker, as interactive charts, a PDF and an Excel sheet.</p>
-        <p>${button('Open reports', `${baseUrl}/app/reports`)}</p>`,
+        <p>${button('Open the report', reportUrl)}</p>
+        <p style="font-size:12px;color:#64748B;">If the button does not work, copy this address into your browser:<br><a href="${esc(reportUrl)}" style="color:#0066FF;">${esc(reportUrl)}</a></p>`,
     });
     await enqueueEmail(q, { orgId, kind: 'bundle_notice', to: a.email, subject: `Your weekly report is ready (${snapshot.period.label})`, html, idempotencyKey: `bundle-notice:${orgId}:${snapshot.period.start}:${a.email}` });
   }
@@ -72,7 +75,7 @@ export async function releaseBundle(q, actor, bundleId, { notify = false, baseUr
   );
   if (row) {
     await audit(q, actor, 'report.release', 'report_bundle', bundle.id, { orgId: bundle.organization_id, scope: 'client' });
-    if (notify) await notifyAdmins(q, { orgId: bundle.organization_id, snapshot: bundle.snapshot, baseUrl });
+    if (notify) await notifyAdmins(q, { orgId: bundle.organization_id, bundleId: bundle.id, snapshot: bundle.snapshot, baseUrl });
   }
   return { released: Boolean(row), orgId: bundle.organization_id };
 }
@@ -93,7 +96,7 @@ export async function releaseToPlan(q, actor, { planCode, periodStart, notify = 
     );
     if (row) {
       released++;
-      if (notify) await notifyAdmins(q, { orgId: b.organization_id, snapshot: b.snapshot, baseUrl });
+      if (notify) await notifyAdmins(q, { orgId: b.organization_id, bundleId: b.id, snapshot: b.snapshot, baseUrl });
     }
   }
   await audit(q, actor, 'report.release_plan', 'plan', plan.code, { periodStart, bundles: bundles.length, released });

@@ -113,7 +113,7 @@ const schema = z.object({
   // a high value means "effectively everything" for large portals like CPPP.
   CRAWLER_MAX_PAGES: z.coerce.number().int().min(1).max(2000).default(100),
   CRAWL_INTERVAL_MINUTES: z.coerce.number().int().min(15).default(120),
-  CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)'),
+  CRAWLER_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://www.procure-brain.in; respectful crawler)'),
   // Path to a system Chromium for the browser engine (set in the Docker image).
   // Empty = use Playwright's own downloaded browser (local development).
   CRAWLER_CHROMIUM_PATH: optionalString,
@@ -172,7 +172,7 @@ const schema = z.object({
   ENRICH_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
   ENRICH_MAX_BYTES: z.coerce.number().int().min(100000).default(15728640),
   ENRICH_MAX_PAGES: z.coerce.number().int().min(1).max(100).default(15),
-  ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://procure-brain.in; respectful crawler)'),
+  ENRICH_USER_AGENT: z.string().default('ShanDeepTenderCrawler/1.0 (+https://www.procure-brain.in; respectful crawler)'),
 
   // Mail. MAIL_MODE=live is required to actually send; dry_run writes to the outbox.
   MAIL_MODE: z.enum(['dry_run', 'live']).default('dry_run'),
@@ -216,6 +216,17 @@ const schema = z.object({
   CONTACT_EMAIL: z.string().default('shantanu.trivedi@procure-brain.in'),
 });
 
+/**
+ * The bare domain procure-brain.in has no DNS address record — only
+ * www.procure-brain.in resolves (checked 2026-11-26 against Google and Cloudflare
+ * DNS). A link to the bare domain therefore gives recipients "this site can't be
+ * reached", which is what made emailed weekly-report links fail to open. Pin a
+ * bare-domain PUBLIC_BASE_URL to the www origin; any other value is left as is.
+ */
+export function canonicalBaseUrl(url) {
+  return String(url).replace(/\/$/, '').replace(/^https?:\/\/procure-brain\.in(?=[:/]|$)/i, 'https://www.procure-brain.in');
+}
+
 function load(env) {
   const parsed = schema.safeParse(env);
   if (!parsed.success) {
@@ -258,16 +269,20 @@ function load(env) {
 
   const isProd = c.NODE_ENV === 'production';
   const resolveDir = (d) => (path.isAbsolute(d) ? d : path.resolve(BACKEND_ROOT, d));
+  const configuredBase = c.PUBLIC_BASE_URL.replace(/\/$/, '');
+  const publicBaseUrl = canonicalBaseUrl(configuredBase);
 
   return Object.freeze({
     env: c.NODE_ENV,
     isProd,
     isTest: c.NODE_ENV === 'test',
     port: c.PORT,
-    publicBaseUrl: c.PUBLIC_BASE_URL.replace(/\/$/, ''),
+    // Every link in every email (weekly reports, alerts, password set-up) is built
+    // from this, so it is pinned to the host that actually resolves.
+    publicBaseUrl,
     corsOrigins: c.CORS_ORIGINS
       ? c.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
-      : [c.PUBLIC_BASE_URL.replace(/\/$/, '')],
+      : [...new Set([publicBaseUrl, configuredBase])],
     db: Object.freeze({
       driver: dbDriver,
       url: c.DATABASE_URL,

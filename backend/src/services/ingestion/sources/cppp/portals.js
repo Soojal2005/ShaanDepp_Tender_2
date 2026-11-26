@@ -145,6 +145,26 @@ export const isGepnicProvider = (id) => {
   return Boolean(p && !p.adapter);
 };
 
+// An internal key (POWERGRID's tender GUID) rather than a number bidders use.
+const OPAQUE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The portal's own Tender / Bid ID for a crawled tender, to show beside its
+ * reference number. Every crawler stores it as `source_id` — GePNIC's
+ * "2026_PWD_123456_1" (the ID bidders search the portal by), Bihar/nProcure/
+ * Vupadhi/CPWD's numeric tender IDs — while `tender_no` holds the department's
+ * reference / NIT number. Returns null when there is nothing extra to show: not a
+ * crawled portal (vendor feed, Excel), the ID equals the reference number already
+ * shown (ISRO, HPCL, BPCL, GeM), or it is an internal GUID (POWERGRID).
+ */
+export function portalTenderId(providerId, sourceId, tenderNo) {
+  if (!portalById(providerId)) return null;
+  const id = String(sourceId ?? '').trim();
+  if (!id || OPAQUE_ID.test(id)) return null;
+  if (id.toLowerCase() === String(tenderNo ?? '').trim().toLowerCase()) return null;
+  return id;
+}
+
 /**
  * A public portal URL to show the user for a tender, derived from its provider
  * id. Used as the "original portal link" in the tender detail so EVERY crawled

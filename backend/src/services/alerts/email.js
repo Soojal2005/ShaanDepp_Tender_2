@@ -5,6 +5,7 @@
  */
 import { button, emailShell, esc, safeUrl } from '../mail/html.js';
 import { tenderRef } from '../../util.js';
+import { portalTenderId } from '../ingestion/sources/cppp/portals.js';
 
 const TZ = 'Asia/Kolkata';
 const dateFmt = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: TZ });
@@ -31,9 +32,10 @@ function tenderRow(t, { baseUrl, now, urgent = false }) {
   const place = [t.city, t.state].filter(Boolean).join(', ');
   const emd = t.emd_status === 'exempted' ? 'Exempted' : inr(t.emd_amount);
   const deadline = t.submission_deadline ? `${dateTimeFmt.format(new Date(t.submission_deadline))} (${timeLeftText(t.submission_deadline, now)})` : 'Not specified';
+  const bidId = portalTenderId(t.provider_id, t.source_id, t.tender_no);
   return `
   <tr><td style="padding:12px 0;border-bottom:1px solid #E2E8F0;">
-    <div style="font-size:11px;color:#64748B;font-family:Consolas,monospace;">${esc(tenderRef(t.id))}${t.tender_no ? ` · ${esc(t.tender_no)}` : ''}${t.score != null ? ` · match ${t.score}/100` : ''}</div>
+    <div style="font-size:11px;color:#64748B;font-family:Consolas,monospace;">${esc(tenderRef(t.id))}${t.tender_no ? ` · ${esc(t.tender_no)}` : ''}${bidId ? ` · ID ${esc(bidId)}` : ''}${t.score != null ? ` · match ${t.score}/100` : ''}</div>
     <a href="${esc(link)}" style="font-size:14.5px;font-weight:600;color:${urgent ? '#B91C1C' : '#0B2545'};text-decoration:none;line-height:1.35;">${esc(t.title)}</a>
     <div style="font-size:12px;color:#475569;margin-top:4px;">
       ${place ? `${esc(place)} · ` : ''}Value <b>${esc(inr(t.estimated_value))}</b> · EMD ${esc(emd)}

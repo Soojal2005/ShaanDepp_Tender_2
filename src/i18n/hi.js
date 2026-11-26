@@ -129,7 +129,7 @@ export default {
     item: 'मद', qty: 'मात्रा', unit: 'इकाई', rate: 'दर', amount: 'राशि',
     noDocs: 'स्रोत ने कोई दस्तावेज़ सूचीबद्ध नहीं किया।', docNote: 'दस्तावेज़ स्रोत फ़ीड से आते हैं। स्रोत द्वारा लिंक देने पर डाउनलोड लिंक दिखता है।',
     noCorrigenda: 'कोई शुद्धिपत्र दर्ज नहीं है।', myNotes: 'मेरे नोट्स', saveNotes: 'नोट्स सहेजें', notesSaved: 'नोट्स सहेज लिए गए।',
-    sourceLink: 'स्रोत पोर्टल पर खोलें', lastUpdated: 'अंतिम अद्यतन {when}', tenderNo: 'टेंडर क्र.', city: 'शहर',
+    sourceLink: 'स्रोत पोर्टल पर खोलें', lastUpdated: 'अंतिम अद्यतन {when}', tenderNo: 'टेंडर क्र.', tenderId: 'टेंडर / बिड आईडी', city: 'शहर',
     addedWatch: 'आपकी वॉचलिस्ट में जोड़ दिया गया।', removedWatch: 'आपकी वॉचलिस्ट से हटा दिया गया।', department: 'विभाग', category: 'श्रेणी',
     hasBoq: 'BOQ', hasDocs: 'दस्तावेज़',
   },

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { allPaths } from '../src/content/services.js';
 
-const site = (process.env.SITE_URL || 'https://procure-brain.in').replace(/\/+$/, '');
+const site = (process.env.SITE_URL || 'https://www.procure-brain.in').replace(/\/+$/, '');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 fs.mkdirSync(root, { recursive: true });
 

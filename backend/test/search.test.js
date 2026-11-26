@@ -265,7 +265,7 @@ describe('tender search', () => {
       const ws = wb.getWorksheet('Tenders');
       assert.equal(ws.actualRowCount, 13, 'header + 12 tenders');
       const header = ws.getRow(1).values.slice(1);
-      assert.deepEqual(header.slice(0, 3), ['Ref', 'Tender number', 'Title']);
+      assert.deepEqual(header.slice(0, 4), ['Ref', 'Tender number', 'Tender / bid ID', 'Title']);
       const rows = [];
       ws.eachRow((row, n) => { if (n > 1) rows.push(Object.fromEntries(header.map((h, i) => [h, row.getCell(i + 1).value]))); });
       const rural = rows.find((r) => r.Title === 'Repair of rural road under PMGSY');
